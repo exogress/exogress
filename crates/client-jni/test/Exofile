@@ -1,0 +1,13 @@
+version: 0.0.1
+revision: 1
+name: develop
+exposes:
+  main-web:
+    targets:
+      main:
+        type: proxy
+        priority: 50
+        upstream: backend
+upstreams:
+  backend:
+    port: 3000

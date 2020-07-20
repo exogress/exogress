@@ -1,0 +1,14 @@
+[package]
+name = "libexogress"
+version = "0.1.0"
+authors = ["Exogress Team <team@exogress.com>"]
+edition = "2018"
+build = "build.rs"
+license = "Apache 2.0"
+
+[build-dependencies]
+cbindgen = "0.9.0"
+
+[dependencies]
+exogress-config-core = { path = "../config-core", version = "0.1" }
+shadow-clone = "1.2.1"

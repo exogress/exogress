@@ -1,0 +1,16 @@
+[package]
+name = "exogress-client-python"
+version = "0.1.0"
+authors = ["Exogress Team <team@exogress.com>"]
+edition = "2018"
+license = "Apache 2.0"
+
+[lib]
+name = "exogress"
+crate-type = ["cdylib"]
+
+[dependencies]
+exogress-client-lib = { path =  "../client-lib", version = "0.1" }
+exogress-tunnel = { path = "../tunnel", version = "0.1" }
+pyo3 = { version = "0.11.1", features = ["extension-module"] }
+shadow-clone = "1.2.1"

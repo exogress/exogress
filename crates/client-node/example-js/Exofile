@@ -1,0 +1,34 @@
+version: 0.0.1
+revision: 5
+name: config
+exposes:
+  backend:
+    targets:
+      main:
+        type: proxy
+        priority: 50
+        upstream: flussonic
+        base_path: []
+      static:
+        type: static_dir
+        priority: 70
+        dir: ./static
+        base_path: []
+  mp-2:
+    targets:
+      main:
+        type: proxy
+        priority: 50
+        upstream: webapp
+        base_path: []
+      static:
+        type: static_dir
+        priority: 70
+        dir: ./static
+        base_path: []
+upstreams:
+  flussonic:
+    port: 8080
+    host: 192.168.71.30
+  webapp:
+    port: 3000
