@@ -13,7 +13,6 @@ members = [
     "crates/tunnel",
 ]
 exclude = [
-     "crates/client-node",
     # "crates/client-jni",
 ]
 

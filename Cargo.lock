@@ -581,6 +581,7 @@ dependencies = [
 name = "exogress-client-lib"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "exogress-client-core",
  "exogress-entities",
  "exogress-tunnel",
