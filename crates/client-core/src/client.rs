@@ -103,10 +103,10 @@ impl Client {
         ))?;
         info!("Use config at {}", config_path.as_path().display());
 
-        // let mut url = Url::parse(APP_BASE_URL).unwrap();
-        // url.set_scheme("wss").unwrap();
+        let mut url = Url::parse(APP_BASE_URL).unwrap();
+        url.set_scheme("wss").unwrap();
 
-        let mut url = Url::parse("ws://localhost:2998").unwrap();
+        // let mut url = Url::parse("ws://localhost:2998").unwrap();
         {
             let mut path_segments = url.path_segments_mut().unwrap();
             path_segments.push("api");

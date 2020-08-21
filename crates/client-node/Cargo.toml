@@ -15,3 +15,4 @@ shadow-clone = "1.2.1"
 
 [build-dependencies]
 node-bindgen = { version = "2.1", features = ["build"] }
+`
