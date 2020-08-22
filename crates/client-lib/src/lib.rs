@@ -5,9 +5,14 @@ use trust_dns_resolver::TokioAsyncResolver;
 
 use exogress_client_core::Client;
 use exogress_entities::{tracing, ClientId, InstanceId};
-use tracing::{Level, error, info};
+use tracing::{error, info, Level};
 
-pub fn spawn(client_id: String, client_secret: String, account: String, project: String) -> Result<(), anyhow::Error> {
+pub fn spawn(
+    client_id: String,
+    client_secret: String,
+    account: String,
+    project: String,
+) -> Result<(), anyhow::Error> {
     let res = thread::spawn(|| {
         let subscriber = tracing_subscriber::fmt()
             .with_max_level(Level::INFO)
@@ -19,14 +24,15 @@ pub fn spawn(client_id: String, client_secret: String, account: String, project:
         let mut rt = Runtime::new().unwrap();
 
         rt.block_on(async move {
-            let resolver = TokioAsyncResolver::from_system_conf(Handle::current())
-                .await?;
+            let resolver = TokioAsyncResolver::from_system_conf(Handle::current()).await?;
 
             let res = Client::builder()
                 .instance_id(InstanceId::new())
-                .client_id(client_id
-                    .parse::<ClientId>()
-                    .map_err(|e| anyhow::Error::msg(e.to_string()))?)
+                .client_id(
+                    client_id
+                        .parse::<ClientId>()
+                        .map_err(|e| anyhow::Error::msg(e.to_string()))?,
+                )
                 .client_secret(client_secret)
                 .account(account)
                 .project(project)
@@ -37,7 +43,8 @@ pub fn spawn(client_id: String, client_secret: String, account: String, project:
 
             Ok::<_, anyhow::Error>(res)
         })
-    }).join();
+    })
+    .join();
 
     match res {
         Err(e) => {
@@ -47,6 +54,6 @@ pub fn spawn(client_id: String, client_secret: String, account: String, project:
                 return Err(anyhow::Error::msg("panic"));
             }
         }
-        Ok(r) => Ok(r?)
+        Ok(r) => Ok(r?),
     }
 }
