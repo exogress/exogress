@@ -301,8 +301,7 @@ mod tests {
                 .fuse();
 
             tokio::select! {
-                _ = f => {
-                },
+                _ = f => {},
                 _ = stop_wait => {},
             }
         });

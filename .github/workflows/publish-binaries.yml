@@ -51,5 +51,5 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
           asset_name: exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
-          asset_content_type: application/zip
+          asset_content_type: application/gzip
 

@@ -1,0 +1,6 @@
+[submodule "package-publisher/-f"]
+	path = package-publisher/-f
+	url = https://github.com/exogress/homebrew-exogress.git
+[submodule "package-publisher/homebrew-brew"]
+	path = package-publisher/homebrew-brew
+	url = https://github.com/exogress/homebrew-brew.git
