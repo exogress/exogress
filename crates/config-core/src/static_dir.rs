@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-use http_serde;
-
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
 pub enum Wildcard {
