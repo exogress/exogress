@@ -111,7 +111,7 @@ pub fn main() {
 
     let mut args = exogress_common_utils::clap::autocompletion::add_args(args);
 
-    let matches = args.clone().get_matches().clone();
+    let matches = args.clone().get_matches();
     exogress_common_utils::clap::autocompletion::handle_autocompletion(
         &mut args, &matches, "exogress",
     );

@@ -1,6 +1,6 @@
 use std::io;
 
-use exogress_entities::{StringIdentifierError, StringIdentifierParseError, TargetName, Upstream};
+use exogress_entities::{StringIdentifierParseError, TargetName, Upstream};
 use futures::channel::{mpsc, oneshot};
 use futures::future::BoxFuture;
 use futures::task::Poll;
@@ -12,7 +12,6 @@ use url::Url;
 use crate::tunnel::Conn;
 use crate::TunneledConnection;
 use core::fmt;
-use serde::export::Formatter;
 use std::str::FromStr;
 
 /// Connect through established TCP tunnel
@@ -89,9 +88,9 @@ impl FromStr for ConnectTarget {
         if s.ends_with(UPSTREAM_SUFFIX) {
             Ok(Upstream::from_str(s.strip_suffix(UPSTREAM_SUFFIX).unwrap())?.into())
         } else if s.ends_with(INT_SUFFIX) {
-            Ok(ConnectTarget::Internal(
-                TargetName::from_str(s.strip_suffix(INT_SUFFIX).unwrap())?.into(),
-            ))
+            Ok(ConnectTarget::Internal(TargetName::from_str(
+                s.strip_suffix(INT_SUFFIX).unwrap(),
+            )?))
         } else {
             Err(ConnectTargetParseError::BadKind(s.into()))
         }
@@ -155,7 +154,7 @@ impl tower::Service<Uri> for Connector {
         let target_result: Result<ConnectTarget, crate::Error> = extract_connect_target(dst);
         match target_result {
             Ok(target) => self.get_connection(target),
-            Err(e) => futures::future::ready(Err(e.into())).boxed(),
+            Err(e) => futures::future::ready(Err(e)).boxed(),
         }
     }
 }

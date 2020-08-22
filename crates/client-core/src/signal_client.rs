@@ -8,16 +8,11 @@ use futures::future::FutureExt;
 use futures::{pin_mut, select_biased, stream::select, SinkExt, StreamExt};
 use http::StatusCode;
 use rand::prelude::*;
-use tokio::net::TcpStream;
 use tokio::time::delay_for;
 use tokio::time::timeout;
-use tokio_rustls::{rustls::ClientConfig as RustlsClientConfig, TlsConnector};
-use tokio_tungstenite::client_async;
-use trust_dns_resolver::error::ResolveError;
 use trust_dns_resolver::TokioAsyncResolver;
 use tungstenite::Message;
 use url::Url;
-use webpki::DNSNameRef;
 
 use exogress_common_utils::backoff::{Backoff, BackoffHandle};
 use exogress_config_core::ClientConfig;
@@ -32,7 +27,6 @@ use std::sync::Arc;
 use tokio::sync::watch::Receiver;
 use tokio_tungstenite::tungstenite::http::{Method, Request};
 use tokio_tungstenite::tungstenite::protocol::CloseFrame;
-use tracing_futures::Instrument;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
@@ -51,6 +45,7 @@ pub enum CloudConnectError {
     Conflict,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn spawn(
     current_config: Arc<RwLock<ClientConfig>>,
     mut config_rx: Receiver<ClientConfig>,
@@ -142,6 +137,7 @@ pub enum Error {
     Jwt(#[from] jsonwebtoken::errors::Error),
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn do_conection(
     config_rx: &mut Receiver<ClientConfig>,
     current_config_storage: &RwLock<ClientConfig>,
@@ -152,7 +148,7 @@ async fn do_conection(
     tx: &mut mpsc::Sender<TunnelRequest>,
     rx: &mut mpsc::Receiver<String>,
     resolver: &TokioAsyncResolver,
-    small_rng: &mut SmallRng,
+    _small_rng: &mut SmallRng,
 ) -> Result<(), Error> {
     let current_config = current_config_storage.read().clone();
 
@@ -302,17 +298,17 @@ async fn do_conection(
                         Ok(Message::Text(s)) => {
                             let _ = recv_tx.send(s.into()).await;
                         }
-                        Ok(Message::Close(Some(CloseFrame { code, reason })))
+                        Ok(Message::Close(Some(CloseFrame { code, .. })))
                             if u16::from(code) == 4001 =>
                         {
                             return Err(Error::Unauthorized);
                         }
-                        Ok(Message::Close(Some(CloseFrame { code, reason })))
+                        Ok(Message::Close(Some(CloseFrame { code, .. })))
                             if u16::from(code) == 4003 =>
                         {
                             return Err(Error::Forbidden);
                         }
-                        Ok(Message::Close(Some(CloseFrame { code, reason })))
+                        Ok(Message::Close(Some(CloseFrame { code, .. })))
                             if u16::from(code) == 4009 =>
                         {
                             return Err(Error::Conflict);
@@ -333,7 +329,10 @@ async fn do_conection(
 
         // wait for incoming pongs. expect to receive at least one per 30 secs
         let pongs_acceptor = async move {
-            while let Some(_) = timeout(Duration::from_secs(30), incoming_pongs_rx.next()).await? {
+            while timeout(Duration::from_secs(30), incoming_pongs_rx.next())
+                .await?
+                .is_some()
+            {
                 trace!("ping received");
             }
 

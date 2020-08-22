@@ -106,8 +106,6 @@ mod test {
 
     use super::*;
     use exogress_config_core::{Config, ConfigVersion, Revision, UpstreamDefinition};
-    use exogress_entities::Upstream;
-    use hashbrown::HashMap;
     use parking_lot::lock_api::RwLock;
     use std::collections::BTreeMap;
     use std::sync::Arc;
@@ -175,7 +173,7 @@ mod test {
                     .into(),
                 ));
 
-                let (internal_server_connector, new_conn_rx) = mpsc::channel(1);
+                let (internal_server_connector, _new_conn_rx) = mpsc::channel(1);
 
                 let tunnel = TcpStream::connect(&binded_to).await.unwrap();
                 tokio::spawn(client_listener(

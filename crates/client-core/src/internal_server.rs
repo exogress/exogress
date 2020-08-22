@@ -2,14 +2,7 @@ use async_io_stream::IoStream;
 use bytes::Bytes;
 use exogress_tunnel::MixedChannel;
 use futures::channel::mpsc;
-use futures::channel::mpsc::Receiver;
-use futures::task::{Context, Poll};
-use futures::Stream;
 use futures::StreamExt;
-use futures::{channel, ready};
-use std::convert::Infallible;
-use std::io;
-use std::pin::Pin;
 use warp::Filter;
 
 pub async fn internal_server(new_conn_rx: mpsc::Receiver<IoStream<MixedChannel, Bytes>>) {
@@ -17,7 +10,7 @@ pub async fn internal_server(new_conn_rx: mpsc::Receiver<IoStream<MixedChannel, 
         .and(warp::fs::dir("./static"))
         .with(warp::trace::request());
     warp::serve(h)
-        .run_incoming(new_conn_rx.map(|c| Ok::<_, anyhow::Error>(c)))
+        .run_incoming(new_conn_rx.map(Ok::<_, anyhow::Error>))
         .await;
 }
 
@@ -25,10 +18,7 @@ pub async fn internal_server(new_conn_rx: mpsc::Receiver<IoStream<MixedChannel, 
 mod test {
     use super::*;
     use bytes::BytesMut;
-    use futures::channel::mpsc::Sender;
     use futures::{SinkExt, StreamExt};
-    use std::mem;
-    use tracing::Level;
     use warp::Filter;
 
     #[tokio::test]
@@ -56,7 +46,9 @@ mod test {
 
         let mut read_bytes = BytesMut::new();
 
-        while let res = rx.next().await.unwrap() {
+        loop {
+            let res = rx.next().await.unwrap();
+
             read_bytes.extend_from_slice(&res);
 
             if let Ok(cur_string) = std::str::from_utf8(&read_bytes) {

@@ -17,7 +17,7 @@ use trust_dns_resolver::TokioAsyncResolver;
 use url::Url;
 
 use exogress_config_core::{ClientConfig, Config};
-use exogress_entities::{ClientId, InstanceId, Ulid};
+use exogress_entities::{ClientId, InstanceId};
 
 use crate::{signal_client, tunnel};
 
@@ -29,7 +29,6 @@ use tracing_futures::Instrument;
 
 use crate::internal_server::internal_server;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
-use tokio::time::delay_for;
 
 const APP_BASE_URL: &str = "https://app.stage.exogress.com/";
 
@@ -269,7 +268,7 @@ impl Client {
 
 #[cfg(test)]
 mod tests {
-    use futures::{pin_mut, select, FutureExt};
+    use futures::FutureExt;
     use stop_handle::stop_handle;
     use tokio::runtime::Handle;
     use tokio::time::delay_for;
@@ -311,24 +310,5 @@ mod tests {
         delay_for(Duration::from_secs(1)).await;
 
         stop_tx.stop(());
-    }
-
-    #[test]
-    fn test_jwt() {
-        let key = "2eoAYVjpjtztomf7mL94fJeZVS5TSkvEDSYB97v1CQxDDyfeg3EQfNn7uC97aEs6g2nX98FjDrLMoh9q1ouW2HLkEnCfHEndWZr7XY99sDxrdxnjNaaXdTGessXw85j9xAVQ4NirTYxNszyGPgHAsWfRaTf2a39N9njMUUty4Xdn48w81CmsNewJY5ZrY";
-
-        let encoding_key = client_secret_private_key(key).unwrap();
-        //
-        // let my_claims = Claims {
-        //     sub: "b@b.com".into(),
-        //     company: "test".into(),
-        // };
-        //
-        // jsonwebtoken::encode(
-        //     &jsonwebtoken::Header::new(jsonwebtoken::Algorithm::ES256),
-        //     &my_claims,
-        //     &encoding_key,
-        // )
-        // .unwrap();
     }
 }
