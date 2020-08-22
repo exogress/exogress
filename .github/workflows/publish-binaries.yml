@@ -43,8 +43,17 @@ jobs:
       - name: Show file
         run: ls -la ./target/${{ matrix.target }}/release/
 
-      - name: Package release
-        run: tar -czf exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz -C ./target/${{ matrix.target }}/release/ exogress
+
+      - uses: actions/checkout@master
+      - name: Compress action step
+        uses: master-atul/tar-action@v1.0.2
+        id: compress
+        with:
+          command: c
+          cwd: ./target/${{ matrix.target }}/release/
+          files: |
+            ./exogress
+          outPath: exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
 
       - name: Show file
         run: ls -la exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
