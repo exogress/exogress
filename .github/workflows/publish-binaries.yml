@@ -40,6 +40,12 @@ jobs:
           command: build
           args: --release --target=${{ matrix.target }} -p exogress
 
+      - name: Show files
+        run: find ./target/${{ matrix.target }}/release/
+
+      - name: Show file
+        run: ls -la ./target/${{ matrix.target }}/release/
+
       - name: Package release
         run: tar -czf exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz -C ./target/${{ matrix.target }}/release/ exogress
 
