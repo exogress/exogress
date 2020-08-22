@@ -43,7 +43,9 @@ jobs:
       - name: Show file
         run: ls -la ./target/${{ matrix.target }}/release/
 
-
+      - name: Show file
+        run: pwd
+        
       - uses: actions/checkout@master
       - name: Compress action step
         uses: master-atul/tar-action@v1.0.2
