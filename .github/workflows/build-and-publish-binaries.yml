@@ -67,7 +67,7 @@ jobs:
       - run: 'echo "$SCCACHE_GCS_KEY" > ./gcs.json'
         shell: bash
         env:
-          SSH_KEY: ${{secrets.SCCACHE_GCS_KEY}}
+          SCCACHE_GCS_KEY: ${{secrets.SCCACHE_GCS_KEY}}
 
       - name: Start sccache
         env:
