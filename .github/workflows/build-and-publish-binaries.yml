@@ -38,7 +38,11 @@ jobs:
         include:
           - os: macOS-latest
             target: x86_64-apple-darwin
-
+            env:
+              SCCACHE_VERSION_ARCH: x86_64-apple-darwin
+          - os: ubuntu-latest
+            env:
+              SCCACHE_VERSION_ARCH: x86_64-unknown-linux-musl
     env:
       RUST_BACKTRACE: 1
       RUSTC_WRAPPER: sccache
@@ -59,8 +63,8 @@ jobs:
           LINK: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: 0.2.13
         run: |
-          curl -L "$LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl.tar.gz" | tar xz
-          echo "::add-path::$PWD/sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl/"
+          curl -L "$LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-${SCCACHE_VERSION_ARCH}.tar.gz" | tar xz
+          echo "::add-path::$PWD/sccache-$SCCACHE_VERSION-${SCCACHE_VERSION_ARCH}/"
 
       - run: 'echo "$SCCACHE_GCS_KEY" > ./gcs.json'
         shell: bash
@@ -75,12 +79,18 @@ jobs:
           SCCACHE_IDLE_TIMEOUT: 0
         run: sccache --start-server
 
+      - name: Sschache pre stats
+        run: sccache --show-stats
+
       - name: Build release binary
         uses: actions-rs/cargo@v1
         with:
           use-cross: true
           command: build
           args: --release --target=${{ matrix.target }} -p exogress
+
+      - name: Sschache post stats
+        run: sccache --show-stats
 
       - name: Compress action step
         uses: master-atul/tar-action@v1.0.2

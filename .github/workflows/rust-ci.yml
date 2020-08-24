@@ -14,7 +14,15 @@ jobs:
         os:
           - ubuntu-latest
           - macOS-latest
-
+        include:
+          - toolchain: nightly
+            experimental: true
+          - os: ubuntu-latest
+            env:
+              SCCACHE_VERSION_ARCH: x86_64-unknown-linux-musl
+          - os: macOS-latest
+            env:
+              SCCACHE_VERSION_ARCH: x86_64-apple-darwin
     env:
       RUST_BACKTRACE: 1
       RUSTC_WRAPPER: sccache
@@ -35,8 +43,8 @@ jobs:
           LINK: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: 0.2.13
         run: |
-          curl -L "$LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl.tar.gz" | tar xz
-          echo "::add-path::$PWD/sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl/"
+          curl -L "$LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-${SCCACHE_VERSION_ARCH}.tar.gz" | tar xz
+          echo "::add-path::$PWD/sccache-$SCCACHE_VERSION-${SCCACHE_VERSION_ARCH}/"
 
       - run: 'echo "$SCCACHE_GCS_KEY" > ./gcs.json'
         shell: bash
@@ -50,6 +58,9 @@ jobs:
           SCCACHE_GCS_RW_MODE: READ_WRITE
           SCCACHE_IDLE_TIMEOUT: 0
         run: sccache --start-server
+
+      - name: Sschache pre stats
+        run: sccache --show-stats
 
       - name: Run cargo check
         uses: actions-rs/cargo@v1
@@ -74,6 +85,9 @@ jobs:
           command: clippy
           args: -- -D warnings
         if: matrix.toolchain == 'stable' && matrix.os == 'ubuntu-latest'
+
+      - name: Sschache post stats
+        run: sccache --show-stats
 
       - name: Stop sccache
         run: sccache --stop-server
