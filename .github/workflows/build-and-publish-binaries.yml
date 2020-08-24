@@ -29,6 +29,8 @@ jobs:
         include:
           - os: macOS-latest
             target: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
     env:
       RUST_BACKTRACE: 1
 
