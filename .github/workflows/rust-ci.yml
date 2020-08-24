@@ -43,6 +43,7 @@ jobs:
           LINK: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: 0.2.13
         run: |
+          echo "dowload from $LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-$SCCACHE_VERSION_ARCH.tar.gz"
           curl -L "$LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-$SCCACHE_VERSION_ARCH.tar.gz" | tar xz
           echo "::add-path::$PWD/sccache-$SCCACHE_VERSION-$SCCACHE_VERSION_ARCH/"
 
