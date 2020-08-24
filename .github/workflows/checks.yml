@@ -5,6 +5,7 @@ on: [push, pull_request]
 jobs:
   native:
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
         toolchain:
@@ -15,8 +16,7 @@ jobs:
           - ubuntu-latest
           - macOS-latest
           - windows-latest
-        experimental:
-          - false
+        experimental: [false]
         include:
           - toolchain: nightly
             experimental: true
@@ -54,13 +54,11 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check --target ${{ matrix.target }}
-        continue-on-error: ${{ matrix.experimental }}
 
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
           command: test --target ${{ matrix.target }}
-        continue-on-error: ${{ matrix.experimental }}
 
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1
