@@ -17,17 +17,20 @@ jobs:
         include:
           - toolchain: nightly
             experimental: true
-          - os: ubuntu-latest
-            sccache_version_arch: x86_64-unknown-linux-musl
-          - os: macOS-latest
-            sccache_version_arch: x86_64-apple-darwin
     env:
       RUST_BACKTRACE: 1
-      RUSTC_WRAPPER: sccache
 
     steps:
       - name: Checkout sources
         uses: actions/checkout@v1
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install ${{ matrix.toolchain }} toolchain
         uses: actions-rs/toolchain@v1
@@ -35,30 +38,6 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.toolchain }}
           override: true
-
-      - name: Install sccache
-        env:
-          LINK: https://github.com/mozilla/sccache/releases/download
-          SCCACHE_VERSION: 0.2.13
-        run: |
-          curl -L "$LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-${{ matrix.sccache_version_arch }}.tar.gz" | tar xz
-          echo "::add-path::$PWD/sccache-$SCCACHE_VERSION-${{ matrix.sccache_version_arch }}/"
-
-      - run: 'echo "$SCCACHE_GCS_KEY" > ./gcs.json'
-        shell: bash
-        env:
-          SCCACHE_GCS_KEY: ${{secrets.SCCACHE_GCS_KEY}}
-
-      - name: Start sccache
-        env:
-          SCCACHE_GCS_KEY_PATH: ./gcs.json
-          SCCACHE_GCS_BUCKET: sccache-exogress
-          SCCACHE_GCS_RW_MODE: READ_WRITE
-          SCCACHE_IDLE_TIMEOUT: 0
-        run: sccache --start-server
-
-      - name: Sschache pre stats
-        run: sccache --show-stats
 
       - name: Run cargo check
         uses: actions-rs/cargo@v1
@@ -83,6 +62,3 @@ jobs:
           command: clippy
           args: -- -D warnings
         if: matrix.toolchain == 'stable' && matrix.os == 'ubuntu-latest'
-
-      - name: Stop sccache
-        run: sccache --stop-server
