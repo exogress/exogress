@@ -96,10 +96,10 @@ async fn main() {
         .expect("additional_message not set");
 
     let macos_url = format!(
-        "https://github.com/exogress/exogress/releases/download/v{version}/exogress-v{version}-x86_64-apple-darwin.tar.gz",
+        "https://github.com/exogress/exogress/releases/download/{version}/exogress-{version}-x86_64-apple-darwin.tar.gz",
         version = version_string
     );
-    let linux_url = format!("https://github.com/exogress/exogress/releases/download/v{version}/exogress-v{version}-x86_64-unknown-linux-gnu.tar.gz", version = version_string);
+    let linux_url = format!("https://github.com/exogress/exogress/releases/download/{version}/exogress-{version}-x86_64-unknown-linux-gnu.tar.gz", version = version_string);
     // let repo_url = format!(
     //     "https://github.com/exogress/exogress/archive/{}.tar.gz",
     //     version

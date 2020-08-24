@@ -1,5 +1,3 @@
-# Based on https://github.com/actions-rs/meta/blob/master/recipes/quickstart.md
-
 name: Rust CI
 
 on: [push, pull_request]
@@ -9,80 +7,73 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        toolchain:
+          - stable
+          - beta
+          - nightly
         os:
           - ubuntu-latest
           - macOS-latest
+
+    env:
+      RUST_BACKTRACE: 1
+      RUSTC_WRAPPER: sccache
+
     steps:
       - name: Checkout sources
         uses: actions/checkout@v1
 
-      - name: Install stable toolchain
+      - name: Install ${{ matrix.toolchain }} toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: stable
+          toolchain: ${{ matrix.toolchain }}
           override: true
+
+      - name: Install sccache
+        env:
+          LINK: https://github.com/mozilla/sccache/releases/download
+          SCCACHE_VERSION: 0.2.13
+        run: |
+          curl -L "$LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl.tar.gz" | tar xz
+          echo "::add-path::$PWD/sccache-$SCCACHE_VERSION-x86_64-unknown-linux-musl/"
+
+      - run: 'echo "$SCCACHE_GCS_KEY" > ./gcs.json'
+        shell: bash
+        env:
+          SSH_KEY: ${{secrets.SCCACHE_GCS_KEY}}
+
+      - name: Start sccache
+        env:
+          SCCACHE_GCS_KEY_PATH: ./gcs.json
+          SCCACHE_GCS_BUCKET: sccache-exogress
+          SCCACHE_GCS_RW_MODE: READ_WRITE
+          SCCACHE_IDLE_TIMEOUT: 0
+        run: sccache --start-server
 
       - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
           command: check
 
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v1
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
           command: test
-
-  format:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v1
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt
 
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v1
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: clippy
+        if: matrix.toolchain == "stable" && matrix.os == "ubuntu-latest"
 
       - name: Run cargo clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: -- -D warnings
+        if: matrix.toolchain == "stable" && matrix.os == "ubuntu-latest"
 
+      - name: Stop sccache
+        run: sccache --stop-server
