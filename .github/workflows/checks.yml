@@ -19,19 +19,20 @@ jobs:
         experimental: [false]
         include:
           - toolchain: nightly
+            os: ${{ matrix.os }}
             experimental: true
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            experimental: false
+            experimental: ${{ matrix.experimental }}
           - os: macOS-latest
             target: x86_64-apple-darwin
-            experimental: false
+            experimental: ${{ matrix.experimental }}
           - os: windows-latest
             target: i686-pc-windows-msvc
-            experimental: false
+            experimental: ${{ matrix.experimental }}
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            experimental: false
+            experimental: ${{ matrix.experimental }}
     env:
       RUST_BACKTRACE: 1
 
