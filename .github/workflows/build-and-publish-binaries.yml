@@ -148,8 +148,10 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Publish homebrew package
+      - name: Publish packages
+        uses: actions-rs/cargo@v1
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
-        run: cargo run -- --homebrew --version ${{ github.event.release.tag_name }} --message "Release new version"
-        working-directory: package-publisher
+        with:
+          command: run
+          args: -- --homebrew --version ${{ github.event.release.tag_name }} --message "Release new version"
