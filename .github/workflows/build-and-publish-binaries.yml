@@ -102,9 +102,9 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./target/${{ matrix.target }}/release/${{ matrix.binary }}
           asset_name: ${{ matrix.upload_asset_name }}
-          asset_content_type: application/gzip
+          asset_content_type: application/octet-stream
 
-      - name: Compress MacOS biary for homebrew
+      - name: Compress MacOS binary for homebrew
         uses: master-atul/tar-action@v1.0.2
         id: compress
         if: matrix.target == 'macOS-latest'
@@ -113,7 +113,7 @@ jobs:
           cwd: ./target/${{ matrix.target }}/release/
           files: |
             ${{ matrix.binary }}
-          outPath: exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
+          outPath: ${{ matrix.upload_asset_name }}.tar.gz
 
       - name: Upload MacOS compressed releas for homebrew
         uses: actions/upload-release-asset@v1.0.2
@@ -122,8 +122,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
-          asset_name: exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
+          asset_path: ./${{ matrix.upload_asset_name }}.tar.gz
+          asset_name: ${{ matrix.upload_asset_name }}.tar.gz
           asset_content_type: application/gzip
 
   publish-homebrew:
