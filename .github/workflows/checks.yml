@@ -9,15 +9,42 @@ on:
       - master
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - command: fmt
+            args: --all -- --check
+          - command: clippy
+            args: -- -D warnings
+    env:
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v1
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.toolchain }}-${{ matrix.target }}-cargo-verify-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run cargo
+        uses: actions-rs/cargo@v1
+        with:
+          command: ${{ matrix.command }}
+          args: ${{ matrix.args }}
+
   native:
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.toolchain == 'nightly' }}
     strategy:
       matrix:
         toolchain:
           - stable
           - beta
-          - nightly
         os:
           - ubuntu-latest
           - macOS-latest
@@ -64,17 +91,3 @@ jobs:
         with:
           command: test
           args: --target=${{ matrix.target }}
-
-      - name: Run cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-        if: matrix.toolchain == 'stable' && matrix.os == 'ubuntu-latest'
-
-      - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
-        if: matrix.toolchain == 'stable' && matrix.os == 'ubuntu-latest'
