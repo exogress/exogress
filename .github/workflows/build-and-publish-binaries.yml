@@ -26,8 +26,6 @@ jobs:
           - armv7-unknown-linux-musleabihf
           - x86_64-unknown-linux-gnu
           - x86_64-unknown-linux-musl
-        binary:
-          - exogress
         include:
           - os: macOS-latest
             target: x86_64-apple-darwin
@@ -35,11 +33,9 @@ jobs:
           - os: windows-latest
             target: i686-pc-windows-msvc
             upload_asset_name: exogress-win32.exe
-            binary: exogress.exe
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             upload_asset_name: exogress-win64.exe
-            binary: exogress.exe
           - target: aarch64-unknown-linux-gnu
             upload_asset_name: exogress-linux-aarch64-gnu
           - target: aarch64-unknown-linux-musl
@@ -94,14 +90,26 @@ jobs:
           command: build
           args: --release --target=${{ matrix.target }} -p exogress
 
-      - name: Upload release binary
+      - name: Upload release binary (non-Windows)
         uses: actions/upload-release-asset@v1.0.2
+        if: os != 'windows-latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./target/${{ matrix.target }}/release/${{ matrix.binary }}
           asset_name: ${{ matrix.upload_asset_name }}
+          asset_content_type: application/octet-stream
+
+      - name: Upload release binary (Windows)
+        uses: actions/upload-release-asset@v1.0.2
+        if: os == 'windows-latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/${{ matrix.target }}/release/${{ matrix.binary }}.exe
+          asset_name: ${{ matrix.upload_asset_name }}.exe
           asset_content_type: application/octet-stream
 
       - name: Compress MacOS binary for homebrew
