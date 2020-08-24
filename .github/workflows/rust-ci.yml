@@ -18,6 +18,8 @@ jobs:
         include:
           - toolchain: nightly
             experimental: true
+          - os: windows-latest
+            experimental: true
     env:
       RUST_BACKTRACE: 1
 
