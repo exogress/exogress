@@ -65,7 +65,7 @@ jobs:
         if: matrix.toolchain == 'stable' && matrix.os == 'ubuntu-latest'
 
   cross:
-    needs: check
+    needs: native
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
