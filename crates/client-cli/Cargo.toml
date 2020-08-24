@@ -8,7 +8,6 @@ license = "Apache 2.0"
 [dependencies]
 clap = "3.0.0-beta.1"
 url = "2.1.1"
-daemonize = "0.4.1"
 tokio = { version = "0.2.21", features = ["macros", "rt-threaded", "process"] }
 futures = "0.3.5"
 trust-dns-resolver = "0.19.5"

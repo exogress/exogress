@@ -72,23 +72,6 @@ pub fn main() {
                 .about("Project")
                 .required(true)
                 .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("daemonize")
-                .short('d')
-                .long("daemonize")
-                .about("Run as a daemon")
-                .required(false)
-                .requires("pid_file")
-                .takes_value(false),
-        )
-        .arg(
-            Arg::with_name("pid_file")
-                .long("pid-file")
-                .about("PID file to use if daemonize flag is enabled")
-                .default_value("./exogress.pid")
-                .env("EXG_PID_FILE")
-                .takes_value(true),
         );
 
     let args = App::new("Exogress CLI")
