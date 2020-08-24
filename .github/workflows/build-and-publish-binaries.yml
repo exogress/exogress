@@ -26,15 +26,6 @@ jobs:
           - armv7-unknown-linux-musleabihf
           - x86_64-unknown-linux-gnu
           - x86_64-unknown-linux-musl
-
-# https://github.com/briansmith/ring/issues/562
-#          - mips-unknown-linux-gnu
-#          - mips-unknown-linux-musl
-#          - mips64-unknown-linux-gnuabi64
-#          - mips64el-unknown-linux-gnuabi64
-#          - mipsel-unknown-linux-gnu
-#          - mipsel-unknown-linux-musl
-
         include:
           - os: macOS-latest
             target: x86_64-apple-darwin
@@ -51,7 +42,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -96,6 +87,14 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v1
 
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-pckage-publisher-cargo-${{ hashFiles('pckage-publisher/Cargo.lock') }}
+
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -103,6 +102,6 @@ jobs:
 
       - name: Publish homebrew package
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
         run: cargo run -- --homebrew --version ${{ github.event.release.tag_name }} --message "Release new version"
         working-directory: package-publisher
