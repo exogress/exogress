@@ -1,0 +1,3 @@
+[submodule "package-publisher/-f"]
+	path = package-publisher/-f
+	url = https://github.com/exogress/homebrew-exogress.git

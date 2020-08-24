@@ -2,19 +2,13 @@
 members = [
     "crates/common-utils",
     "crates/entities",
-    "crates/client-cli",
     "crates/client-core",
     "crates/client-lib",
     "crates/signaling",
-    # "crates/client-jni",
-    # "crates/client-python",
     "crates/config-core",
-    # "crates/libexogress",
     "crates/tunnel",
 ]
-exclude = [
-    # "crates/client-jni",
-]
+exclude = []
 
 [profile.release]
 lto = true

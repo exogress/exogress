@@ -25,7 +25,7 @@ use tokio::net::TcpStream;
 use tokio::time::timeout;
 use trust_dns_resolver::TokioAsyncResolver;
 
-use exogress_entities::{ConfigName, InstanceId, Upstream};
+use exogress_entities::{ConfigName, InstanceId};
 
 use crate::connector::{ConnectTarget, Connector};
 use crate::mixed_channel::to_async_rw;
@@ -237,7 +237,7 @@ pub async fn client_listener(
                                                                     payload.into(),
                                                                 )).await?;
 
-                                                                return Err(e.into());
+                                                                return Err(e);
                                                             }
                                                         }
                                                     };

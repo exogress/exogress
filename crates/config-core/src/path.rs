@@ -270,6 +270,7 @@ impl<'de> Visitor<'de> for PathVisitor {
         formatter.write_str("valid path FIXME")
     }
 
+    #[allow(clippy::unnecessary_unwrap)]
     fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
     where
         V: SeqAccess<'de>,

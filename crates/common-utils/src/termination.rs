@@ -1,12 +1,21 @@
-use futures::stream::FuturesUnordered;
-use futures::StreamExt;
 use stop_handle::StopHandle;
+#[cfg(unix)]
 use tokio::signal::unix::{signal, SignalKind};
 
-async fn wait_signals(signal_kinds: &[SignalKind]) -> SignalKind {
+#[cfg(unix)]
+async fn wait_unix_signal() -> SignalKind {
+    use futures::stream::FuturesUnordered;
+    use futures::StreamExt;
+
+    let unix_signals: [SignalKind; 3] = [
+        SignalKind::interrupt(),
+        SignalKind::quit(),
+        SignalKind::terminate(),
+    ];
+
     let mut f = FuturesUnordered::new();
 
-    for kind in signal_kinds {
+    for kind in &unix_signals {
         let err_msg = format!("Could not listen for {:?}", kind);
         f.push(async move {
             signal(*kind).expect(&err_msg).recv().await;
@@ -19,18 +28,21 @@ async fn wait_signals(signal_kinds: &[SignalKind]) -> SignalKind {
         .expect("unexpected termination of signal handler")
 }
 
-fn unix_termination_signals() -> [SignalKind; 3] {
-    [
-        SignalKind::interrupt(),
-        SignalKind::quit(),
-        SignalKind::terminate(),
-    ]
-}
-
 pub async fn stop_signal_listener<R: StopSignal>(app_stop_handle: StopHandle<R>) {
-    let kind = wait_signals(&unix_termination_signals()).await;
+    #[cfg(unix)]
+    {
+        let kind = wait_unix_signal().await;
+        info!("signal `{:?}` received", kind);
+    }
 
-    info!("signal `{:?}` received", kind);
+    #[cfg(windows)]
+    {
+        tokio::signal::windows::ctrl_break()
+            .expect("failed to set up ctrl_break handler")
+            .recv()
+            .await
+            .expect("unexpected termination of signal handler");
+    }
 
     app_stop_handle.stop(R::signal_received());
 }

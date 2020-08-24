@@ -1,11 +1,9 @@
-use futures::{AsyncRead, StreamExt};
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
 use std::io;
-use std::net::{IpAddr, SocketAddr};
+use std::net::IpAddr;
 use std::str::FromStr;
 use std::sync::Arc;
-use tokio::io::AsyncWrite;
 use tokio::net::TcpStream;
 use tokio_either::Either;
 use tokio_rustls::rustls::ClientConfig;
