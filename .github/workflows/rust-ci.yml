@@ -43,8 +43,8 @@ jobs:
           LINK: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: 0.2.13
         run: |
-          curl -L "$LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-${SCCACHE_VERSION_ARCH}.tar.gz" | tar xz
-          echo "::add-path::$PWD/sccache-$SCCACHE_VERSION-${SCCACHE_VERSION_ARCH}/"
+          curl -L "$LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-$SCCACHE_VERSION_ARCH.tar.gz" | tar xz
+          echo "::add-path::$PWD/sccache-$SCCACHE_VERSION-$SCCACHE_VERSION_ARCH/"
 
       - run: 'echo "$SCCACHE_GCS_KEY" > ./gcs.json'
         shell: bash
