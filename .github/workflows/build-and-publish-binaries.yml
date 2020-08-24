@@ -71,8 +71,8 @@ jobs:
         with:
           command: c
           cwd: ./target/${{ matrix.target }}/release/
-          files:
-            - ${{ matrix.binary }}
+          files: |
+            ${{ matrix.binary }}
           outPath: exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
 
       - name: Archive Release
