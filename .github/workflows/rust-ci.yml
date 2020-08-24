@@ -84,8 +84,5 @@ jobs:
           args: -- -D warnings
         if: matrix.toolchain == 'stable' && matrix.os == 'ubuntu-latest'
 
-      - name: Sschache post stats
-        run: sccache --show-stats
-
       - name: Stop sccache
         run: sccache --stop-server

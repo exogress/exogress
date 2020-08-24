@@ -87,9 +87,6 @@ jobs:
           command: build
           args: --release --target=${{ matrix.target }} -p exogress
 
-      - name: Sschache post stats
-        run: sccache --show-stats
-
       - name: Compress action step
         uses: master-atul/tar-action@v1.0.2
         id: compress
