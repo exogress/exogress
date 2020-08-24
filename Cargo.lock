@@ -490,27 +490,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "exogress"
-version = "0.1.0"
-dependencies = [
- "clap",
- "exogress-client-core",
- "exogress-common-utils",
- "exogress-config-core",
- "exogress-entities",
- "exogress-tunnel",
- "futures",
- "shadow-clone",
- "stop-handle",
- "tokio",
- "tracing",
- "tracing-futures",
- "tracing-subscriber",
- "trust-dns-resolver",
- "url",
-]
-
-[[package]]
 name = "exogress-client-core"
 version = "0.1.0"
 dependencies = [
