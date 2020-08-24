@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   native:
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.experimental }}
+    continue-on-error: ${{ matrix.toolchain == "nightly" }}
     strategy:
       matrix:
         toolchain:
@@ -16,23 +16,15 @@ jobs:
           - ubuntu-latest
           - macOS-latest
           - windows-latest
-        experimental: [false]
         include:
-          - toolchain: nightly
-            os: ${{ matrix.os }}
-            experimental: true
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            experimental: ${{ matrix.experimental }}
           - os: macOS-latest
             target: x86_64-apple-darwin
-            experimental: ${{ matrix.experimental }}
           - os: windows-latest
             target: i686-pc-windows-msvc
-            experimental: ${{ matrix.experimental }}
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            experimental: ${{ matrix.experimental }}
     env:
       RUST_BACKTRACE: 1
 
