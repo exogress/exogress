@@ -66,14 +66,14 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
-        if: matrix.toolchain == "stable" && matrix.os == "ubuntu-latest"
+        if: matrix.toolchain == 'stable' && matrix.os == 'ubuntu-latest'
 
       - name: Run cargo clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: -- -D warnings
-        if: matrix.toolchain == "stable" && matrix.os == "ubuntu-latest"
+        if: matrix.toolchain == 'stable' && matrix.os == 'ubuntu-latest'
 
       - name: Stop sccache
         run: sccache --stop-server
