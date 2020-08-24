@@ -2,7 +2,7 @@ name: Checks
 
 on:
   push:
-    braches:
+    branches:
       - master
   pull_request:
     branches:
