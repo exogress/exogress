@@ -15,7 +15,8 @@ jobs:
           - ubuntu-latest
           - macOS-latest
           - windows-latest
-        experimental: [false]
+        experimental:
+          - false
         include:
           - toolchain: nightly
             experimental: true
