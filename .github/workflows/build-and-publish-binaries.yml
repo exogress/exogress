@@ -97,7 +97,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./target/${{ matrix.target }}/release/${{ matrix.binary }}
+          asset_path: ./target/${{ matrix.target }}/release/exogress
           asset_name: ${{ matrix.upload_asset_name }}
           asset_content_type: application/octet-stream
 
@@ -108,7 +108,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./target/${{ matrix.target }}/release/${{ matrix.binary }}.exe
+          asset_path: ./target/${{ matrix.target }}/release/exogress.exe
           asset_name: ${{ matrix.upload_asset_name }}.exe
           asset_content_type: application/octet-stream
 
@@ -120,7 +120,7 @@ jobs:
           command: c
           cwd: ./target/${{ matrix.target }}/release/
           files: |
-            ${{ matrix.binary }}
+            exogress
           outPath: ${{ matrix.upload_asset_name }}.tar.gz
 
       - name: Upload MacOS compressed releas for homebrew

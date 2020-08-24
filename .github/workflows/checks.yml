@@ -51,13 +51,13 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          target: ${{ matrix.target }}
+          args: --target=${{ matrix.target }}
 
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
           command: test
-          target: ${{ matrix.target }}
+          args: --target=${{ matrix.target }}
 
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1
