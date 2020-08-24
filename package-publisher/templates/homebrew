@@ -1,6 +1,6 @@
 class Exogress < Formula
-  desc "Exogress"
-  homepage "https://github.com/exogress/exogress"
+  desc "Exogress command-line client"
+  homepage "https://www.exogress.com/"
   version "{{ VERSION }}"
   url "{{ MACOS_URL }}"
   sha256 "{{ MACOS_SHA256 }}"

@@ -1,14 +1,18 @@
 #[macro_use]
 extern crate tracing;
 
+pub mod git;
+
 use include_dir::{include_dir, Dir};
 use std::env;
 use std::fs;
 use std::process::Command;
 
+use crate::git::commit_file;
 use clap::{crate_version, App, Arg};
 use hex;
 use reqwest;
+use semver::Version;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use tokio;
@@ -33,15 +37,6 @@ fn hash_archive(archive: &[u8]) -> String {
     hex::encode(&hasher.result()[..])
 }
 
-fn git_add_commit_push(version: &str) {
-    Command::new("git").args(&["add", "."]).status().unwrap();
-    Command::new("git")
-        .args(&["commit", "-m", version])
-        .status()
-        .unwrap();
-    Command::new("git").args(&["push"]).status().unwrap();
-}
-
 #[tokio::main]
 async fn main() {
     let subscriber = tracing_subscriber::fmt()
@@ -55,11 +50,11 @@ async fn main() {
         .author("Exogress Team <team@exogress.com>")
         .about("Publish exogress binaries to package repositories")
         .arg(
-            Arg::with_name("homebrew_repo_dir")
-                .long("homebrew-repo-dir")
+            Arg::with_name("additional_message")
+                .long("message")
+                .about("message")
                 .takes_value(true)
-                .required(true)
-                .default_value("./homebrew-brew"),
+                .required(true),
         )
         .arg(
             Arg::with_name("homebrew")
@@ -70,21 +65,41 @@ async fn main() {
         .arg(
             Arg::with_name("version")
                 .about("version")
-                .last(true)
-                .multiple(false),
+                .long("version")
+                .takes_value(true)
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("github_token")
+                .about("github-token")
+                .long("github-token")
+                .env("GITHUB_TOKEN")
+                .takes_value(true)
+                .required(true),
         )
         .get_matches();
 
-    let version = matches.value_of("version").expect("version not set");
-    let homebrew_repo_dir = matches
-        .value_of("homebrew_repo_dir")
-        .expect("homebrew_repo_dir not set");
+    let github_token = matches
+        .value_of("github_token")
+        .expect("github token not set");
+
+    let version: Version = matches
+        .value_of("version")
+        .expect("version not set")
+        .parse()
+        .expect("bad version");
+
+    let version_string = version.to_string();
+
+    let additional_message = matches
+        .value_of("additional_message")
+        .expect("additional_message not set");
 
     let macos_url = format!(
         "https://github.com/exogress/exogress/releases/download/v{version}/exogress-v{version}-x86_64-apple-darwin.tar.gz",
-        version = version
+        version = version_string
     );
-    let linux_url = format!("https://github.com/exogress/exogress/releases/download/v{version}/exogress-v{version}-x86_64-unknown-linux-gnu.tar.gz", version = version);
+    let linux_url = format!("https://github.com/exogress/exogress/releases/download/v{version}/exogress-v{version}-x86_64-unknown-linux-gnu.tar.gz", version = version_string);
     // let repo_url = format!(
     //     "https://github.com/exogress/exogress/archive/{}.tar.gz",
     //     version
@@ -104,14 +119,12 @@ async fn main() {
             .contents_utf8()
             .unwrap();
 
-        env::set_current_dir(homebrew_repo_dir).unwrap();
-
         let template = mustache::compile_str(homebrew_tpl).expect("Failed to compile");
 
         let mut data = HashMap::new();
         data.insert("MACOS_URL", macos_url.as_str());
         data.insert("LINUX_URL", linux_url.as_str());
-        data.insert("VERSION", version);
+        data.insert("VERSION", version_string.as_str());
         data.insert("MACOS_SHA256", macos_hash.as_str());
         data.insert("LINUX_SHA256", linux_hash.as_str());
 
@@ -123,8 +136,16 @@ async fn main() {
 
         let message = std::str::from_utf8(&bytes).unwrap();
 
-        fs::write(HOMEBREW_FILE, message).unwrap();
+        commit_file(
+            HOMEBREW_FILE,
+            message,
+            &version,
+            additional_message,
+            "https://github.com/exogress/homebrew-brew.git"
+                .parse()
+                .unwrap(),
+            github_token,
+        )
+        .unwrap()
     }
-
-    git_add_commit_push(version);
 }
