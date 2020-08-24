@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   native:
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.toolchain == "nightly" }}
+    continue-on-error: ${{ matrix.toolchain == 'nightly' }}
     strategy:
       matrix:
         toolchain:
