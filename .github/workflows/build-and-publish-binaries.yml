@@ -31,10 +31,40 @@ jobs:
         include:
           - os: macOS-latest
             target: x86_64-apple-darwin
+            upload_asset_name: exogress-macos-amd64
+          - os: windows-latest
+            target: i686-pc-windows-msvc
+            upload_asset_name: exogress-win32.exe
+            binary: exogress.exe
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            binary:
-              - exogress.exe
+            upload_asset_name: exogress-win64.exe
+            binary: exogress.exe
+          - target: aarch64-unknown-linux-gnu
+            upload_asset_name: exogress-linux-aarch64-gnu
+          - target: aarch64-unknown-linux-musl
+            upload_asset_name: exogress-linux-aarch64-musl
+          - target: arm-unknown-linux-gnueabi
+            upload_asset_name: exogress-linux-arm-gnueabi
+          - target: arm-unknown-linux-gnueabihf
+            upload_asset_name: exogress-linux-arm-gnueabihf
+          - target: arm-unknown-linux-musleabi
+            upload_asset_name: exogress-linux-arm-musleabi
+          - target: arm-unknown-linux-musleabihf
+            upload_asset_name: exogress-linux-arm-musleabihf
+          - target: armv5te-unknown-linux-gnueabi
+            upload_asset_name: exogress-linux-armv5te-gnueabi
+          - target: armv5te-unknown-linux-musleabi
+            upload_asset_name: exogress-linux-armv5te-musleabi
+          - target: armv7-unknown-linux-gnueabihf
+            upload_asset_name: exogress-linux-armv7-gnueabihf
+          - target: armv7-unknown-linux-musleabihf
+            upload_asset_name: exogress-linux-armv7-musleabihf
+          - target: x86_64-unknown-linux-gnu
+            upload_asset_name: exogress-linux-x86_64-gnu
+          - target: x86_64-unknown-linux-musl
+            upload_asset_name: exogress-linux-x86_64-musl
+
     env:
       RUST_BACKTRACE: 1
 
@@ -64,10 +94,20 @@ jobs:
           command: build
           args: --release --target=${{ matrix.target }} -p exogress
 
-      - name: Compress action step
+      - name: Upload release binary
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/${{ matrix.target }}/release/${{ matrix.binary }}
+          asset_name: ${{ matrix.upload_asset_name }}
+          asset_content_type: application/gzip
+
+      - name: Compress MacOS biary for homebrew
         uses: master-atul/tar-action@v1.0.2
         id: compress
-        if: matrix.target != 'windows-latest'
+        if: matrix.target == 'macOS-latest'
         with:
           command: c
           cwd: ./target/${{ matrix.target }}/release/
@@ -75,15 +115,9 @@ jobs:
             ${{ matrix.binary }}
           outPath: exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
 
-      - name: Archive Release
-        uses: thedoctor0/zip-release@master
-        if: matrix.target == 'windows-latest'
-        with:
-          filename: exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.zip
-          exclusions: '*.git* /*node_modules/* .editorconfig'
-
-      - name: Upload release asset
+      - name: Upload MacOS compressed releas for homebrew
         uses: actions/upload-release-asset@v1.0.2
+        if: matrix.target == 'macOS-latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
