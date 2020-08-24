@@ -6,7 +6,7 @@ on:
       - created
 
 jobs:
-  publish:
+  build-and-publish:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -24,14 +24,16 @@ jobs:
           - armv5te-unknown-linux-musleabi
           - armv7-unknown-linux-gnueabihf
           - armv7-unknown-linux-musleabihf
-          - mips-unknown-linux-gnu
-          - mips-unknown-linux-musl
-          - mips64-unknown-linux-gnuabi64
-          - mips64el-unknown-linux-gnuabi64
-          - mipsel-unknown-linux-gnu
-          - mipsel-unknown-linux-musl
           - x86_64-unknown-linux-gnu
           - x86_64-unknown-linux-gnu
+
+# https://github.com/briansmith/ring/issues/562
+#          - mips-unknown-linux-gnu
+#          - mips-unknown-linux-musl
+#          - mips64-unknown-linux-gnuabi64
+#          - mips64el-unknown-linux-gnuabi64
+#          - mipsel-unknown-linux-gnu
+#          - mipsel-unknown-linux-musl
         include:
           - os: macOS-latest
             target: x86_64-apple-darwin
