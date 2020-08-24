@@ -26,11 +26,15 @@ jobs:
           - armv7-unknown-linux-musleabihf
           - x86_64-unknown-linux-gnu
           - x86_64-unknown-linux-musl
+        binary:
+          - exogress
         include:
           - os: macOS-latest
             target: x86_64-apple-darwin
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            binary:
+              - exogress.exe
     env:
       RUST_BACKTRACE: 1
 
@@ -63,12 +67,20 @@ jobs:
       - name: Compress action step
         uses: master-atul/tar-action@v1.0.2
         id: compress
+        if: matrix.target != 'windows-latest'
         with:
           command: c
           cwd: ./target/${{ matrix.target }}/release/
-          files: |
-            ./exogress
+          files:
+            - ${{ matrix.binary }}
           outPath: exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
+
+      - name: Archive Release
+        uses: thedoctor0/zip-release@master
+        if: matrix.target == 'windows-latest'
+        with:
+          filename: exogress-${{ github.event.release.tag_name }}-${{ matrix.target }}.zip
+          exclusions: '*.git* /*node_modules/* .editorconfig'
 
       - name: Upload release asset
         uses: actions/upload-release-asset@v1.0.2
