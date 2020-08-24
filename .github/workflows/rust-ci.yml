@@ -18,11 +18,9 @@ jobs:
           - toolchain: nightly
             experimental: true
           - os: ubuntu-latest
-            env:
-              SCCACHE_VERSION_ARCH: x86_64-unknown-linux-musl
+            sccache_version_arch: x86_64-unknown-linux-musl
           - os: macOS-latest
-            env:
-              SCCACHE_VERSION_ARCH: x86_64-apple-darwin
+            sccache_version_arch: x86_64-apple-darwin
     env:
       RUST_BACKTRACE: 1
       RUSTC_WRAPPER: sccache
@@ -43,9 +41,8 @@ jobs:
           LINK: https://github.com/mozilla/sccache/releases/download
           SCCACHE_VERSION: 0.2.13
         run: |
-          echo "dowload from $LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-$SCCACHE_VERSION_ARCH.tar.gz"
-          curl -L "$LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-$SCCACHE_VERSION_ARCH.tar.gz" | tar xz
-          echo "::add-path::$PWD/sccache-$SCCACHE_VERSION-$SCCACHE_VERSION_ARCH/"
+          curl -L "$LINK/$SCCACHE_VERSION/sccache-$SCCACHE_VERSION-${{ matrix.sccache_version_arch }}.tar.gz" | tar xz
+          echo "::add-path::$PWD/sccache-$SCCACHE_VERSION-${{ matrix.sccache_version_arch }}/"
 
       - run: 'echo "$SCCACHE_GCS_KEY" > ./gcs.json'
         shell: bash
