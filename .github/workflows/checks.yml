@@ -9,15 +9,42 @@ on:
       - master
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - command: fmt
+            args: --all -- --check
+          - command: clippy
+            args: -- -D warnings
+    env:
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v1
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.toolchain }}-${{ matrix.target }}-cargo-verify-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run cargo
+        uses: actions-rs/cargo@v1
+        with:
+          command: ${{ matrix.command }}
+          args: ${{ matrix.args }}
+
   native:
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.toolchain == 'nightly' }}
     strategy:
       matrix:
         toolchain:
           - stable
           - beta
-          - nightly
         os:
           - ubuntu-latest
           - macOS-latest
@@ -63,67 +90,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --target=${{ matrix.target }}
-
-      - name: Run cargo fmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-        if: matrix.toolchain == 'stable' && matrix.os == 'ubuntu-latest'
-
-      - name: Run cargo clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
-        if: matrix.toolchain == 'stable' && matrix.os == 'ubuntu-latest'
-
-  cross:
-    needs: native
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - aarch64-unknown-linux-gnu
-          - aarch64-unknown-linux-musl
-          - arm-unknown-linux-gnueabi
-          - arm-unknown-linux-gnueabihf
-          - arm-unknown-linux-musleabi
-          - arm-unknown-linux-musleabihf
-          - armv5te-unknown-linux-gnueabi
-          - armv5te-unknown-linux-musleabi
-          - armv7-unknown-linux-gnueabihf
-          - armv7-unknown-linux-musleabihf
-          - x86_64-unknown-linux-gnu
-          - x86_64-unknown-linux-musl
-
-    env:
-      RUST_BACKTRACE: 1
-
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v1
-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
-
-      - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
           args: --target=${{ matrix.target }}
