@@ -13,7 +13,7 @@ pub fn add_args<'a>(app: clap::App<'a, 'a>) -> clap::App<'a, 'a> {
         //     Arg::with_name("gelf_own_hostname")
         //         .long("gelf-individual-hostname")
         //         .value_name("HOSTNAME")
-        //         .help("Use provided hostname as a gelf hostname")
+        //         .about("Use provided hostname as a gelf hostname")
         //         .takes_value(true)
         //         .required(false)
         //         .default_value(&DEFAULT_HOSTNAME),
@@ -22,7 +22,7 @@ pub fn add_args<'a>(app: clap::App<'a, 'a>) -> clap::App<'a, 'a> {
         //     Arg::with_name("gelf_server")
         //         .long("gelf-server")
         //         .value_name("SOCKET_ADDR")
-        //         .help("Log to GELF server")
+        //         .about("Log to GELF server")
         //         .takes_value(true)
         //         .required(false),
         // )
