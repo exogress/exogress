@@ -1,10 +1,8 @@
-use clap::{App, ArgMatches};
-use clap_generate::generate;
-use clap_generate::generators::*;
+use clap::{App, ArgMatches, Shell};
 
 use std::io;
 
-pub fn add_args(app: clap::App) -> clap::App {
+pub fn add_args<'a>(app: clap::App<'a, 'a>) -> clap::App<'a, 'a> {
     app.subcommand(
         App::new("autocompletion")
             .subcommand(App::new("fish"))
@@ -26,30 +24,30 @@ fn autodetect_shell() -> Option<&'static str> {
     }
 }
 
-pub fn handle_autocompletion(app: &mut clap::App, matches: &ArgMatches, cmd: &str) {
+pub fn handle_autocompletion<'a>(app: &'a mut clap::App<'a, 'a>, matches: &ArgMatches, cmd: &str) {
     if let Some(shell) = matches.subcommand_matches("autocompletion") {
         match shell.subcommand() {
             ("fish", _) => {
-                generate::<Fish, _>(app, cmd, &mut io::stdout());
+                app.gen_completions_to(cmd, Shell::Fish, &mut io::stdout());
             }
             ("bash", _) => {
-                generate::<Bash, _>(app, cmd, &mut io::stdout());
+                app.gen_completions_to(cmd, Shell::Bash, &mut io::stdout());
             }
             ("zsh", _) => {
-                generate::<Zsh, _>(app, cmd, &mut io::stdout());
+                app.gen_completions_to(cmd, Shell::Zsh, &mut io::stdout());
             }
             _ => {
                 if let Some(shell) = autodetect_shell() {
                     eprintln!("Autodetect shell: {}", shell);
                     match shell {
                         "fish" => {
-                            generate::<Fish, _>(app, cmd, &mut io::stdout());
+                            app.gen_completions_to(cmd, Shell::Fish, &mut io::stdout());
                         }
                         "bash" => {
-                            generate::<Bash, _>(app, cmd, &mut io::stdout());
+                            app.gen_completions_to(cmd, Shell::Bash, &mut io::stdout());
                         }
                         "zsh" => {
-                            generate::<Zsh, _>(app, cmd, &mut io::stdout());
+                            app.gen_completions_to(cmd, Shell::Zsh, &mut io::stdout());
                         }
                         _ => {
                             eprintln!("Could not autodetect shell");

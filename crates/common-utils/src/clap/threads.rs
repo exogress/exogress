@@ -5,14 +5,14 @@ lazy_static! {
     static ref DEFAULT_NUM_THREADS: std::string::String = num_cpus::get().to_string();
 }
 
-pub fn add_args(app: clap::App) -> clap::App {
+pub fn add_args<'a>(app: clap::App<'a, 'a>) -> clap::App<'a, 'a> {
     app.arg(
         Arg::with_name("num_threads")
             .long("num-threads")
             .value_name("NUMBER")
             .default_value(&DEFAULT_NUM_THREADS)
             .required(true)
-            .about("Number of threads to use")
+            .help("Number of threads to use")
             .takes_value(true),
     )
 }

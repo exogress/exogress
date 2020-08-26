@@ -7,13 +7,13 @@ use tracing::Level;
 //         hostname::get_hostname().unwrap_or_else(|| "unknown".into());
 // }
 
-pub fn add_args(app: clap::App) -> clap::App {
+pub fn add_args<'a>(app: clap::App<'a, 'a>) -> clap::App<'a, 'a> {
     app
         // .arg(
         //     Arg::with_name("gelf_own_hostname")
         //         .long("gelf-individual-hostname")
         //         .value_name("HOSTNAME")
-        //         .about("Use provided hostname as a gelf hostname")
+        //         .help("Use provided hostname as a gelf hostname")
         //         .takes_value(true)
         //         .required(false)
         //         .default_value(&DEFAULT_HOSTNAME),
@@ -22,7 +22,7 @@ pub fn add_args(app: clap::App) -> clap::App {
         //     Arg::with_name("gelf_server")
         //         .long("gelf-server")
         //         .value_name("SOCKET_ADDR")
-        //         .about("Log to GELF server")
+        //         .help("Log to GELF server")
         //         .takes_value(true)
         //         .required(false),
         // )
@@ -31,13 +31,10 @@ pub fn add_args(app: clap::App) -> clap::App {
                 .long("log-level")
                 .env("LOG_LEVEL")
                 .value_name("LOG_LEVEL")
-                .about("Log level")
+                .help("Log level")
                 .default_value("INFO")
                 .case_insensitive(true)
-                .possible_values(&[
-                    "TRACE", "trace", "DEBUG", "debug", "INFO", "info", "WARN", "warn", "ERROR",
-                    "error",
-                ])
+                .possible_values(&["trace", "debug", "info", "warn", "error"])
                 .required(true)
                 .takes_value(true),
         )
