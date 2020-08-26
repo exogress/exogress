@@ -55,20 +55,17 @@ impl FromStr for ConfigVersion {
 #[serde(deny_unknown_fields)]
 pub struct UpstreamDefinition {
     pub port: u16,
-    #[serde(default = "UpstreamDefinition::default_host")]
-    pub host: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    host: Option<String>,
 }
 
 impl UpstreamDefinition {
-    fn default_host() -> String {
-        "127.0.0.1".to_string()
+    pub fn on_default_host(port: u16) -> Self {
+        UpstreamDefinition { port, host: None }
     }
 
-    pub fn on_default_host(port: u16) -> Self {
-        UpstreamDefinition {
-            port,
-            host: Self::default_host(),
-        }
+    pub fn get_host(&self) -> String {
+        self.host.clone().unwrap_or_else(|| "127.0.0.1".to_string())
     }
 }
 
@@ -80,6 +77,53 @@ pub struct RootConfig {
     pub name: ConfigName,
     pub exposes: BTreeMap<MountPointName, Mount>,
     pub upstreams: BTreeMap<Upstream, UpstreamDefinition>,
+}
+
+impl RootConfig {
+    pub fn sample(
+        config_name: Option<ConfigName>,
+        target_name: Option<TargetName>,
+        mount_point_name: Option<MountPointName>,
+        upstream_name: Option<Upstream>,
+    ) -> Self {
+        let upstream_name = upstream_name.unwrap_or_else(|| "my-upstream".parse().unwrap());
+        let mount_point_name =
+            mount_point_name.unwrap_or_else(|| "my-mount-point".parse().unwrap());
+        let target_name = target_name.unwrap_or_else(|| "my-target".parse().unwrap());
+        let config_name = config_name.unwrap_or_else(|| "my-config-name".parse().unwrap());
+
+        let mut upstreams = BTreeMap::new();
+        upstreams.insert(
+            upstream_name.clone(),
+            UpstreamDefinition {
+                port: 3000,
+                host: None,
+            },
+        );
+
+        let mut targets = BTreeMap::new();
+        targets.insert(
+            target_name,
+            Target {
+                variant: TargetVariant::Proxy(Proxy {
+                    upstream: upstream_name,
+                }),
+                base_path: vec![],
+                priority: 10,
+            },
+        );
+
+        let mut exposes = BTreeMap::new();
+        exposes.insert(mount_point_name, Mount { targets });
+
+        RootConfig {
+            version: "0.0.1".parse().unwrap(),
+            revision: 1.into(),
+            name: config_name,
+            exposes,
+            upstreams,
+        }
+    }
 }
 
 #[derive(thiserror::Error, Debug)]

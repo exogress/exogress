@@ -192,31 +192,32 @@ pub async fn client_listener(
                                                 let maybe_upstream_target = client_config.read().resolve_upstream(&upstream);
 
                                                 if let Some(upstream_target) = maybe_upstream_target {
-                                                    let ip_addr = if let Ok(ip_addr) = upstream_target.host.parse::<IpAddr>() {
+                                                    let host = upstream_target.get_host();
+                                                    let ip_addr = if let Ok(ip_addr) = host.parse::<IpAddr>() {
                                                         ip_addr
                                                     } else {
                                                         let r = async {
                                                             resolver
-                                                                .lookup_ip(upstream_target.host.as_str())
+                                                                .lookup_ip(host.as_str())
                                                                 .await
                                                                 .map_err(|e| {
                                                                     warn!("resolver error: {}", e);
                                                                     crate::Error::UpstreamResolveError {
                                                                         upstream: upstream.clone(),
-                                                                        host: upstream_target.host.as_str().to_string(),
+                                                                        host: host.as_str().to_string(),
                                                                     }
                                                                 })
                                                                 .into_iter()
                                                                 .next()
                                                                 .ok_or_else(|| crate::Error::UpstreamResolveError {
                                                                     upstream: upstream.clone(),
-                                                                    host: upstream_target.host.as_str().to_string(),
+                                                                    host: host.as_str().to_string(),
                                                                 })?
                                                                 .into_iter()
                                                                 .next()
                                                                 .ok_or_else(|| crate::Error::UpstreamResolveError {
                                                                     upstream,
-                                                                    host: upstream_target.host.as_str().to_string(),
+                                                                    host: host.as_str().to_string(),
                                                                 })
                                                         }.await;
 
