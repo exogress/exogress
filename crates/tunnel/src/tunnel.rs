@@ -948,28 +948,28 @@ mod test {
 
                 {
                     let mut tunneled1 = connector
-                        .get_connection("backend.upstream.exg".parse().unwrap())
+                        .retrieve_connection("backend.upstream.exg".parse().unwrap())
                         .await
                         .unwrap();
                     tunneled1.write_all(&buf1).await.unwrap();
                 }
 
                 let mut tunneled2 = connector
-                    .get_connection("backend.upstream.exg".parse().unwrap())
+                    .retrieve_connection("backend.upstream.exg".parse().unwrap())
                     .await
                     .unwrap();
                 tunneled2.write_all(&buf2).await.unwrap();
 
                 {
                     let _tunneled3 = connector
-                        .get_connection("backend.upstream.exg".parse().unwrap())
+                        .retrieve_connection("backend.upstream.exg".parse().unwrap())
                         .await
                         .unwrap();
                 }
 
                 {
                     let mut tunneled4 = connector
-                        .get_connection("backend.upstream.exg".parse().unwrap())
+                        .retrieve_connection("backend.upstream.exg".parse().unwrap())
                         .await
                         .unwrap();
                     tunneled4.write_all(&buf4).await.unwrap();

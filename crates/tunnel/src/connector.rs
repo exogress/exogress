@@ -104,7 +104,7 @@ impl Connector {
         Connector { req_tx }
     }
 
-    pub fn get_connection(
+    pub fn retrieve_connection(
         &self,
         connect_target: ConnectTarget,
     ) -> BoxFuture<'static, Result<TunneledConnection, crate::Error>> {
@@ -153,7 +153,7 @@ impl tower::Service<Uri> for Connector {
     fn call(&mut self, dst: Uri) -> Self::Future {
         let target_result: Result<ConnectTarget, crate::Error> = extract_connect_target(dst);
         match target_result {
-            Ok(target) => self.get_connection(target),
+            Ok(target) => self.retrieve_connection(target),
             Err(e) => futures::future::ready(Err(e)).boxed(),
         }
     }
