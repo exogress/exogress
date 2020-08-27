@@ -131,6 +131,9 @@ pub enum ConfigError {
     #[error("upstreams {} not defined", .0.iter().map(| s | s.to_string()).collect::< Vec < _ >> ().join(", "))]
     UpstreamNotDefined(Vec<Upstream>),
 
+    #[error("mount points {} not defined", .0.iter().map(| s | s.to_string()).collect::< Vec < _ >> ().join(", "))]
+    MountPointsNotDefined(Vec<MountPointName>),
+
     #[error("unsupported config version {}", _0)]
     UnsupportedVersion(ConfigVersion),
 }
@@ -160,6 +163,22 @@ impl RootConfig {
         if not_defined.peek().is_some() {
             return Err(ConfigError::UpstreamNotDefined(
                 not_defined.cloned().collect::<Vec<_>>(),
+            ));
+        }
+
+        Ok(())
+    }
+
+    pub fn check_mount_points(&self, existing: &[MountPointName]) -> Result<(), ConfigError> {
+        let used_mount_points = self.exposes.keys().collect::<HashSet<&MountPointName>>();
+        let existing_mount_points = existing.iter().collect::<HashSet<&MountPointName>>();
+
+        let mut not_defined = used_mount_points
+            .difference(&existing_mount_points)
+            .peekable();
+        if not_defined.peek().is_some() {
+            return Err(ConfigError::MountPointsNotDefined(
+                not_defined.copied().cloned().collect::<Vec<_>>(),
             ));
         }
 
