@@ -30,7 +30,7 @@ use tracing_futures::Instrument;
 use crate::internal_server::internal_server;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
 
-pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.stage.exogress.com/";
+pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.sexogress.com/";
 
 #[derive(Default, Builder, Debug)]
 pub struct Client {
