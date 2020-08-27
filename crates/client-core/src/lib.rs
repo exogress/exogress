@@ -10,4 +10,4 @@ mod internal_server;
 mod signal_client;
 mod tunnel;
 
-pub use client::{Client, ClientBuilder};
+pub use client::{Client, ClientBuilder, DEFAULT_CLOUD_ENDPOINT};

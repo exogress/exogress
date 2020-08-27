@@ -30,7 +30,7 @@ use tracing_futures::Instrument;
 use crate::internal_server::internal_server;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
 
-const APP_BASE_URL: &str = "https://app.stage.exogress.com/";
+pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.stage.exogress.com/";
 
 #[derive(Default, Builder, Debug)]
 pub struct Client {
@@ -51,6 +51,9 @@ pub struct Client {
 
     #[builder(setter(into))]
     pub account: String,
+
+    #[builder(setter(into), default = "DEFAULT_CLOUD_ENDPOINT.to_string()")]
+    pub cloud_endpoint: String,
 
     #[builder(setter(into))]
     pub instance_id: InstanceId,
@@ -102,10 +105,13 @@ impl Client {
         ))?;
         info!("Use config at {}", config_path.as_path().display());
 
-        let mut url = Url::parse(APP_BASE_URL).unwrap();
-        url.set_scheme("wss").unwrap();
+        let mut url = Url::parse(self.cloud_endpoint.as_str()).unwrap();
+        if url.scheme() == "https" {
+            url.set_scheme("wss").unwrap();
+        } else if url.scheme() == "http" {
+            url.set_scheme("ws").unwrap();
+        }
 
-        // let mut url = Url::parse("ws://localhost:2998").unwrap();
         {
             let mut path_segments = url.path_segments_mut().unwrap();
             path_segments.push("api");
