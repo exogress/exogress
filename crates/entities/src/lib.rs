@@ -18,6 +18,7 @@ ulid_type!(InstanceId);
 ulid_type!(EnvironmentId);
 ulid_type!(ClientId);
 
+string_type!(RateLimiterName);
 string_type!(ProjectName);
 string_type!(AccountName);
 string_type!(MountPointName);
