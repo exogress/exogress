@@ -7,7 +7,7 @@ license = "Apache 2.0"
 
 [dependencies]
 tokio = { version = "0.2", features = ["rt-core", "tcp", "sync", "io-util", "time", "macros"] }
-tokio-util = { version = "0.3.1", features = ["codec"] }
+tokio-util = { version = "0.3.1", features = ["codec", "compat"] }
 tokio-rustls = "0.14"
 futures = "0.3"
 bytes = "0.5"
@@ -15,7 +15,7 @@ thiserror = "1.0.19"
 hashbrown = "0.8"
 parking_lot = "0.11"
 stop-handle = "0.1.0"
-async_io_stream = { version = "0.1.0", features = ["tokio_io"] }
+rw-stream-sink = "0.2.1"
 hyper = "0.13.6"
 tower = "0.3.1"
 ulid = { version = "0.4.0", features = ["serde"] }

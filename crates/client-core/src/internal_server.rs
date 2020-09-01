@@ -1,16 +1,16 @@
-use async_io_stream::IoStream;
-use bytes::Bytes;
 use exogress_tunnel::MixedChannel;
 use futures::channel::mpsc;
 use futures::StreamExt;
+use rw_stream_sink::RwStreamSink;
+use tokio_util::compat::FuturesAsyncReadCompatExt;
 use warp::Filter;
 
-pub async fn internal_server(new_conn_rx: mpsc::Receiver<IoStream<MixedChannel, Bytes>>) {
+pub async fn internal_server(new_conn_rx: mpsc::Receiver<RwStreamSink<MixedChannel>>) {
     let h = warp::any()
         .and(warp::fs::dir("./static"))
         .with(warp::trace::request());
     warp::serve(h)
-        .run_incoming(new_conn_rx.map(Ok::<_, anyhow::Error>))
+        .run_incoming(new_conn_rx.map(|r| Ok::<_, anyhow::Error>(r.compat())))
         .await;
 }
 
@@ -38,7 +38,7 @@ mod test {
 
         let (channel, mut tx, mut rx) = MixedChannel::new(16, 16);
 
-        new_conn_tx.send(IoStream::new(channel)).await.unwrap();
+        new_conn_tx.send(RwStreamSink::new(channel)).await.unwrap();
 
         static REQ: &str = "GET /test HTTP/1.1\n\n";
 

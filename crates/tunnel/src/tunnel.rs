@@ -30,9 +30,10 @@ use exogress_entities::{ConfigName, InstanceId};
 use crate::connector::{ConnectTarget, Connector};
 use crate::mixed_channel::to_async_rw;
 use crate::{Error, MixedChannel};
-use async_io_stream::IoStream;
 use exogress_config_core::ClientConfig;
 use parking_lot::RwLock;
+use rw_stream_sink::RwStreamSink;
+use tokio_util::compat::FuturesAsyncReadCompatExt;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum RejectionReason {
@@ -160,14 +161,14 @@ pub async fn client_listener(
         + Send
         + 'static,
     client_config: Arc<RwLock<ClientConfig>>,
-    mut internal_server_connector: mpsc::Sender<IoStream<MixedChannel, Bytes>>,
+    mut internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
     resolver: TokioAsyncResolver,
 ) -> Result<(), crate::error::Error> {
     let storage = Arc::new(Mutex::new(HashMap::<Slot, Connection>::new()));
 
     let (tx, mut rx) = tunnel.split();
 
-    let (outgoing_messages_tx, outgoing_messages_rx) = mpsc::channel(16);
+    let (outgoing_messages_tx, outgoing_messages_rx) = mpsc::channel::<(_, Vec<u8>)>(16);
 
     let read_future = {
         shadow_clone!(client_config);
@@ -235,7 +236,7 @@ pub async fn client_listener(
                                                                         header: ClientHeader::Rejected,
                                                                         slot,
                                                                     },
-                                                                    payload.into(),
+                                                                    payload,
                                                                 )).await?;
 
                                                                 return Err(e);
@@ -296,7 +297,7 @@ pub async fn client_listener(
                                                                                     ClientPacket {
                                                                                         header: ClientHeader::Common(CommonHeader::Data),
                                                                                         slot,
-                                                                                    }, buf.freeze()
+                                                                                    }, buf.freeze().to_vec()
                                                                                 ))
                                                                                     .await
                                                                                     .map_err(|_|
@@ -360,7 +361,7 @@ pub async fn client_listener(
                                                                     header: ClientHeader::Rejected,
                                                                     slot,
                                                                 },
-                                                                payload.into(),
+                                                                payload,
                                                             )).await?;
                                                         }
                                                         Err(e) => {
@@ -374,7 +375,7 @@ pub async fn client_listener(
                                                                     header: ClientHeader::Rejected,
                                                                     slot,
                                                                 },
-                                                                payload.into(),
+                                                                payload,
                                                             )).await?;
                                                         }
                                                     }
@@ -388,7 +389,7 @@ pub async fn client_listener(
                                                             header: ClientHeader::Rejected,
                                                             slot,
                                                         },
-                                                        payload.into(),
+                                                        payload,
                                                     )).await?;
                                                 }
                                                 Ok::<_, crate::Error>(())
@@ -452,7 +453,7 @@ pub async fn client_listener(
                                                         let forward_to_internal_server = async move {
                                                             while let Some(buf) = tunnel_to_tcp_rx.next().await {
                                                                 tx
-                                                                    .send(buf)
+                                                                    .send(buf.to_vec())
                                                                     .await
                                                                     .map_err(|_| io::Error::new(io::ErrorKind::Other, "channel closed"))?
                                                             }
@@ -496,7 +497,7 @@ pub async fn client_listener(
                                             }
                                         });
 
-                                        internal_server_connector.send(IoStream::new(ch)).await?;
+                                        internal_server_connector.send(RwStreamSink::new(ch)).await?;
                                     }
                                 }
                             }
@@ -541,7 +542,10 @@ pub async fn client_listener(
         }
     }.fuse();
 
-    let write_future = outgoing_messages_rx.map(Ok).forward(tx).fuse();
+    let write_future = outgoing_messages_rx
+        .map(|a| Ok((a.0, a.1.into())))
+        .forward(tx)
+        .fuse();
 
     let res = tokio::select! {
         r = read_future => r,
@@ -639,8 +643,7 @@ pub fn server_connection(
                                 bincode::serialize(&ConnectRequestPayload {
                                     target: connect_target,
                                 })
-                                .unwrap()
-                                .into(),
+                                .unwrap(),
                             ))
                             .await
                             .map_err(|_| io::Error::new(io::ErrorKind::Other, "channel closed"))?;
@@ -677,7 +680,8 @@ pub fn server_connection(
 
                                                     let (channel, mut from_tunnel_tx, mut to_tunnel_rx) = to_async_rw(16, 16);
 
-                                                    ready_connection_resolver.send(Box::new(channel))
+                                                    ready_connection_resolver
+                                                        .send(Box::new(channel.compat()))
                                                         .map_err(|_| io::Error::new(io::ErrorKind::Other, "tunnel closed: could ot sed to read_connection_resolver"))?;
 
                                                     tokio::spawn({
@@ -710,7 +714,7 @@ pub fn server_connection(
                                                             let forward_to_connection = async move {
                                                                 while let Some(buf) = tunnel_to_channel.next().await {
                                                                     from_tunnel_tx
-                                                                        .send(buf)
+                                                                        .send(buf.to_vec())
                                                                         .await
                                                                         .map_err(|_| io::Error::new(io::ErrorKind::Other, "tunnel closed: could not send to from_tunnel_tx"))
                                                                         ?;
@@ -838,7 +842,10 @@ pub fn server_connection(
                 }
             }.fuse();
 
-            let write_future = outgoing_messages_rx.map(Ok).forward(tx).fuse();
+            let write_future = outgoing_messages_rx
+                .map(|(a, b)| Ok((a, b.into())))
+                .forward(tx)
+                .fuse();
 
             pin_mut!(read_future);
             pin_mut!(write_future);

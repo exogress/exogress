@@ -1,25 +1,26 @@
 use std::io;
 
-use async_io_stream::IoStream;
-use bytes::Bytes;
 use futures::channel::mpsc;
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::ready;
 use futures::stream::Fuse;
 use futures::task::{Context, Poll};
 use futures::{Sink, Stream, StreamExt};
-use tokio::io::{AsyncRead, AsyncWrite};
+use rw_stream_sink::RwStreamSink;
 use tokio::macros::support::Pin;
 
 // TODO: check how to properly handle close
 
 pub struct MixedChannel {
-    tx: mpsc::Sender<Bytes>,
-    rx: Fuse<mpsc::Receiver<Bytes>>,
+    tx: mpsc::Sender<Vec<u8>>,
+    rx: Fuse<mpsc::Receiver<Vec<u8>>>,
 }
 
 impl MixedChannel {
-    pub fn new(buf_sender: usize, buf_receiver: usize) -> (Self, Sender<Bytes>, Receiver<Bytes>) {
+    pub fn new(
+        buf_sender: usize,
+        buf_receiver: usize,
+    ) -> (Self, Sender<Vec<u8>>, Receiver<Vec<u8>>) {
         let (tx_sender, rx_sender) = mpsc::channel(buf_sender);
         let (tx_receiver, rx_receiver) = mpsc::channel(buf_receiver);
 
@@ -33,7 +34,7 @@ impl MixedChannel {
 }
 
 impl Stream for MixedChannel {
-    type Item = Result<Bytes, io::Error>;
+    type Item = Result<Vec<u8>, io::Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let res = ready!(Pin::new(&mut self.rx).poll_next(cx));
@@ -42,7 +43,7 @@ impl Stream for MixedChannel {
     }
 }
 
-impl Sink<Bytes> for MixedChannel {
+impl Sink<Vec<u8>> for MixedChannel {
     type Error = io::Error;
 
     fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
@@ -51,7 +52,7 @@ impl Sink<Bytes> for MixedChannel {
             .map_err(|_| io::Error::new(io::ErrorKind::Other, "tunnel closed: could not poll mix"))
     }
 
-    fn start_send(mut self: Pin<&mut Self>, item: Bytes) -> Result<(), Self::Error> {
+    fn start_send(mut self: Pin<&mut Self>, item: Vec<u8>) -> Result<(), Self::Error> {
         Pin::new(&mut self.tx).start_send(item).map_err(|_| {
             io::Error::new(
                 io::ErrorKind::Other,
@@ -83,12 +84,12 @@ pub fn to_async_rw(
     buf_sender: usize,
     buf_receiver: usize,
 ) -> (
-    impl AsyncRead + AsyncWrite + Unpin + Send,
-    mpsc::Sender<Bytes>,
-    mpsc::Receiver<Bytes>,
+    RwStreamSink<MixedChannel>,
+    mpsc::Sender<Vec<u8>>,
+    mpsc::Receiver<Vec<u8>>,
 ) {
     let (mixed, tx, rx) = MixedChannel::new(buf_sender, buf_receiver);
-    (IoStream::new(mixed), tx, rx)
+    (RwStreamSink::new(mixed), tx, rx)
 }
 
 #[cfg(test)]

@@ -90,19 +90,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async_io_stream"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0ca05f2071458a2a17b4a12684d1d5f0a519762d30fc69fe9ef447a5c6b3198"
-dependencies = [
- "futures-core",
- "futures-io",
- "futures-sink",
- "futures-task",
- "tokio",
-]
-
-[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -477,7 +464,6 @@ name = "exogress-client-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async_io_stream",
  "bincode",
  "bs58",
  "byteorder",
@@ -499,6 +485,7 @@ dependencies = [
  "pin-project",
  "rand 0.7.3",
  "rustls-native-certs",
+ "rw-stream-sink",
  "serde",
  "serde_json",
  "serde_with",
@@ -512,6 +499,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "tokio-tungstenite 0.11.0",
+ "tokio-util",
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
@@ -616,7 +604,6 @@ dependencies = [
 name = "exogress-tunnel"
 version = "0.1.0"
 dependencies = [
- "async_io_stream",
  "bincode",
  "bytes",
  "exogress-config-core",
@@ -626,6 +613,7 @@ dependencies = [
  "hyper",
  "parking_lot",
  "rand 0.7.3",
+ "rw-stream-sink",
  "serde",
  "shadow-clone",
  "smartstring",
@@ -1900,6 +1888,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rw-stream-sink"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4da5fcb054c46f5a5dff833b129285a93d3f0179531735e6c866e8cc307d2020"
+dependencies = [
+ "futures",
+ "pin-project",
+ "static_assertions",
+]
+
+[[package]]
 name = "ryu"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2386,6 +2385,7 @@ checksum = "be8242891f2b6cbef26a2d7e8605133c2c554cd35b3e4948ea892d6d68436499"
 dependencies = [
  "bytes",
  "futures-core",
+ "futures-io",
  "futures-sink",
  "log 0.4.11",
  "pin-project-lite",

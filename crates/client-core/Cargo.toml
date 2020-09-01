@@ -41,8 +41,9 @@ bs58 = "0.3.1"
 jsonwebtoken = "7.2.0"
 pem = "0.8.1"
 warp = "0.2.4"
-async_io_stream = { version = "0.1.0", features = ["tokio_io"] }
+rw-stream-sink = "0.2.1"
 bytes = "0.5"
+tokio-util = { version = "0.3.1", features = ["compat"] }
 
 exogress-common-utils = { path = "../common-utils", version = "0.1" }
 exogress-config-core = { path = "../config-core", version = "0.1" }

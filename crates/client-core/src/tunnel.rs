@@ -3,8 +3,6 @@ use std::io;
 
 use std::net::SocketAddr;
 
-use async_io_stream::IoStream;
-use bytes::Bytes;
 use exogress_config_core::ClientConfig;
 use exogress_entities::InstanceId;
 use exogress_tunnel::{client_framed, client_listener, MixedChannel, TunnelHello};
@@ -13,6 +11,7 @@ use parking_lot::RwLock;
 use rand::rngs::SmallRng;
 use rand::seq::IteratorRandom;
 use rustls::ClientConfig as RustlsClientConfig;
+use rw_stream_sink::RwStreamSink;
 use std::convert::TryInto;
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
@@ -37,7 +36,7 @@ pub async fn spawn(
     client_config: Arc<RwLock<ClientConfig>>,
     instance_id: InstanceId,
     gw_hostname: String,
-    internal_server_connector: mpsc::Sender<IoStream<MixedChannel, Bytes>>,
+    internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
     resolver: TokioAsyncResolver,
     small_rng: &mut SmallRng,
 ) -> Result<(), Error> {
