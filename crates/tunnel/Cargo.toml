@@ -29,6 +29,7 @@ shadow-clone = "1.2.1"
 tracing = "0.1"
 trust-dns-resolver = "0.19.5"
 url = "2.1.1"
+lru_time_cache = "0.11.0"
 
 # will be used for id reuse
 #slot_generator = "0.1.0"

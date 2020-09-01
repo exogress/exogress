@@ -31,6 +31,7 @@ use crate::connector::{ConnectTarget, Connector};
 use crate::mixed_channel::to_async_rw;
 use crate::{Error, MixedChannel};
 use exogress_config_core::ClientConfig;
+use lru_time_cache::LruCache;
 use parking_lot::RwLock;
 use rw_stream_sink::RwStreamSink;
 use tokio_util::compat::FuturesAsyncReadCompatExt;
@@ -58,7 +59,7 @@ pub struct TunnelHello {
     pub instance_id: InstanceId,
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Slot(u32);
 
 impl fmt::Display for Slot {
@@ -165,6 +166,9 @@ pub async fn client_listener(
     resolver: TokioAsyncResolver,
 ) -> Result<(), crate::error::Error> {
     let storage = Arc::new(Mutex::new(HashMap::<Slot, Connection>::new()));
+    let just_closed_by_us = Arc::new(Mutex::new(LruCache::<Slot, ()>::with_expiry_duration(
+        Duration::from_secs(5),
+    )));
 
     let (tx, mut rx) = tunnel.split();
 
@@ -174,6 +178,7 @@ pub async fn client_listener(
         shadow_clone!(client_config);
         shadow_clone!(storage);
         shadow_clone!(outgoing_messages_tx);
+        shadow_clone!(just_closed_by_us);
 
         async move {
             while let Some(res) = rx.next().await {
@@ -188,6 +193,7 @@ pub async fn client_listener(
                                             shadow_clone!(storage);
                                             shadow_clone!(client_config);
                                             shadow_clone!(mut outgoing_messages_tx);
+                                            shadow_clone!(just_closed_by_us);
 
                                             async move {
                                                 let maybe_upstream_target = client_config.read().resolve_upstream(&upstream);
@@ -272,6 +278,7 @@ pub async fn client_listener(
                                                             tokio::spawn({
                                                                 shadow_clone!(storage);
                                                                 shadow_clone!(outgoing_messages_tx);
+                                                                shadow_clone!(just_closed_by_us);
 
                                                                 async move {
                                                                     let (mut from_tcp, mut to_tcp) = tcp.split();
@@ -318,6 +325,7 @@ pub async fn client_listener(
 
                                                                     let forwarders = {
                                                                         shadow_clone!(mut outgoing_messages_tx);
+                                                                        shadow_clone!(just_closed_by_us);
 
                                                                         async move {
                                                                             let res = tokio::select! {
@@ -336,6 +344,8 @@ pub async fn client_listener(
                                                                                     Default::default()
                                                                                 )).await;
                                                                             };
+
+                                                                            just_closed_by_us.lock().insert(slot, ());
                                                                         }.fuse()
                                                                     };
 
@@ -403,7 +413,7 @@ pub async fn client_listener(
                                             shadow_clone!(internal_server_connector);
                                             shadow_clone!(mut outgoing_messages_tx);
                                             shadow_clone!(storage);
-                                            // shadow_clone!(client_config);
+                                            shadow_clone!(just_closed_by_us);
 
                                             async move {
                                                 outgoing_messages_tx.send((
@@ -480,6 +490,8 @@ pub async fn client_listener(
                                                                         Default::default()
                                                                     )).await;
                                                                 };
+
+                                                                just_closed_by_us.lock().insert(slot, ());
                                                             }.fuse()
                                                         };
 
@@ -511,9 +523,11 @@ pub async fn client_listener(
                                         .tunnel_to_tcp_tx
                                         .send(payload.freeze())
                                         .await?;
-                                } else {
+                                } else if just_closed_by_us.lock().get(&slot).is_none() {
                                     warn!("unknown slot {}, closing connection", slot);
                                     return Err(Error::UnknownSlot(slot));
+                                } else {
+                                    info!("ignore unknown slot, possible race-condition");
                                 }
                             }
                             ServerHeader::Common(CommonHeader::Closed) => {
@@ -524,9 +538,11 @@ pub async fn client_listener(
                                     slot
                                         .stop_handle
                                         .stop(());
-                                } else {
+                                } else if just_closed_by_us.lock().get(&slot).is_none() {
                                     warn!("unknown slot {}, closing connection", slot);
                                     return Err(Error::UnknownSlot(slot));
+                                } else {
+                                    info!("ignore unknown slot, possible race-condition");
                                 }
                             }
                         }
@@ -607,6 +623,9 @@ pub fn server_connection(
 ) {
     let storage = Arc::new(Mutex::new(HashMap::<Slot, ServerConnection>::new()));
     let (new_connection_req_tx, mut new_connection_req_rx) = mpsc::channel(2);
+    let just_closed_by_us = Arc::new(Mutex::new(LruCache::<Slot, ()>::with_expiry_duration(
+        Duration::from_secs(5),
+    )));
 
     let f = {
         async move {
@@ -687,6 +706,7 @@ pub fn server_connection(
                                                     tokio::spawn({
                                                         shadow_clone!(storage);
                                                         shadow_clone!(outgoing_messages_tx);
+                                                        shadow_clone!(just_closed_by_us);
 
                                                         async move {
                                                             let forward_to_tunnel = {
@@ -724,6 +744,7 @@ pub fn server_connection(
 
                                                             let forwarders = {
                                                                 shadow_clone!(mut outgoing_messages_tx);
+                                                                shadow_clone!(just_closed_by_us);
 
                                                                 async move {
                                                                     let res = tokio::select! {
@@ -742,6 +763,8 @@ pub fn server_connection(
                                                                             Default::default()
                                                                         )).await?;
                                                                     }
+
+                                                                    just_closed_by_us.lock().insert(slot, ());
 
                                                                     res?;
 
@@ -766,8 +789,12 @@ pub fn server_connection(
                                                 }
                                             }
                                             Entry::Vacant(_) => {
-                                                warn!("unknown slot {}, closing connection", slot);
-                                                return Err(Error::UnknownSlot(slot));
+                                                if just_closed_by_us.lock().get(&slot).is_none() {
+                                                    warn!("unknown slot {}, closing connection", slot);
+                                                    return Err(Error::UnknownSlot(slot));
+                                                } else {
+                                                    info!("ignore unknown slot, possible race-condition");
+                                                }
                                             }
                                         }
                                     }
@@ -789,32 +816,37 @@ pub fn server_connection(
                                                 }
                                             }
                                             Entry::Vacant(_) => {
-                                                warn!("unknown slot {}, closing connection", slot);
-                                                return Err(Error::UnknownSlot(slot));
+                                                if just_closed_by_us.lock().get(&slot).is_none() {
+                                                    warn!("unknown slot {}, closing connection", slot);
+                                                    return Err(Error::UnknownSlot(slot));
+                                                } else {
+                                                    info!("ignore unknown slot, possible race-condition");
+                                                }
                                             }
                                         }
                                     }
                                     ClientHeader::Common(CommonHeader::Data) => {
-                                        let maybe_connection = if let Some(slot) = storage
+                                        let res = storage
                                             .lock()
                                             .get(&slot)
-                                        {
-                                            slot.established().cloned()
-                                        } else {
+                                            .map(|r| r.established().cloned());
+                                        if let Some(slot) = res {
+                                            if let Some(conn) = slot {
+                                                conn
+                                                    .tunnel_to_tcp_tx
+                                                    .clone()
+                                                    .send(payload.freeze())
+                                                    .await?;
+                                            } else {
+                                                warn!("received data while connection is not in established state");
+                                                return Err(Error::CommandOnInitiatingConnection);
+                                            }
+                                        } else if just_closed_by_us.lock().get(&slot).is_none() {
                                             warn!("unknown slot {}, closing connection", slot);
                                             return Err(Error::UnknownSlot(slot));
-                                        };
-
-                                        if let Some(conn) = maybe_connection {
-                                            conn
-                                                .tunnel_to_tcp_tx
-                                                .clone()
-                                                .send(payload.freeze())
-                                                .await?;
                                         } else {
-                                            warn!("received data while connection is not in established state");
-                                            return Err(Error::CommandOnInitiatingConnection);
-                                        }
+                                            info!("ignore unknown slot, possible race-condition");
+                                        };
                                     }
                                     ClientHeader::Common(CommonHeader::Closed) => {
                                         if let Some(slot) = storage
@@ -824,7 +856,7 @@ pub fn server_connection(
                                             if let Some(conn) = slot.into_established() {
                                                 conn.stop_handle.stop(());
                                             } else {
-                                                warn!("closed command received during connnection initialization");
+                                                warn!("closed command received during connection initialization");
                                                 return Err(Error::CommandOnInitiatingConnection);
                                             }
                                         }
