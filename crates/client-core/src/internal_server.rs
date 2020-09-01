@@ -23,7 +23,7 @@ mod test {
 
     #[tokio::test]
     async fn test_serve() {
-        let (mut new_conn_tx, new_conn_rx) = mpsc::channel(1);
+        let (mut new_conn_tx, new_conn_rx) = mpsc::channel::<RwStreamSink<MixedChannel>>(1);
 
         const RESP: &str = "Hello World";
 
@@ -32,7 +32,7 @@ mod test {
                 .map(|| RESP.to_string())
                 .with(warp::trace::request());
             warp::serve(h)
-                .run_incoming(new_conn_rx.map(|c| Ok::<_, anyhow::Error>(c)))
+                .run_incoming(new_conn_rx.map(|c| Ok::<_, anyhow::Error>(c.compat())))
                 .await;
         });
 

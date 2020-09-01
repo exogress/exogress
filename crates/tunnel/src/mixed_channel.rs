@@ -97,7 +97,6 @@ mod test {
     use std::net::{IpAddr, SocketAddr};
 
     use futures::{SinkExt, StreamExt};
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::{TcpListener, TcpStream};
 
     use hyper::Uri;
@@ -106,10 +105,13 @@ mod test {
     use crate::{client_listener, server_connection};
 
     use super::*;
+    use bytes::Bytes;
     use exogress_config_core::{Config, ConfigVersion, Revision, UpstreamDefinition};
+    use futures::{AsyncReadExt, AsyncWriteExt};
     use parking_lot::lock_api::RwLock;
     use std::collections::BTreeMap;
     use std::sync::Arc;
+    use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
     use tokio::runtime::Handle;
     use trust_dns_resolver::TokioAsyncResolver;
 
