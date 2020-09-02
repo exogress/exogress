@@ -1077,8 +1077,11 @@ mod test {
         let (_accepted_connection3, _) = tcp_tunneled.accept().await.unwrap();
 
         let (mut accepted_connection4, _) = tcp_tunneled.accept().await.unwrap();
-        let mut read_buf4 = Vec::with_capacity(MAX_PAYLOAD_LEN * 2 + 1);
-        accepted_connection4.read_buf(&mut read_buf4).await.unwrap();
+        let mut read_buf4 = vec![0; MAX_PAYLOAD_LEN * 2];
+        accepted_connection4
+            .read_exact(&mut read_buf4)
+            .await
+            .unwrap();
 
         accepted_connection2.write_all(&buf1_3).await.unwrap();
 
@@ -1086,7 +1089,6 @@ mod test {
 
         assert_eq!(buf1, read_buf1);
         assert_eq!(buf2, read_buf2);
-        assert_eq!(buf4.len(), read_buf4.len());
         assert_eq!(buf4, read_buf4);
 
         send_handle.await.unwrap();

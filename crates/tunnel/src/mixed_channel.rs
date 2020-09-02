@@ -4,16 +4,16 @@ use futures::channel::mpsc;
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::ready;
 use futures::stream::Fuse;
-use futures::task::{Context, Poll};
+use futures::task::{Context, Poll, Waker};
 use futures::{Sink, Stream, StreamExt};
 use rw_stream_sink::RwStreamSink;
 use tokio::macros::support::Pin;
 
-// TODO: check how to properly handle close
-
 pub struct MixedChannel {
     tx: mpsc::Sender<Vec<u8>>,
-    rx: Fuse<mpsc::Receiver<Vec<u8>>>,
+    rx: Option<Fuse<mpsc::Receiver<Vec<u8>>>>,
+    sink_waker: Option<Waker>,
+    stream_waker: Option<Waker>,
 }
 
 impl MixedChannel {
@@ -26,7 +26,9 @@ impl MixedChannel {
 
         let channel = MixedChannel {
             tx: tx_sender,
-            rx: rx_receiver.fuse(),
+            rx: Some(rx_receiver.fuse()),
+            sink_waker: None,
+            stream_waker: None,
         };
 
         (channel, tx_receiver, rx_sender)
@@ -37,9 +39,31 @@ impl Stream for MixedChannel {
     type Item = Result<Vec<u8>, io::Error>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let res = ready!(Pin::new(&mut self.rx).poll_next(cx));
+        if let Some(rx) = &mut self.rx {
+            let res = ready!(Pin::new(rx).poll_next(cx));
+            self.stream_waker = Some(cx.waker().clone());
 
-        Poll::Ready(res.map(Ok))
+            if let Some(r) = res {
+                Poll::Ready(Some(Ok(r)))
+            } else {
+                self.tx.close_channel();
+                if let Some(w) = self.sink_waker.as_ref() {
+                    w.wake_by_ref()
+                }
+                Poll::Ready(None)
+            }
+        } else {
+            Poll::Ready(None)
+        }
+    }
+}
+
+impl MixedChannel {
+    fn close_stream(&mut self) {
+        let _ = self.rx.take();
+        if let Some(w) = self.stream_waker.as_ref() {
+            w.wake_by_ref()
+        };
     }
 }
 
@@ -47,13 +71,17 @@ impl Sink<Vec<u8>> for MixedChannel {
     type Error = io::Error;
 
     fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        Pin::new(&mut self.tx)
-            .poll_ready(cx)
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, "tunnel closed: could not poll mix"))
+        self.sink_waker = Some(cx.waker().clone());
+
+        Pin::new(&mut self.tx).poll_ready(cx).map_err(|_| {
+            self.close_stream();
+            io::Error::new(io::ErrorKind::Other, "tunnel closed: could not poll mix")
+        })
     }
 
     fn start_send(mut self: Pin<&mut Self>, item: Vec<u8>) -> Result<(), Self::Error> {
         Pin::new(&mut self.tx).start_send(item).map_err(|_| {
+            self.close_stream();
             io::Error::new(
                 io::ErrorKind::Other,
                 "tunnel closed: could not start_send to mix",
@@ -62,7 +90,10 @@ impl Sink<Vec<u8>> for MixedChannel {
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.sink_waker = Some(cx.waker().clone());
+
         Pin::new(&mut self.tx).poll_flush(cx).map_err(|_| {
+            self.close_stream();
             io::Error::new(
                 io::ErrorKind::Other,
                 "tunnel closed: could not poll_flush to mix",
@@ -71,12 +102,21 @@ impl Sink<Vec<u8>> for MixedChannel {
     }
 
     fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        Pin::new(&mut self.tx).poll_close(cx).map_err(|_| {
-            io::Error::new(
-                io::ErrorKind::Other,
-                "tunnel closed: could not poll_close to mix",
-            )
-        })
+        self.sink_waker = Some(cx.waker().clone());
+
+        Pin::new(&mut self.tx)
+            .poll_close(cx)
+            .map(|r| {
+                self.close_stream();
+                r
+            })
+            .map_err(|_| {
+                self.close_stream();
+                io::Error::new(
+                    io::ErrorKind::Other,
+                    "tunnel closed: could not poll_close to mix",
+                )
+            })
     }
 }
 
@@ -110,10 +150,83 @@ mod test {
     use futures::{AsyncReadExt, AsyncWriteExt};
     use parking_lot::lock_api::RwLock;
     use std::collections::BTreeMap;
+    use std::mem;
     use std::sync::Arc;
     use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
     use tokio::runtime::Handle;
     use trust_dns_resolver::TokioAsyncResolver;
+
+    #[tokio::test]
+    async fn test_mixed_channel_close_stream_sink() {
+        let (rw, mut ch_tx, mut ch_rx) = to_async_rw(2, 2);
+
+        #[allow(unreachable_code)]
+        let sender = tokio::spawn(async move {
+            loop {
+                ch_tx.send(vec![1]).await?;
+            }
+
+            Ok::<_, mpsc::SendError>(())
+        });
+        let receiver = tokio::spawn(async move { ch_rx.next().await });
+
+        mem::drop(rw);
+
+        assert!(receiver.await.unwrap().is_none());
+        assert!(sender.await.unwrap().is_err());
+    }
+
+    #[tokio::test]
+    async fn test_mixed_channel_close_tx() {
+        let (rw, ch_tx, _ch_rx) = to_async_rw(2, 2);
+
+        let (mut r, mut w) = rw.split();
+
+        #[allow(unreachable_code)]
+        let sender = tokio::spawn(async move {
+            loop {
+                w.write_all(&[1]).await?;
+            }
+
+            Ok::<_, io::Error>(())
+        });
+        let receiver = tokio::spawn(async move {
+            let mut v = Vec::new();
+
+            r.read_to_end(&mut v).await
+        });
+
+        mem::drop(ch_tx);
+
+        assert!(matches!(receiver.await, Ok(Ok(0))));
+        assert!(matches!(sender.await, Ok(Err(_))));
+    }
+
+    #[tokio::test]
+    async fn test_mixed_channel_close_rx() {
+        let (rw, _ch_tx, ch_rx) = to_async_rw(2, 2);
+
+        let (mut r, mut w) = rw.split();
+
+        #[allow(unreachable_code)]
+        let sender = tokio::spawn(async move {
+            loop {
+                w.write_all(&[1]).await?;
+            }
+
+            Ok::<_, io::Error>(())
+        });
+        let receiver = tokio::spawn(async move {
+            let mut v = Vec::new();
+
+            r.read_to_end(&mut v).await
+        });
+
+        mem::drop(ch_rx);
+
+        assert!(matches!(receiver.await, Ok(Ok(0))));
+        assert!(matches!(sender.await, Ok(Err(_))));
+    }
 
     #[tokio::test]
     async fn test_channel() {
