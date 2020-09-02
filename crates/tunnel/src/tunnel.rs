@@ -142,6 +142,7 @@ pub const CODE_BITS_RESERVED: u64 = 4;
 pub const CODE_MASK: u64 = (1 << CODE_BITS_RESERVED) - 1;
 pub const MAX_HEADER_CODE: u64 = 0xffffff;
 pub const MAX_SLOT_NUM: u64 = MAX_HEADER_CODE >> 4; //3 bytes - 4 bits, reserved for codes
+pub const MAX_PAYLOAD_LEN: usize = u16::MAX as usize;
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -156,6 +157,8 @@ pub struct ConnectRequestPayload {
     target: ConnectTarget,
 }
 
+// FIXME: abstraction is clearly broken here. we should not access client_config and
+// handle particular request
 pub async fn client_listener(
     tunnel: impl Stream<Item = Result<(ServerPacket, BytesMut), Error>>
         + Sink<(ClientPacket, Bytes), Error = Error>
@@ -444,16 +447,18 @@ pub async fn client_listener(
 
                                                             async move {
                                                                 while let Some(buf) = rx.next().await {
-                                                                    outgoing_messages_tx.send((
-                                                                        ClientPacket {
-                                                                            header: ClientHeader::Common(CommonHeader::Data),
-                                                                            slot,
-                                                                        }, buf
-                                                                    ))
-                                                                        .await
-                                                                        .map_err(|_|
-                                                                            io::Error::new(io::ErrorKind::Other, "channel closed")
-                                                                        )?;
+                                                                    for chunk in buf.chunks(MAX_PAYLOAD_LEN) {
+                                                                        outgoing_messages_tx.send((
+                                                                            ClientPacket {
+                                                                                header: ClientHeader::Common(CommonHeader::Data),
+                                                                                slot,
+                                                                            }, chunk.to_vec()
+                                                                        ))
+                                                                            .await
+                                                                            .map_err(|_|
+                                                                                io::Error::new(io::ErrorKind::Other, "channel closed")
+                                                                            )?;
+                                                                    }
                                                                 }
 
                                                                 Ok::<(), io::Error>(())
@@ -714,17 +719,19 @@ pub fn server_connection(
 
                                                                 async move {
                                                                     while let Some(buf) = to_tunnel_rx.next().await {
-                                                                        shadow_clone!(mut outgoing_messages_tx);
+                                                                        for chunk in buf.chunks(MAX_PAYLOAD_LEN) {
+                                                                            shadow_clone!(mut outgoing_messages_tx);
 
-                                                                        outgoing_messages_tx.send((
-                                                                            ServerPacket {
-                                                                                header: ServerHeader::Common(CommonHeader::Data),
-                                                                                slot,
-                                                                            }, buf
-                                                                        )).await
-                                                                            .map_err(|_|
-                                                                                io::Error::new(io::ErrorKind::Other, "channel closed")
-                                                                            )?;
+                                                                            outgoing_messages_tx.send((
+                                                                                ServerPacket {
+                                                                                    header: ServerHeader::Common(CommonHeader::Data),
+                                                                                    slot,
+                                                                                }, chunk.to_vec()
+                                                                            )).await
+                                                                                .map_err(|_|
+                                                                                    io::Error::new(io::ErrorKind::Other, "channel closed")
+                                                                                )?;
+                                                                        }
                                                                     }
 
                                                                     Ok::<(), io::Error>(())
@@ -959,7 +966,7 @@ mod test {
     async fn test_simple() {
         let buf1 = vec![1, 2, 3, 4, 5, 6];
         let buf2 = vec![7, 8, 9];
-        let buf4 = vec![10, 11, 12];
+        let buf4 = vec![10; MAX_PAYLOAD_LEN * 2];
         let buf1_3 = vec![65, 66, 67];
 
         let resolver = TokioAsyncResolver::from_system_conf(Handle::current())
@@ -1070,7 +1077,7 @@ mod test {
         let (_accepted_connection3, _) = tcp_tunneled.accept().await.unwrap();
 
         let (mut accepted_connection4, _) = tcp_tunneled.accept().await.unwrap();
-        let mut read_buf4 = vec![];
+        let mut read_buf4 = Vec::with_capacity(MAX_PAYLOAD_LEN * 2 + 1);
         accepted_connection4.read_buf(&mut read_buf4).await.unwrap();
 
         accepted_connection2.write_all(&buf1_3).await.unwrap();
@@ -1079,6 +1086,7 @@ mod test {
 
         assert_eq!(buf1, read_buf1);
         assert_eq!(buf2, read_buf2);
+        assert_eq!(buf4.len(), read_buf4.len());
         assert_eq!(buf4, read_buf4);
 
         send_handle.await.unwrap();

@@ -51,6 +51,8 @@ fn encode_server_header(slot: Slot, header: ServerHeader) -> Result<u64, Error> 
     use crate::tunnel::ServerHeader::*;
 
     let slot_val: u64 = slot.into_inner().into();
+    assert!(slot_val <= MAX_SLOT_NUM);
+
     let code = match header {
         Common(Data) => COMMON_CODE_DATA,
         Common(Closed) => COMMON_CODE_CLOSED,
@@ -58,8 +60,6 @@ fn encode_server_header(slot: Slot, header: ServerHeader) -> Result<u64, Error> 
     };
 
     let res = (slot_val << CODE_BITS_RESERVED) | u64::from(code);
-
-    assert!(res <= MAX_SLOT_NUM);
 
     Ok(res)
 }
@@ -69,6 +69,8 @@ fn encode_client_header(slot: Slot, header: ClientHeader) -> Result<u64, Error> 
     use crate::tunnel::CommonHeader::*;
 
     let slot_val: u64 = slot.into_inner().into();
+    assert!(slot_val <= MAX_HEADER_CODE);
+
     let code = match header {
         Common(Data) => COMMON_CODE_DATA,
         Common(Closed) => COMMON_CODE_CLOSED,
@@ -77,8 +79,6 @@ fn encode_client_header(slot: Slot, header: ClientHeader) -> Result<u64, Error> 
     };
 
     let res = (slot_val << CODE_BITS_RESERVED) | u64::from(code);
-
-    assert!(res <= MAX_HEADER_CODE);
 
     Ok(res)
 }
@@ -105,7 +105,7 @@ pub fn server_framed(
         .err_into()
         .and_then(|mut bytes| async move {
             let mut header = bytes.split_to(HEADER_BYTES);
-            Ok((parse_client_header(header.get_uint(3))?, bytes))
+            Ok((parse_client_header(header.get_uint(HEADER_BYTES))?, bytes))
         })
         .with(|(packet, bytes): (ServerPacket, Bytes)| async move {
             let mut out = BytesMut::with_capacity(bytes.len() + HEADER_BYTES);
