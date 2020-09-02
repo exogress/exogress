@@ -230,26 +230,33 @@ impl Client {
         tokio::spawn(internal_server(new_conn_rx));
 
         let tunnel_requests_processor = tokio::spawn(async move {
-            while let Some(TunnelRequest { hostname }) = send_rx.next().await {
-                tokio::spawn({
-                    shadow_clone!(current_config);
-                    shadow_clone!(resolver);
-                    shadow_clone!(mut internal_server_connector);
-                    shadow_clone!(mut small_rng);
+            while let Some(TunnelRequest {
+                hostname,
+                max_tunnels_count,
+            }) = send_rx.next().await
+            {
+                for _ in 0..max_tunnels_count {
+                    tokio::spawn({
+                        shadow_clone!(hostname);
+                        shadow_clone!(current_config);
+                        shadow_clone!(resolver);
+                        shadow_clone!(mut internal_server_connector);
+                        shadow_clone!(mut small_rng);
 
-                    async move {
-                        tunnel::spawn(
-                            current_config.clone(),
-                            instance_id,
-                            hostname,
-                            internal_server_connector,
-                            resolver,
-                            &mut small_rng,
-                        )
-                        .await
-                        .expect("FIXME: error spawning tunnel");
-                    }
-                });
+                        async move {
+                            tunnel::spawn(
+                                current_config.clone(),
+                                instance_id,
+                                hostname,
+                                internal_server_connector,
+                                resolver,
+                                &mut small_rng,
+                            )
+                            .await
+                            .expect("FIXME: error spawning tunnel");
+                        }
+                    });
+                }
             }
         })
         .fuse();
