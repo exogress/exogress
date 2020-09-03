@@ -532,7 +532,7 @@ pub async fn client_listener(
                                     warn!("unknown slot {}, closing connection", slot);
                                     return Err(Error::UnknownSlot(slot));
                                 } else {
-                                    info!("ignore unknown slot, possible race-condition");
+                                    debug!("ignore unknown slot, possible race-condition");
                                 }
                             }
                             ServerHeader::Common(CommonHeader::Closed) => {
@@ -547,7 +547,7 @@ pub async fn client_listener(
                                     warn!("unknown slot {}, closing connection", slot);
                                     return Err(Error::UnknownSlot(slot));
                                 } else {
-                                    info!("ignore unknown slot, possible race-condition");
+                                    debug!("ignore unknown slot, possible race-condition");
                                 }
                             }
                         }
@@ -800,7 +800,7 @@ pub fn server_connection(
                                                     warn!("unknown slot {}, closing connection", slot);
                                                     return Err(Error::UnknownSlot(slot));
                                                 } else {
-                                                    info!("ignore unknown slot, possible race-condition");
+                                                    debug!("ignore unknown slot, possible race-condition");
                                                 }
                                             }
                                         }
@@ -827,7 +827,7 @@ pub fn server_connection(
                                                     warn!("unknown slot {}, closing connection", slot);
                                                     return Err(Error::UnknownSlot(slot));
                                                 } else {
-                                                    info!("ignore unknown slot, possible race-condition");
+                                                    debug!("ignore unknown slot, possible race-condition");
                                                 }
                                             }
                                         }
@@ -852,7 +852,7 @@ pub fn server_connection(
                                             warn!("unknown slot {}, closing connection", slot);
                                             return Err(Error::UnknownSlot(slot));
                                         } else {
-                                            info!("ignore unknown slot, possible race-condition");
+                                            debug!("ignore unknown slot, possible race-condition");
                                         };
                                     }
                                     ClientHeader::Common(CommonHeader::Closed) => {
