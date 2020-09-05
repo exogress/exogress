@@ -4,7 +4,8 @@ extern crate serde;
 extern crate tracing;
 
 pub use config::{
-    ConfigVersion, Revision, RootConfig as Config, Target, TargetVariant, UpstreamDefinition,
+    AuthProvider, ConfigVersion, Revision, RootConfig as Config, Target, TargetVariant,
+    UpstreamDefinition,
 };
 pub use proxy::Proxy;
 pub use static_dir::StaticDir;

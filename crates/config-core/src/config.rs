@@ -114,7 +114,13 @@ impl RootConfig {
         );
 
         let mut exposes = BTreeMap::new();
-        exposes.insert(mount_point_name, Mount { targets });
+        exposes.insert(
+            mount_point_name,
+            Mount {
+                targets,
+                auth: None,
+            },
+        );
 
         RootConfig {
             version: "0.0.1".parse().unwrap(),
@@ -192,10 +198,20 @@ impl RootConfig {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Hash)]
+#[serde(deny_unknown_fields)]
+pub enum AuthProvider {
+    Google,
+    Github,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct Mount {
     pub targets: BTreeMap<TargetName, Target>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auth: Option<AuthProvider>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
