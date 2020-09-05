@@ -1,6 +1,6 @@
 use std::io;
 
-use exogress_entities::{StringIdentifierParseError, TargetName, Upstream};
+use exogress_entities::{HandlerName, StringIdentifierParseError, Upstream};
 use futures::channel::{mpsc, oneshot};
 use futures::future::BoxFuture;
 use futures::task::Poll;
@@ -29,7 +29,7 @@ impl fmt::Debug for Connector {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ConnectTarget {
     Upstream(Upstream),
-    Internal(TargetName),
+    Internal(HandlerName),
 }
 
 impl From<Upstream> for ConnectTarget {
@@ -38,8 +38,8 @@ impl From<Upstream> for ConnectTarget {
     }
 }
 
-impl From<TargetName> for ConnectTarget {
-    fn from(target_name: TargetName) -> Self {
+impl From<HandlerName> for ConnectTarget {
+    fn from(target_name: HandlerName) -> Self {
         ConnectTarget::Internal(target_name)
     }
 }
@@ -48,6 +48,7 @@ impl From<TargetName> for ConnectTarget {
 pub enum ConnectTargetParseError {
     #[error("bad connect target kind: `{0}`")]
     BadKind(String),
+
     #[error("bad upstream: {0}")]
     BadUpstream(#[from] StringIdentifierParseError),
 }
@@ -66,7 +67,7 @@ impl ConnectTarget {
         Url::parse(format!("http://{}", self.to_string()).as_ref())
     }
 
-    /// Chage hostname in the URL to connect target name
+    /// Change hostname in the URL to connect target name
     pub fn update_url(&self, url: &mut Url) {
         url.set_host(Some(&self.to_string())).expect("FIXME");
     }
@@ -88,7 +89,7 @@ impl FromStr for ConnectTarget {
         if s.ends_with(UPSTREAM_SUFFIX) {
             Ok(Upstream::from_str(s.strip_suffix(UPSTREAM_SUFFIX).unwrap())?.into())
         } else if s.ends_with(INT_SUFFIX) {
-            Ok(ConnectTarget::Internal(TargetName::from_str(
+            Ok(ConnectTarget::Internal(HandlerName::from_str(
                 s.strip_suffix(INT_SUFFIX).unwrap(),
             )?))
         } else {

@@ -22,6 +22,6 @@ string_type!(RateLimiterName);
 string_type!(ProjectName);
 string_type!(AccountName);
 string_type!(MountPointName);
-string_type!(TargetName);
+string_type!(HandlerName);
 string_type!(ConfigName);
 string_type!(Upstream);
