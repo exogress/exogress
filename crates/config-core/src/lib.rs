@@ -1,7 +1,5 @@
 #[macro_use]
 extern crate serde;
-#[macro_use]
-extern crate tracing;
 
 pub use config::{
     AuthProvider, ConfigVersion, Revision, RootConfig as Config, Target, TargetVariant,
