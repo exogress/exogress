@@ -21,10 +21,6 @@ impl AsRef<Config> for ClientConfig {
 
 impl ClientConfig {
     pub fn resolve_upstream(&self, upstream: &Upstream) -> Option<UpstreamDefinition> {
-        info!(
-            "upstreams = {:?}, looking for {:?}",
-            self.config.upstreams, upstream
-        );
         self.config.upstreams.get(upstream).cloned()
     }
 }

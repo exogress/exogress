@@ -201,7 +201,10 @@ impl RootConfig {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Hash)]
 #[serde(deny_unknown_fields)]
 pub enum AuthProvider {
+    #[serde(rename = "google")]
     Google,
+
+    #[serde(rename = "github")]
     Github,
 }
 
