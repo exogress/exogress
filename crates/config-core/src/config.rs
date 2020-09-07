@@ -82,6 +82,7 @@ impl UpstreamDefinition {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 #[serde(deny_unknown_fields)]
 pub enum ProbeKind {
+    #[serde(rename = "liveness")]
     Liveness,
 }
 
@@ -98,7 +99,7 @@ pub struct ProbeTarget {
     path: String,
 
     #[serde(with = "humantime_serde")]
-    timeout_millis: Duration,
+    timeout: Duration,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
