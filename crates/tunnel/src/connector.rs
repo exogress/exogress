@@ -56,29 +56,25 @@ pub enum ConnectTargetParseError {
 const UPSTREAM_SUFFIX: &str = ".upstream.exg";
 const INT_SUFFIX: &str = ".int.exg";
 
-impl ToString for ConnectTarget {
-    fn to_string(&self) -> std::string::String {
-        String::from(self.clone()).into()
-    }
-}
-
 impl ConnectTarget {
+    pub fn hostname(&self) -> String {
+        match self {
+            ConnectTarget::Upstream(upstream) => String::from(upstream.clone()) + UPSTREAM_SUFFIX,
+            ConnectTarget::Internal(int) => String::from(int.clone()) + INT_SUFFIX,
+        }
+    }
+
     pub fn base_url(&self) -> Result<Url, url::ParseError> {
-        Url::parse(format!("http://{}", self.to_string()).as_ref())
+        Url::parse(format!("http://{}", self.hostname()).as_ref())
     }
 
     /// Change hostname in the URL to connect target name
     pub fn update_url(&self, url: &mut Url) {
-        url.set_host(Some(&self.to_string())).expect("FIXME");
+        url.set_host(Some(&self.hostname())).expect("FIXME");
     }
-}
 
-impl From<ConnectTarget> for String {
-    fn from(target: ConnectTarget) -> Self {
-        match target {
-            ConnectTarget::Upstream(upstream) => String::from(upstream) + UPSTREAM_SUFFIX,
-            ConnectTarget::Internal(int) => String::from(int) + INT_SUFFIX,
-        }
+    pub fn with_path(&self, path: &str) -> Result<Url, url::ParseError> {
+        Url::parse(&format!("http://{}{}", self.hostname(), path))
     }
 }
 

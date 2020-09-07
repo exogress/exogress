@@ -89,17 +89,20 @@ pub enum ProbeKind {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct Probe {
-    kind: ProbeKind,
-    target: ProbeTarget,
+    pub kind: ProbeKind,
+    pub target: ProbeTarget,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct ProbeTarget {
-    path: String,
+    pub path: String,
 
     #[serde(with = "humantime_serde")]
-    timeout: Duration,
+    pub timeout: Duration,
+
+    #[serde(with = "humantime_serde")]
+    pub period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]

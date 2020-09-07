@@ -3,7 +3,8 @@ extern crate serde;
 
 pub use auth::{Auth, AuthProvider};
 pub use config::{
-    ConfigVersion, Handler, HandlerVariant, Revision, RootConfig as Config, UpstreamDefinition,
+    ConfigVersion, Handler, HandlerVariant, Probe, Revision, RootConfig as Config,
+    UpstreamDefinition,
 };
 pub use proxy::Proxy;
 pub use static_dir::StaticDir;
