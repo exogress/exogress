@@ -283,7 +283,7 @@ mod test {
                         version: ConfigVersion("0.0.1".parse().unwrap()),
                         revision: Revision(1),
                         name: "my-config".parse().unwrap(),
-                        exposes: Default::default(),
+                        mount_points: Default::default(),
                         upstreams,
                     }
                     .into(),

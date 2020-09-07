@@ -13,6 +13,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
+use std::time::Duration;
 
 pub const ANY_SEGMENTS_MATCH_STR: &str = "*";
 pub const ANY_STR: &str = "?";
@@ -56,13 +57,21 @@ impl FromStr for ConfigVersion {
 #[serde(deny_unknown_fields)]
 pub struct UpstreamDefinition {
     pub port: u16,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     host: Option<String>,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    health: Vec<Probe>,
 }
 
 impl UpstreamDefinition {
     pub fn on_default_host(port: u16) -> Self {
-        UpstreamDefinition { port, host: None }
+        UpstreamDefinition {
+            port,
+            host: None,
+            health: vec![],
+        }
     }
 
     pub fn get_host(&self) -> String {
@@ -72,11 +81,33 @@ impl UpstreamDefinition {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 #[serde(deny_unknown_fields)]
+pub enum ProbeKind {
+    Liveness,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[serde(deny_unknown_fields)]
+pub struct Probe {
+    kind: ProbeKind,
+    target: ProbeTarget,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[serde(deny_unknown_fields)]
+pub struct ProbeTarget {
+    path: String,
+
+    #[serde(with = "humantime_serde")]
+    timeout_millis: Duration,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[serde(deny_unknown_fields)]
 pub struct RootConfig {
     pub version: ConfigVersion,
     pub revision: Revision,
     pub name: ConfigName,
-    pub exposes: BTreeMap<MountPointName, Mount>,
+    pub mount_points: BTreeMap<MountPointName, Mount>,
     pub upstreams: BTreeMap<Upstream, UpstreamDefinition>,
 }
 
@@ -99,6 +130,7 @@ impl RootConfig {
             UpstreamDefinition {
                 port: 3000,
                 host: None,
+                health: vec![],
             },
         );
 
@@ -114,14 +146,14 @@ impl RootConfig {
             },
         );
 
-        let mut exposes = BTreeMap::new();
-        exposes.insert(mount_point_name, Mount { handlers });
+        let mut mount_points = BTreeMap::new();
+        mount_points.insert(mount_point_name, Mount { handlers });
 
         RootConfig {
             version: "0.0.1".parse().unwrap(),
             revision: 1.into(),
             name: config_name,
-            exposes,
+            mount_points,
             upstreams,
         }
     }
@@ -147,7 +179,7 @@ impl RootConfig {
 
         let defined_upstreams = self.upstreams.keys().cloned().collect::<HashSet<_>>();
         let used_upstreams = self
-            .exposes
+            .mount_points
             .values()
             .map(|mount| {
                 mount
@@ -171,7 +203,10 @@ impl RootConfig {
     }
 
     pub fn check_mount_points(&self, existing: &[MountPointName]) -> Result<(), ConfigError> {
-        let used_mount_points = self.exposes.keys().collect::<HashSet<&MountPointName>>();
+        let used_mount_points = self
+            .mount_points
+            .keys()
+            .collect::<HashSet<&MountPointName>>();
         let existing_mount_points = existing.iter().collect::<HashSet<&MountPointName>>();
 
         let mut not_defined = used_mount_points
@@ -241,7 +276,7 @@ name: repository-1
 upstreams:
   backend:
     port: 3000
-exposes:
+mount_points:
   mount_point:
     handlers:
       main:
@@ -261,7 +296,7 @@ name: repository-1
 upstreams:
   backend2: 
     port: 3000
-exposes:
+mount_points:
   mount_point:
     handlers:
       main:
@@ -289,7 +324,7 @@ upstreams:
     port: 3000
   backend2:
     port: 4000
-exposes:
+mount_points:
   mount_point:
     handlers:
       main:
@@ -305,7 +340,7 @@ exposes:
 version: 0.0.1
 name: repository-1
 revision: 10
-exposes:
+mount_points:
   mount_point:
     handlers:
       main2:
