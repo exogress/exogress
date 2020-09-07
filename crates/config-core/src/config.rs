@@ -62,7 +62,7 @@ pub struct UpstreamDefinition {
     host: Option<String>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    health: Vec<Probe>,
+    pub health: Vec<Probe>,
 }
 
 impl UpstreamDefinition {
