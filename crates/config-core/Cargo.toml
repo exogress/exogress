@@ -24,3 +24,4 @@ shadow-clone = "1.2.1"
 hashbrown = { version = "0.8.2", features = ["serde"] }
 tracing = "0.1"
 seahash = "4.0.1"
+lazy_static = "1.4.0"

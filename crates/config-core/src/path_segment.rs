@@ -1,7 +1,7 @@
-use crate::config::ANY_SEGMENTS_MATCH_STR;
 use percent_encoding::percent_decode_str;
 use serde::de::Visitor;
 
+use crate::path::ANY_SEGMENTS_MATCH_STR;
 use serde::{de, Deserialize, Deserializer};
 use smartstring::alias::String;
 use std::fmt;

@@ -194,7 +194,7 @@ async fn do_conection(
 
                 ws_stream
                     .send(Message::Text(
-                        serde_json::to_string(current_config.as_ref()).unwrap(),
+                        serde_json::to_string(&current_config).unwrap(),
                     ))
                     .await?;
 
@@ -219,9 +219,7 @@ async fn do_conection(
             while let Some(config) = config_rx.recv().await {
                 info!("The new config uploaded");
                 send_tx2
-                    .send(Message::Text(
-                        serde_json::to_string(config.as_ref()).unwrap(),
-                    ))
+                    .send(Message::Text(serde_json::to_string(&config).unwrap()))
                     .await?;
             }
 

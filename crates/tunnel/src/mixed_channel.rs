@@ -146,7 +146,9 @@ mod test {
 
     use super::*;
     use bytes::Bytes;
-    use exogress_config_core::{Config, ConfigVersion, Revision, UpstreamDefinition};
+    use exogress_config_core::{
+        ClientConfig, ClientConfigRevision, ConfigVersion, UpstreamDefinition,
+    };
     use futures::{AsyncReadExt, AsyncWriteExt};
     use parking_lot::lock_api::RwLock;
     use std::collections::BTreeMap;
@@ -279,9 +281,9 @@ mod test {
                 );
 
                 let client_config = Arc::new(RwLock::new(
-                    Config {
+                    ClientConfig {
                         version: ConfigVersion("0.0.1".parse().unwrap()),
-                        revision: Revision(1),
+                        revision: ClientConfigRevision(1),
                         name: "my-config".parse().unwrap(),
                         mount_points: Default::default(),
                         upstreams,

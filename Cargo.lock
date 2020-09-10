@@ -556,6 +556,7 @@ dependencies = [
  "http",
  "http-serde",
  "humantime-serde",
+ "lazy_static",
  "percent-encoding",
  "regex",
  "seahash",

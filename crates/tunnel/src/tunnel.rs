@@ -958,7 +958,7 @@ mod test {
 
     use super::*;
     use exogress_config_core::UpstreamDefinition;
-    use exogress_config_core::{Config, ConfigVersion, Revision};
+    use exogress_config_core::{ClientConfig, ClientConfigRevision, ConfigVersion};
     use std::collections::BTreeMap;
     use tokio::runtime::Handle;
 
@@ -1039,9 +1039,9 @@ mod test {
         );
 
         let client_config = Arc::new(RwLock::new(
-            Config {
+            ClientConfig {
                 version: ConfigVersion("0.0.1".parse().unwrap()),
-                revision: Revision(1),
+                revision: ClientConfigRevision(1),
                 name: "my-config".parse().unwrap(),
                 mount_points: Default::default(),
                 upstreams,

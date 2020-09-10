@@ -140,11 +140,8 @@ impl Client {
             .read_to_end(&mut config)
             .await
             .unwrap();
-        let parsed = serde_yaml::from_slice::<Config>(&config).unwrap();
-        if let Err(err) = parsed.validate() {
-            return Err(err.into());
-        }
-        let client_config: ClientConfig = parsed.into();
+        let client_config = serde_yaml::from_slice::<ClientConfig>(&config).unwrap();
+        client_config.validate()?;
 
         let current_config = Arc::new(RwLock::new(client_config.clone()));
 
@@ -173,15 +170,14 @@ impl Client {
                                 .unwrap()
                                 .read_to_end(&mut config)
                                 .unwrap();
-                            match serde_yaml::from_slice::<Config>(&config) {
-                                Ok(parsed) => {
-                                    if let Err(err) = parsed.validate() {
+                            match serde_yaml::from_slice::<ClientConfig>(&config) {
+                                Ok(client_config) => {
+                                    if let Err(err) = client_config.validate() {
                                         error!("Error in config: {}. Changes are not applied", err);
                                     } else {
                                         info!("New config successfully loaded");
                                     }
 
-                                    let client_config = ClientConfig::from(parsed);
                                     *current_config.write() = client_config.clone();
                                     config_tx.broadcast(client_config).unwrap();
                                 }

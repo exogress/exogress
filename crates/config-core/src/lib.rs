@@ -2,26 +2,30 @@
 extern crate serde;
 
 pub use auth::{Auth, AuthProvider};
-pub use config::{
-    ConfigVersion, Handler, HandlerVariant, Probe, Revision, RootConfig as Config,
-    UpstreamDefinition,
-};
+pub use client_config::{ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant};
+pub use config::Config;
+use lazy_static::lazy_static;
 pub use proxy::Proxy;
+use semver::Version;
 pub use static_dir::StaticDir;
+pub use upstream::{Probe, UpstreamDefinition};
+pub use version::ConfigVersion;
 
 mod app;
+mod auth;
 mod cache;
+mod client_config;
 mod config;
-// mod mappings;
 mod path;
 mod path_segment;
+mod project_config;
 mod proxy;
-// mod redirect;
-// mod rewrite;
-mod auth;
-mod client_config;
 mod static_dir;
-
-pub use client_config::ClientConfig;
+mod upstream;
+mod version;
 
 pub const DEFAULT_CONFIG_FILE: &str = "Exofile";
+
+lazy_static! {
+    static ref CURRENT_VERSION: Version = Version::new(0, 0, 1);
+}

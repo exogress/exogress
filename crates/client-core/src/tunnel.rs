@@ -57,7 +57,7 @@ pub async fn spawn(
     let mut stream = config.connect(dnsname, socket).await?;
 
     let hello = TunnelHello {
-        config_name: client_config.read().as_ref().name.clone(),
+        config_name: client_config.read().name.clone(),
         instance_id,
     };
 

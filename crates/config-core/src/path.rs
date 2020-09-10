@@ -6,8 +6,11 @@ use serde::de::{IntoDeserializer, SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::config::{ANY_SEGMENTS_MATCH_STR, ANY_STR};
 use crate::path_segment::UrlPathSegmentOrQueryPart;
+
+pub const ANY_SEGMENTS_MATCH_STR: &str = "*";
+pub const ANY_STR: &str = "?";
+// pub const REF_STR: &str = "$";
 
 #[derive(Debug, Clone)]
 pub enum MatchPathSegment {
