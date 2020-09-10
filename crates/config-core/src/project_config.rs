@@ -15,6 +15,7 @@ pub struct ProjectConfig {
 }
 
 impl ProjectConfig {
+    /// Project-level config sample
     pub fn sample(
         handler_name: Option<HandlerName>,
         mount_point_name: Option<MountPointName>,
