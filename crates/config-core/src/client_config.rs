@@ -31,6 +31,7 @@ pub struct ClientConfig {
     pub revision: ClientConfigRevision,
     pub name: ConfigName,
     pub mount_points: BTreeMap<MountPointName, ClientMount>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub upstreams: BTreeMap<Upstream, UpstreamDefinition>,
 }
 

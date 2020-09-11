@@ -47,6 +47,15 @@ impl ProjectConfig {
     }
 }
 
+impl Default for ProjectConfig {
+    fn default() -> Self {
+        ProjectConfig {
+            version: "0.0.1".parse().unwrap(),
+            mount_points: Default::default()
+        }
+    }
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum ProjectConfigError {
     #[error("mount points {} not defined", .0.iter().map(| s | s.to_string()).collect::< Vec < _ >> ().join(", "))]
