@@ -147,7 +147,7 @@ mod test {
     use super::*;
     use bytes::Bytes;
     use exogress_config_core::{
-        ClientConfig, ClientConfigRevision, ConfigVersion, UpstreamDefinition,
+        ClientConfig, ClientConfigRevision, ConfigVersion, UpstreamDefinition, CURRENT_VERSION,
     };
     use futures::{AsyncReadExt, AsyncWriteExt};
     use parking_lot::lock_api::RwLock;
@@ -282,7 +282,7 @@ mod test {
 
                 let client_config = Arc::new(RwLock::new(
                     ClientConfig {
-                        version: ConfigVersion("0.0.1".parse().unwrap()),
+                        version: CURRENT_VERSION.clone(),
                         revision: ClientConfigRevision(1),
                         name: "my-config".parse().unwrap(),
                         mount_points: Default::default(),

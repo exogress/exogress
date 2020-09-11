@@ -5,6 +5,7 @@ pub use auth::{Auth, AuthProvider};
 pub use client_config::{ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant};
 pub use config::Config;
 use lazy_static::lazy_static;
+pub use project_config::ProjectConfig;
 pub use proxy::Proxy;
 use semver::Version;
 pub use static_dir::StaticDir;
@@ -27,5 +28,5 @@ mod version;
 pub const DEFAULT_CONFIG_FILE: &str = "Exofile";
 
 lazy_static! {
-    static ref CURRENT_VERSION: Version = Version::new(0, 0, 1);
+    pub static ref CURRENT_VERSION: ConfigVersion = ConfigVersion(Version::new(0, 0, 1));
 }

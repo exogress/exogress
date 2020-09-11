@@ -9,6 +9,7 @@ use crate::path_segment::UrlPathSegmentOrQueryPart;
 use crate::proxy::Proxy;
 use crate::static_dir::StaticDir;
 use crate::upstream::UpstreamDefinition;
+use crate::CURRENT_VERSION;
 use crate::{Auth, ConfigVersion};
 use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
@@ -72,7 +73,7 @@ impl ClientConfig {
         mount_points.insert(mount_point_name, ClientMount { handlers });
 
         ClientConfig {
-            version: "0.0.1".parse().unwrap(),
+            version: CURRENT_VERSION.clone(),
             revision: 1.into(),
             name: config_name,
             mount_points,
@@ -126,7 +127,7 @@ impl Config for ClientConfig {
     }
 
     fn validate(&self) -> Result<(), ClientConfigError> {
-        if self.version != "0.0.1".parse().unwrap() {
+        if self.version != *CURRENT_VERSION {
             return Err(ClientConfigError::UnsupportedVersion(self.version.clone()));
         }
 

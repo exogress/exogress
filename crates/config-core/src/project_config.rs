@@ -2,6 +2,7 @@ use hashbrown::HashSet;
 
 use crate::path_segment::UrlPathSegmentOrQueryPart;
 use crate::{Auth, AuthProvider, Config, ConfigVersion};
+use crate::{ClientHandler, ClientHandlerVariant, CURRENT_VERSION};
 use exogress_entities::{HandlerName, MountPointName};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -40,7 +41,7 @@ impl ProjectConfig {
         mount_points.insert(mount_point_name, ProjectMount { handlers });
 
         ProjectConfig {
-            version: "0.0.1".parse().unwrap(),
+            version: CURRENT_VERSION.clone(),
             mount_points,
         }
     }
@@ -84,7 +85,7 @@ impl Config for ProjectConfig {
     }
 
     fn validate(&self) -> Result<(), ProjectConfigError> {
-        if self.version != "0.0.1".parse().unwrap() {
+        if self.version != *CURRENT_VERSION {
             return Err(ProjectConfigError::UnsupportedVersion(self.version.clone()));
         }
 
@@ -118,6 +119,19 @@ pub struct ProjectHandler {
     pub base_path: Vec<UrlPathSegmentOrQueryPart>,
 
     pub priority: u16,
+}
+
+impl From<ProjectHandler> for ClientHandler {
+    fn from(f: ProjectHandler) -> Self {
+        let v = match f.variant {
+            ProjectHandlerVariant::Auth(auth) => ClientHandlerVariant::Auth(auth),
+        };
+        ClientHandler {
+            variant: v,
+            base_path: f.base_path,
+            priority: f.priority,
+        }
+    }
 }
 
 #[cfg(test)]
