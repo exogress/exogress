@@ -3,7 +3,6 @@ extern crate serde;
 
 pub use auth::{Auth, AuthProvider};
 pub use client_config::{ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant};
-pub use project_config::ProjectConfig;
 pub use config::Config;
 use lazy_static::lazy_static;
 pub use project_config::ProjectConfig;
