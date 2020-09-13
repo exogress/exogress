@@ -44,6 +44,7 @@ warp = "0.2.4"
 rw-stream-sink = "0.2.1"
 bytes = "0.5"
 tokio-util = { version = "0.3.1", features = ["compat"] }
+urlencoding = "1.1.1"
 
 exogress-common-utils = { path = "../common-utils", version = "0.1" }
 exogress-config-core = { path = "../config-core", version = "0.1" }

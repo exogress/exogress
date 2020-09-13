@@ -500,6 +500,7 @@ dependencies = [
  "trust-dns-resolver",
  "tungstenite",
  "url",
+ "urlencoding",
  "warp",
  "webpki",
 ]

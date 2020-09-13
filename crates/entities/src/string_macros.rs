@@ -1,4 +1,4 @@
-pub const MIN_STRING_IDENTIFIER_LENGTH: usize = 4;
+pub const MIN_STRING_IDENTIFIER_LENGTH: usize = 1;
 pub const MAX_STRING_IDENTIFIER_LENGTH: usize = 46;
 
 #[derive(thiserror::Error, Debug)]

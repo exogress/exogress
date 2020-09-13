@@ -17,7 +17,7 @@ use trust_dns_resolver::TokioAsyncResolver;
 use url::Url;
 
 use exogress_config_core::{ClientConfig, Config};
-use exogress_entities::{ClientId, InstanceId};
+use exogress_entities::{ClientId, InstanceId, LabelName, LabelValue};
 
 use crate::{signal_client, tunnel};
 
@@ -29,6 +29,7 @@ use tracing_futures::Instrument;
 
 use crate::internal_server::internal_server;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
+use hashbrown::HashMap;
 
 pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.sexogress.com/";
 
@@ -57,6 +58,9 @@ pub struct Client {
 
     #[builder(setter(into))]
     pub instance_id: InstanceId,
+
+    #[builder(setter(into), default = "Default::default()")]
+    pub labels: HashMap<LabelName, LabelValue>,
 }
 
 impl Client {
@@ -122,7 +126,13 @@ impl Client {
         }
 
         url.set_query(Some(
-            format!("project={}&account={}", self.project, self.account).as_str(),
+            format!(
+                "project={}&account={}&labels={}",
+                self.project,
+                self.account,
+                urlencoding::encode(serde_json::to_string(&self.labels).unwrap().as_str())
+            )
+            .as_str(),
         ));
 
         info!("Will connect signalling channel to {}", url);
@@ -277,13 +287,13 @@ impl Client {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use futures::FutureExt;
+    use std::str::FromStr;
     use stop_handle::stop_handle;
     use tokio::runtime::Handle;
     use tokio::time::delay_for;
     use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
-
-    use super::*;
 
     #[tokio::test]
     async fn test_minimal() {
@@ -297,13 +307,21 @@ mod tests {
 
         let (stop_tx, stop_wait) = stop_handle();
 
-        tokio::spawn(async move {
+        let bg = tokio::spawn(async move {
             let f = Client::builder()
                 .instance_id(InstanceId::new())
                 .client_id(ClientId::new())
                 .client_secret("client_secret".to_string())
                 .account("account".to_string())
                 .project("project".to_string())
+                .labels(
+                    vec![(
+                        LabelName::from_str("test").unwrap(),
+                        LabelValue::from_str("true").unwrap(),
+                    )]
+                    .into_iter()
+                    .collect::<HashMap<_, _>>(),
+                )
                 .build()
                 .unwrap()
                 .spawn(resolver.clone())
@@ -318,5 +336,7 @@ mod tests {
         delay_for(Duration::from_secs(1)).await;
 
         stop_tx.stop(());
+
+        bg.await.unwrap();
     }
 }
