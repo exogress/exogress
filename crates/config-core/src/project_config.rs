@@ -51,7 +51,7 @@ impl Default for ProjectConfig {
     fn default() -> Self {
         ProjectConfig {
             version: "0.0.1".parse().unwrap(),
-            mount_points: Default::default()
+            mount_points: Default::default(),
         }
     }
 }

@@ -9,7 +9,7 @@ use shadow_clone::shadow_clone;
 use std::io::Read;
 use std::path::PathBuf;
 use std::time::Duration;
-use std::{fs, io};
+use std::{fs, io, mem};
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 use tokio::sync::watch;
@@ -23,13 +23,17 @@ use crate::{signal_client, tunnel};
 
 use exogress_signaling::TunnelRequest;
 use notify::event::{CreateKind, ModifyKind, RemoveKind};
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tracing_futures::Instrument;
 
 use crate::internal_server::internal_server;
+use exogress_common_utils::backoff::Backoff;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
 use hashbrown::HashMap;
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering;
+use tokio::time::delay_for;
 
 pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.sexogress.com/";
 
@@ -250,16 +254,50 @@ impl Client {
                         shadow_clone!(mut small_rng);
 
                         async move {
-                            tunnel::spawn(
-                                current_config.clone(),
-                                instance_id,
-                                hostname,
-                                internal_server_connector,
-                                resolver,
-                                &mut small_rng,
-                            )
-                            .await
-                            .expect("FIXME: error spawning tunnel");
+                            let mut backoff =
+                                Backoff::new(Duration::from_millis(5), Duration::from_secs(20));
+
+                            let retry = Arc::new(AtomicUsize::new(0));
+
+                            loop {
+                                info!(
+                                    "try to establish tunnel attempt {}",
+                                    retry.load(Ordering::SeqCst)
+                                );
+                                let backoff_handle = backoff.next().await.unwrap();
+
+                                let existence = Arc::new(Mutex::new(()));
+                                let weak = Arc::downgrade(&existence);
+                                tokio::spawn({
+                                    let retry = retry.clone();
+
+                                    async move {
+                                        delay_for(Duration::from_secs(10)).await;
+                                        if weak.upgrade().is_some() {
+                                            debug!("Tunnel is ok. Reset backoff");
+                                            backoff_handle.reset();
+                                            retry.store(0, Ordering::SeqCst);
+                                        }
+                                    }
+                                });
+                                {
+                                    let r = tunnel::spawn(
+                                        current_config.clone(),
+                                        instance_id,
+                                        hostname.clone(),
+                                        internal_server_connector.clone(),
+                                        resolver.clone(),
+                                        &mut small_rng,
+                                    )
+                                    .await;
+                                    if let Err(e) = r {
+                                        error!("error in tunnel {}", e);
+                                    }
+                                    mem::drop(existence);
+                                }
+
+                                retry.fetch_add(1, Ordering::SeqCst);
+                            }
                         }
                     });
                 }
