@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate serde;
 
+use exogress_entities::InstanceId;
 use smartstring::alias::String;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -12,4 +13,10 @@ pub struct TunnelRequest {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TunnelRequestResponse {
     pub num_recipients: u16,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum SignalerHandshakeResponse {
+    Ok { instance_id: InstanceId },
+    Err { msg: String },
 }

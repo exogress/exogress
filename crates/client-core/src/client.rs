@@ -17,7 +17,7 @@ use trust_dns_resolver::TokioAsyncResolver;
 use url::Url;
 
 use exogress_config_core::{ClientConfig, Config};
-use exogress_entities::{ClientId, InstanceId, LabelName, LabelValue};
+use exogress_entities::{ClientId, LabelName, LabelValue};
 
 use crate::{signal_client, tunnel};
 
@@ -59,9 +59,6 @@ pub struct Client {
 
     #[builder(setter(into), default = "DEFAULT_CLOUD_ENDPOINT.to_string()")]
     pub cloud_endpoint: String,
-
-    #[builder(setter(into))]
-    pub instance_id: InstanceId,
 
     #[builder(setter(into), default = "Default::default()")]
     pub labels: HashMap<LabelName, LabelValue>,
@@ -106,7 +103,7 @@ impl Client {
         let jwt_encoding_key = client_secret_private_key(self.client_secret.as_str())
             .context("client_secret error")?;
 
-        let instance_id = self.instance_id;
+        let instance_id_storage = Arc::new(Mutex::new(None));
 
         let config_path = fs::canonicalize(PathBuf::from(
             shellexpand::full(&self.config_path)?.into_owned(),
@@ -124,8 +121,6 @@ impl Client {
             let mut path_segments = url.path_segments_mut().unwrap();
             path_segments.push("api");
             path_segments.push("v1");
-            path_segments.push("instances");
-            path_segments.push(instance_id.to_string().as_str());
             path_segments.push("channel");
         }
 
@@ -216,8 +211,10 @@ impl Client {
         let connector_result = tokio::spawn({
             shadow_clone!(resolver);
             shadow_clone!(current_config);
+            shadow_clone!(instance_id_storage);
 
             signal_client::spawn(
+                instance_id_storage,
                 current_config,
                 config_rx,
                 url,
@@ -247,6 +244,7 @@ impl Client {
             {
                 for _ in 0..max_tunnels_count {
                     tokio::spawn({
+                        shadow_clone!(instance_id_storage);
                         shadow_clone!(hostname);
                         shadow_clone!(current_config);
                         shadow_clone!(resolver);
@@ -281,17 +279,20 @@ impl Client {
                                     }
                                 });
                                 {
-                                    let r = tunnel::spawn(
-                                        current_config.clone(),
-                                        instance_id,
-                                        hostname.clone(),
-                                        internal_server_connector.clone(),
-                                        resolver.clone(),
-                                        &mut small_rng,
-                                    )
-                                    .await;
-                                    if let Err(e) = r {
-                                        error!("error in tunnel {}", e);
+                                    let maybe_instance_id = *instance_id_storage.lock();
+                                    if let Some(instance_id) = maybe_instance_id {
+                                        let r = tunnel::spawn(
+                                            current_config.clone(),
+                                            instance_id,
+                                            hostname.clone(),
+                                            internal_server_connector.clone(),
+                                            resolver.clone(),
+                                            &mut small_rng,
+                                        )
+                                        .await;
+                                        if let Err(e) = r {
+                                            error!("error in tunnel {}", e);
+                                        }
                                     }
                                     mem::drop(existence);
                                 }
@@ -347,7 +348,6 @@ mod tests {
 
         let bg = tokio::spawn(async move {
             let f = Client::builder()
-                .instance_id(InstanceId::new())
                 .client_id(ClientId::new())
                 .client_secret("client_secret".to_string())
                 .account("account".to_string())

@@ -601,6 +601,7 @@ dependencies = [
 name = "exogress-signaling"
 version = "0.1.0"
 dependencies = [
+ "exogress-entities",
  "serde",
  "smartstring",
 ]

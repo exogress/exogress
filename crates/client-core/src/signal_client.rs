@@ -16,13 +16,13 @@ use url::Url;
 
 use exogress_common_utils::backoff::{Backoff, BackoffHandle};
 use exogress_config_core::ClientConfig;
-use exogress_signaling::TunnelRequest;
+use exogress_signaling::{SignalerHandshakeResponse, TunnelRequest};
 
 use exogress_common_utils::ws_client;
 use exogress_common_utils::ws_client::connect_ws;
-use exogress_entities::ClientId;
+use exogress_entities::{ClientId, InstanceId};
 use jsonwebtoken::EncodingKey;
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tokio::sync::watch::Receiver;
 use tokio_tungstenite::tungstenite::http::{Method, Request};
@@ -47,6 +47,7 @@ pub enum CloudConnectError {
 
 #[allow(clippy::too_many_arguments)]
 pub async fn spawn(
+    instance_id_storage: Arc<Mutex<Option<InstanceId>>>,
     current_config: Arc<RwLock<ClientConfig>>,
     mut config_rx: Receiver<ClientConfig>,
     url: Url,
@@ -64,6 +65,7 @@ pub async fn spawn(
     while let Some(backoff_handle) = backoff.next().await {
         info!("trying to establish connection to a signaler server");
         match do_conection(
+            &instance_id_storage,
             &mut config_rx,
             &current_config,
             &client_id,
@@ -135,10 +137,14 @@ pub enum Error {
 
     #[error("JWT generation error: `{0}`")]
     Jwt(#[from] jsonwebtoken::errors::Error),
+
+    #[error("handshake error")]
+    HandshakeError,
 }
 
 #[allow(clippy::too_many_arguments)]
 async fn do_conection(
+    instance_id_storage: &Arc<Mutex<Option<InstanceId>>>,
     config_rx: &mut Receiver<ClientConfig>,
     current_config_storage: &RwLock<ClientConfig>,
     client_id: &ClientId,
@@ -198,11 +204,29 @@ async fn do_conection(
                     ))
                     .await?;
 
-                Ok((ws_stream, current_config))
+                let instance_id = match ws_stream.next().await {
+                    Some(Ok(Message::Text(response))) => {
+                        match serde_json::from_str::<SignalerHandshakeResponse>(response.as_str())?
+                        {
+                            SignalerHandshakeResponse::Ok { instance_id } => instance_id,
+                            SignalerHandshakeResponse::Err { msg } => {
+                                error!("Error during signaler handshake: {}", msg);
+                                return Err(Error::HandshakeError);
+                            }
+                        }
+                    }
+                    r => {
+                        error!("Error receiving signaler handshake response: {:?}", r);
+                        return Err(Error::HandshakeError);
+                    }
+                };
+
+                Ok((ws_stream, current_config, instance_id))
             }
         };
 
-        let (ws_stream, _current_config) = timeout(Duration::from_secs(5), initiate).await??;
+        let (ws_stream, _current_config, instance_id) =
+            timeout(Duration::from_secs(5), initiate).await??;
 
         let (mut ws_tx, mut ws_rx) = ws_stream.split();
 
@@ -365,6 +389,9 @@ async fn do_conection(
         pin_mut!(forward_received_messages);
         pin_mut!(send_updated_config);
 
+        info!("set instance_id to {}", instance_id);
+        *instance_id_storage.lock() = Some(instance_id);
+
         let r = select_biased! {
             res = receiver => {
                 res
@@ -389,7 +416,10 @@ async fn do_conection(
             }
         };
 
-        info!("Connection to signal server closed");
+        *instance_id_storage.lock() = None;
+        // TODO: FIXME: disconnect all tunnels
+
+        info!("Connection to signal server closed. Clear instance_id");
 
         r
     }

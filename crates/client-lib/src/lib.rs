@@ -4,7 +4,7 @@ use tokio::runtime::{Handle, Runtime};
 use trust_dns_resolver::TokioAsyncResolver;
 
 use exogress_client_core::Client;
-use exogress_entities::{tracing, ClientId, InstanceId};
+use exogress_entities::{tracing, ClientId};
 use tracing::Level;
 
 pub fn spawn(
@@ -28,7 +28,6 @@ pub fn spawn(
 
             Ok::<_, anyhow::Error>(
                 Client::builder()
-                    .instance_id(InstanceId::new())
                     .client_id(
                         client_id
                             .parse::<ClientId>()
