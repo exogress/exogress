@@ -19,6 +19,7 @@ mod ulid_macro;
 ulid_type!(InstanceId);
 ulid_type!(EnvironmentId);
 ulid_type!(ClientId);
+ulid_type!(TunnelId);
 
 string_type!(RateLimiterName);
 string_type!(ProjectName);

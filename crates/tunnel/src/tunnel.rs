@@ -26,7 +26,7 @@ use tokio::net::TcpStream;
 use tokio::time::timeout;
 use trust_dns_resolver::TokioAsyncResolver;
 
-use exogress_entities::{ConfigName, InstanceId};
+use exogress_entities::{ConfigName, InstanceId, TunnelId};
 
 use crate::connector::{Compression, ConnectTarget, Connector};
 use crate::mixed_channel::to_async_rw;
@@ -58,6 +58,12 @@ impl fmt::Display for RejectionReason {
 pub struct TunnelHello {
     pub config_name: ConfigName,
     pub instance_id: InstanceId,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum TunnelHelloResponse {
+    Ok { tunnel_id: TunnelId },
+    Err { msg: String },
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]

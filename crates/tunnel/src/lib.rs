@@ -8,7 +8,9 @@ extern crate serde;
 pub use connector::{Compression, ConnectTarget, Connector};
 pub use error::Error;
 pub use framed::{client_framed, server_framed};
-pub use tunnel::{client_listener, server_connection, Conn, TunnelHello, TunneledConnection};
+pub use tunnel::{
+    client_listener, server_connection, Conn, TunnelHello, TunnelHelloResponse, TunneledConnection,
+};
 
 mod connector;
 mod error;

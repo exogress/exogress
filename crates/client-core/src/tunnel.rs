@@ -3,9 +3,12 @@ use std::io;
 
 use std::net::SocketAddr;
 
+use core::time::Duration;
 use exogress_config_core::ClientConfig;
 use exogress_entities::InstanceId;
-use exogress_tunnel::{client_framed, client_listener, MixedChannel, TunnelHello};
+use exogress_tunnel::{
+    client_framed, client_listener, MixedChannel, TunnelHello, TunnelHelloResponse,
+};
 use futures::channel::mpsc;
 use parking_lot::RwLock;
 use rand::rngs::SmallRng;
@@ -14,7 +17,7 @@ use rustls::ClientConfig as RustlsClientConfig;
 use rw_stream_sink::RwStreamSink;
 use std::convert::TryInto;
 use std::sync::Arc;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio_rustls::webpki::DNSNameRef;
 use tokio_rustls::{rustls, TlsConnector};
@@ -30,6 +33,12 @@ pub enum Error {
 
     #[error("tunnel error: `{0}`")]
     Tunnel(#[from] exogress_tunnel::Error),
+
+    #[error("tunnel rejected with message: `{0}`")]
+    Rejected(String),
+
+    #[error("tunnel establish timeout")]
+    EstablishTimeout,
 }
 
 pub async fn spawn(
@@ -40,33 +49,51 @@ pub async fn spawn(
     resolver: TokioAsyncResolver,
     small_rng: &mut SmallRng,
 ) -> Result<(), Error> {
-    info!("connecting tunnel to server");
-    let gw_addrs = resolver.lookup_ip(gw_hostname.to_string()).await.unwrap();
-    let gw_addr = gw_addrs.iter().choose(small_rng).unwrap();
+    let (tunnel_id, stream) = tokio::time::timeout(Duration::from_secs(5), async {
+        info!("connecting tunnel to server");
+        let gw_addrs = resolver.lookup_ip(gw_hostname.to_string()).await.unwrap();
+        let gw_addr = gw_addrs.iter().choose(small_rng).unwrap();
 
-    let socket = TcpStream::connect(SocketAddr::new(gw_addr, 10714)).await?;
-    let _ = socket.set_nodelay(true);
-    let mut config = RustlsClientConfig::new();
-    config.root_store =
-        rustls_native_certs::load_native_certs().expect("could not load platform certs");
-    let config = TlsConnector::from(Arc::new(config));
-    let dnsname = DNSNameRef::try_from_ascii_str(&gw_hostname).unwrap();
+        let socket = TcpStream::connect(SocketAddr::new(gw_addr, 10714)).await?;
+        let _ = socket.set_nodelay(true);
+        let mut config = RustlsClientConfig::new();
+        config.root_store =
+            rustls_native_certs::load_native_certs().expect("could not load platform certs");
+        let config = TlsConnector::from(Arc::new(config));
+        let dnsname = DNSNameRef::try_from_ascii_str(&gw_hostname).unwrap();
 
-    info!("connect to {}, addr={}", gw_hostname, gw_addr);
+        info!("connect to {}, addr={}", gw_hostname, gw_addr);
 
-    let mut stream = config.connect(dnsname, socket).await?;
+        let mut stream = config.connect(dnsname, socket).await?;
 
-    let hello = TunnelHello {
-        config_name: client_config.read().name.clone(),
-        instance_id,
-    };
+        let hello = TunnelHello {
+            config_name: client_config.read().name.clone(),
+            instance_id,
+        };
 
-    let encoded_hello: Vec<u8> = bincode::serialize(&hello).unwrap();
+        let encoded_hello: Vec<u8> = bincode::serialize(&hello).unwrap();
+        stream
+            .write_u16(encoded_hello.len().try_into().unwrap())
+            .await?;
+        stream.write_all(&encoded_hello).await?;
 
-    stream
-        .write_u16(encoded_hello.len().try_into().unwrap())
-        .await?;
-    stream.write_all(&encoded_hello).await?;
+        let resp_len = stream.read_u16().await?.into();
+        let mut tunnel_hello_reponse = vec![0u8; resp_len];
+        stream.read_exact(&mut tunnel_hello_reponse).await?;
+        let hello_response = bincode::deserialize::<TunnelHelloResponse>(&tunnel_hello_reponse)
+            .map_err(exogress_tunnel::Error::DecodeError)?;
+
+        match hello_response {
+            TunnelHelloResponse::Ok { tunnel_id } => Ok((tunnel_id, stream)),
+            TunnelHelloResponse::Err { msg } => {
+                return Err(Error::Rejected(msg.into()));
+            }
+        }
+    })
+    .await
+    .map_err(|_| Error::EstablishTimeout)??;
+
+    info!("tunnel established. tunnel_id = {}", tunnel_id);
 
     client_listener(
         client_framed(stream),

@@ -37,11 +37,8 @@ macro_rules! ulid_type {
 
         impl Default for $x {
             fn default() -> Self {
-                use $crate::rand::Rng;
-
-                let mut rng = $crate::rand::thread_rng();
                 $x {
-                    inner: $crate::Ulid(rng.gen()),
+                    inner: $crate::Ulid::new(),
                 }
             }
         }
