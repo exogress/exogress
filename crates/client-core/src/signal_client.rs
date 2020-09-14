@@ -20,8 +20,7 @@ use exogress_signaling::TunnelRequest;
 
 use exogress_common_utils::ws_client;
 use exogress_common_utils::ws_client::connect_ws;
-use exogress_entities::{ClientId, LabelName, LabelValue};
-use hashbrown::HashMap;
+use exogress_entities::ClientId;
 use jsonwebtoken::EncodingKey;
 use parking_lot::RwLock;
 use std::sync::Arc;

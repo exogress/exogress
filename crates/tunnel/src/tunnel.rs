@@ -1,3 +1,4 @@
+use crate::connector::ConnectorRequest;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::fmt::Formatter;
@@ -9,7 +10,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::{io, mem};
 
-use bytes::{Bytes, BytesMut};
+use bytes::BytesMut;
 use futures::channel::{mpsc, oneshot};
 use futures::select_biased;
 use futures::stream::StreamExt;
@@ -27,7 +28,7 @@ use trust_dns_resolver::TokioAsyncResolver;
 
 use exogress_entities::{ConfigName, InstanceId};
 
-use crate::connector::{ConnectTarget, Connector};
+use crate::connector::{Compression, ConnectTarget, Connector};
 use crate::mixed_channel::to_async_rw;
 use crate::{Error, MixedChannel};
 use exogress_config_core::ClientConfig;
@@ -100,7 +101,8 @@ impl Slot {
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum CommonHeader {
-    Data,
+    DataPlain,
+    DataCompressed,
     Closed,
 }
 
@@ -129,39 +131,111 @@ pub struct ClientPacket {
     pub(crate) slot: Slot,
 }
 
-pub const COMMON_CODE_DATA: u8 = 0;
-pub const COMMON_CODE_CLOSED: u8 = 1;
+pub const COMMON_CODE_DATA_PLAIN: u8 = 0;
+pub const COMMON_CODE_DATA_COMPRESSED: u8 = 1;
+pub const COMMON_CODE_CLOSED: u8 = 2;
 
-pub const CLIENT_CODE_ACCEPTED: u8 = 2;
-pub const CLIENT_CODE_REJECTED: u8 = 3;
+pub const CLIENT_CODE_ACCEPTED: u8 = 3;
+pub const CLIENT_CODE_REJECTED: u8 = 4;
 
-pub const SERVER_CODE_CONNECT_REQUEST: u8 = 2;
+pub const SERVER_CODE_CONNECT_REQUEST: u8 = 3;
 
 pub const HEADER_BYTES: usize = 3;
 pub const CODE_BITS_RESERVED: u64 = 4;
 pub const CODE_MASK: u64 = (1 << CODE_BITS_RESERVED) - 1;
 pub const MAX_HEADER_CODE: u64 = 0xffffff;
-pub const MAX_SLOT_NUM: u64 = MAX_HEADER_CODE >> 4; //3 bytes - 4 bits, reserved for codes
+pub const MAX_SLOT_NUM: u64 = MAX_HEADER_CODE >> 4;
+//3 bytes - 4 bits, reserved for codes
 pub const MAX_PAYLOAD_LEN: usize = u16::MAX as usize;
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 
-#[derive(Debug, Clone)]
+enum Compressor {
+    Plain,
+    Zstd(zstd::block::Compressor),
+}
+
+impl Compressor {
+    pub fn new(compression: Compression) -> Self {
+        match compression {
+            Compression::Plain => Compressor::Plain,
+            Compression::Zstd => Compressor::Zstd(Default::default()),
+        }
+    }
+
+    pub fn compress(&mut self, buf: Vec<u8>) -> (Vec<u8>, bool) {
+        match self {
+            Compressor::Plain => (buf, false),
+            Compressor::Zstd(compressor) => {
+                let compressed = compressor.compress(&buf, 0).expect("Unable to compress");
+
+                // info!(
+                //     "compress ratio = {}",
+                //     buf.len() as f32 / compressed.len() as f32
+                // );
+                if compressed.len() < buf.len() {
+                    (compressed, true)
+                } else {
+                    (buf, false)
+                }
+            }
+        }
+    }
+}
+
+enum Decompressor {
+    Plain,
+    Zstd(zstd::block::Decompressor),
+}
+
+impl Decompressor {
+    pub fn new(compression: Compression) -> Self {
+        match compression {
+            Compression::Plain => Decompressor::Plain,
+            Compression::Zstd => Decompressor::Zstd(Default::default()),
+        }
+    }
+
+    pub fn decompress(&mut self, buf: Vec<u8>) -> Result<Vec<u8>, io::Error> {
+        match self {
+            Decompressor::Plain => Ok(buf),
+            Decompressor::Zstd(compressor) => compressor.decompress(&buf, buf.len() * 10),
+        }
+    }
+}
+
+struct Compressors {
+    compressor: Compressor,
+    decompressor: Decompressor,
+}
+
+impl Compressors {
+    pub fn new(compression: Compression) -> Self {
+        Compressors {
+            compressor: Compressor::new(compression),
+            decompressor: Decompressor::new(compression),
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct Connection {
     stop_handle: StopHandle<()>,
-    tunnel_to_tcp_tx: mpsc::Sender<Bytes>,
+    tunnel_to_tcp_tx: mpsc::Sender<Vec<u8>>,
+    compressors: Arc<Mutex<Compressors>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConnectRequestPayload {
     target: ConnectTarget,
+    compression: Compression,
 }
 
 // FIXME: abstraction is clearly broken here. we should not access client_config and
 // handle particular request
 pub async fn client_listener(
-    tunnel: impl Stream<Item = Result<(ServerPacket, BytesMut), Error>>
-        + Sink<(ClientPacket, Bytes), Error = Error>
+    tunnel: impl Stream<Item = Result<(ServerPacket, Vec<u8>), Error>>
+        + Sink<(ClientPacket, Vec<u8>), Error = Error>
         + Send
         + 'static,
     client_config: Arc<RwLock<ClientConfig>>,
@@ -189,7 +263,10 @@ pub async fn client_listener(
                     Ok((ServerPacket { header, slot }, payload)) => {
                         match header {
                             ServerHeader::ConnectRequest => {
-                                match bincode::deserialize::<ConnectRequestPayload>(&payload)?.target {
+                                let req = bincode::deserialize::<ConnectRequestPayload>(&payload)?;
+                                let target = req.target;
+                                let compression = req.compression;
+                                match target {
                                     ConnectTarget::Upstream(upstream) => {
                                         tokio::spawn({
                                             shadow_clone!(resolver);
@@ -271,29 +348,34 @@ pub async fn client_listener(
                                                             let (tunnel_to_tcp_tx, mut tunnel_to_tcp_rx) = mpsc::channel(4);
                                                             let (stop_handle, mut stop_wait) = stop_handle::<()>();
 
+                                                            let compressors = Arc::new(Mutex::new(Compressors::new(compression)));
+
                                                             storage.lock().insert(
                                                                 slot,
                                                                 Connection {
                                                                     stop_handle,
                                                                     tunnel_to_tcp_tx,
+                                                                    compressors: compressors.clone(),
                                                                 });
 
                                                             tokio::spawn({
                                                                 shadow_clone!(storage);
                                                                 shadow_clone!(outgoing_messages_tx);
                                                                 shadow_clone!(just_closed_by_us);
+                                                                shadow_clone!(compressors);
 
                                                                 async move {
                                                                     let (mut from_tcp, mut to_tcp) = tcp.split();
 
                                                                     let forward_to_tunnel = {
                                                                         shadow_clone!(outgoing_messages_tx);
+                                                                        shadow_clone!(compressors);
 
                                                                         async move {
                                                                             loop {
                                                                                 shadow_clone!(mut outgoing_messages_tx);
                                                                                 let mut buf = BytesMut::new();
-                                                                                buf.resize(0xffff, 0);
+                                                                                buf.resize(MAX_PAYLOAD_LEN, 0);
 
                                                                                 let num_bytes = from_tcp.read(&mut buf).await?;
 
@@ -303,11 +385,18 @@ pub async fn client_listener(
 
                                                                                 buf.truncate(num_bytes);
 
+                                                                                let buf = buf.freeze().to_vec();
+                                                                                let (maybe_compressed, is_compressed) = compressors
+                                                                                    .lock()
+                                                                                    .compressor
+                                                                                    .compress(buf);
+
                                                                                 outgoing_messages_tx.send((
                                                                                     ClientPacket {
-                                                                                        header: ClientHeader::Common(CommonHeader::Data),
+                                                                                        header: ClientHeader::Common(if is_compressed { CommonHeader::DataCompressed } else { CommonHeader::DataPlain }),
                                                                                         slot,
-                                                                                    }, buf.freeze().to_vec()
+                                                                                    },
+                                                                                    maybe_compressed
                                                                                 ))
                                                                                     .await
                                                                                     .map_err(|_|
@@ -319,12 +408,16 @@ pub async fn client_listener(
                                                                         }.fuse()
                                                                     };
 
-                                                                    let forward_to_connection = async move {
-                                                                        while let Some(buf) = tunnel_to_tcp_rx.next().await {
-                                                                            to_tcp.write_all(&buf).await?;
-                                                                        }
-                                                                        Ok::<(), io::Error>(())
-                                                                    }.fuse();
+                                                                    let forward_to_connection = {
+                                                                        shadow_clone!(compressors);
+
+                                                                        async move {
+                                                                            while let Some(buf) = tunnel_to_tcp_rx.next().await {
+                                                                                to_tcp.write_all(&buf).await?;
+                                                                            }
+                                                                            Ok::<(), io::Error>(())
+                                                                        }.fuse()
+                                                                    };
 
                                                                     let forwarders = {
                                                                         shadow_clone!(mut outgoing_messages_tx);
@@ -430,29 +523,41 @@ pub async fn client_listener(
                                                 let (tunnel_to_tcp_tx, mut tunnel_to_tcp_rx) = mpsc::channel(4);
                                                 let (stop_handle, mut stop_wait) = stop_handle::<()>();
 
+                                                let compressors = Arc::new(Mutex::new(Compressors::new(compression)));
+
                                                 storage.lock().insert(
                                                     slot,
                                                     Connection {
                                                         stop_handle,
                                                         tunnel_to_tcp_tx,
+                                                        compressors: compressors.clone(),
                                                     });
 
                                                 tokio::spawn({
+                                                    shadow_clone!(compressors);
+                                                    shadow_clone!(storage);
                                                     shadow_clone!(storage);
                                                     shadow_clone!(outgoing_messages_tx);
 
                                                     async move {
                                                         let forward_to_tunnel = {
                                                             shadow_clone!(mut outgoing_messages_tx);
+                                                            shadow_clone!(compressors);
 
                                                             async move {
                                                                 while let Some(buf) = rx.next().await {
                                                                     for chunk in buf.chunks(MAX_PAYLOAD_LEN) {
+                                                                        let buf = chunk.to_vec();
+                                                                        let (maybe_compressed, is_compressed) = compressors
+                                                                            .lock()
+                                                                            .compressor
+                                                                            .compress(buf);
+
                                                                         outgoing_messages_tx.send((
                                                                             ClientPacket {
-                                                                                header: ClientHeader::Common(CommonHeader::Data),
+                                                                                header: ClientHeader::Common(if is_compressed { CommonHeader::DataCompressed } else { CommonHeader::DataPlain }),
                                                                                 slot,
-                                                                            }, chunk.to_vec()
+                                                                            }, maybe_compressed
                                                                         ))
                                                                             .await
                                                                             .map_err(|_|
@@ -465,15 +570,19 @@ pub async fn client_listener(
                                                             }.fuse()
                                                         };
 
-                                                        let forward_to_internal_server = async move {
-                                                            while let Some(buf) = tunnel_to_tcp_rx.next().await {
-                                                                tx
-                                                                    .send(buf.to_vec())
-                                                                    .await
-                                                                    .map_err(|_| io::Error::new(io::ErrorKind::Other, "channel closed"))?
-                                                            }
-                                                            Ok::<(), io::Error>(())
-                                                        }.fuse();
+                                                        let forward_to_internal_server = {
+                                                            shadow_clone!(compressors);
+
+                                                            async move {
+                                                                while let Some(buf) = tunnel_to_tcp_rx.next().await {
+                                                                    tx
+                                                                        .send(buf)
+                                                                        .await
+                                                                        .map_err(|_| io::Error::new(io::ErrorKind::Other, "channel closed"))?
+                                                                }
+                                                                Ok::<(), io::Error>(())
+                                                            }.fuse()
+                                                        };
 
                                                         let forwarders = {
                                                             shadow_clone!(mut outgoing_messages_tx);
@@ -518,15 +627,31 @@ pub async fn client_listener(
                                     }
                                 }
                             }
-                            ServerHeader::Common(CommonHeader::Data) => {
-                                let maybe_slot = storage
+                            ServerHeader::Common(CommonHeader::DataPlain) | ServerHeader::Common(CommonHeader::DataCompressed) => {
+                                let maybe_slot_info = storage
                                     .lock()
                                     .get(&slot)
-                                    .cloned();
-                                if let Some(mut slot) = maybe_slot {
-                                    slot
-                                        .tunnel_to_tcp_tx
-                                        .send(payload.freeze())
+                                    .map(|client_connection| {
+                                        (client_connection
+                                             .tunnel_to_tcp_tx
+                                             .clone(),
+                                         client_connection
+                                             .compressors
+                                             .clone()
+                                        )
+                                    });
+                                if let Some((mut tunnel_to_tcp_tx, compressors)) = maybe_slot_info {
+                                    let decompressed = if let ServerHeader::Common(CommonHeader::DataCompressed) = header {
+                                        compressors
+                                            .lock()
+                                            .decompressor
+                                            .decompress(payload)?
+                                    } else {
+                                        payload
+                                    };
+
+                                    tunnel_to_tcp_tx
+                                        .send(decompressed)
                                         .await?;
                                 } else if just_closed_by_us.lock().get(&slot).is_none() {
                                     warn!("unknown slot {}, closing connection", slot);
@@ -564,7 +689,7 @@ pub async fn client_listener(
     }.fuse();
 
     let write_future = outgoing_messages_rx
-        .map(|a| Ok((a.0, a.1.into())))
+        .map(|a| Ok((a.0, a.1)))
         .forward(tx)
         .fuse();
 
@@ -579,7 +704,7 @@ pub async fn client_listener(
 }
 
 pub enum ServerConnection {
-    Initiating(oneshot::Sender<Box<dyn Conn>>),
+    Initiating((oneshot::Sender<Box<dyn Conn>>, Compression)),
     Established(Connection),
 }
 
@@ -605,9 +730,16 @@ impl ServerConnection {
         }
     }
 
-    fn take_initiating(self) -> Option<oneshot::Sender<Box<dyn Conn>>> {
+    fn get_compression(&self) -> Option<Compression> {
         match self {
-            ServerConnection::Initiating(tcp_stream) => Some(tcp_stream),
+            ServerConnection::Initiating((_, compression)) => Some(*compression),
+            ServerConnection::Established(_) => None,
+        }
+    }
+
+    fn take_initiating_stream(self) -> Option<oneshot::Sender<Box<dyn Conn>>> {
+        match self {
+            ServerConnection::Initiating((tcp_stream, _)) => Some(tcp_stream),
             ServerConnection::Established(_) => None,
         }
     }
@@ -618,8 +750,8 @@ pub trait Conn: AsyncRead + AsyncWrite + Send + Unpin + 'static {}
 impl<T> Conn for T where T: AsyncRead + AsyncWrite + Send + Unpin + 'static {}
 
 pub fn server_connection(
-    transport: impl Stream<Item = Result<(ClientPacket, BytesMut), Error>>
-        + Sink<(ServerPacket, Bytes), Error = Error>
+    transport: impl Stream<Item = Result<(ClientPacket, Vec<u8>), Error>>
+        + Sink<(ServerPacket, Vec<u8>), Error = Error>
         + Send
         + 'static,
 ) -> (
@@ -646,17 +778,21 @@ pub fn server_connection(
 
                 #[allow(unreachable_code)]
                 async move {
-                    while let Some((ready_async_channel_tx, connect_target)) =
-                        new_connection_req_rx.next().await
+                    while let Some(ConnectorRequest {
+                        tx: ready_async_channel_tx,
+                        target: connect_target,
+                        compression,
+                    }) = new_connection_req_rx.next().await
                     {
                         let slot: Slot = slot_counter
                             .fetch_add(1, Ordering::SeqCst)
                             .try_into()
                             .expect("slot overflow");
 
-                        storage
-                            .lock()
-                            .insert(slot, ServerConnection::Initiating(ready_async_channel_tx));
+                        storage.lock().insert(
+                            slot,
+                            ServerConnection::Initiating((ready_async_channel_tx, compression)),
+                        );
 
                         outgoing_messages_tx
                             .send((
@@ -666,6 +802,7 @@ pub fn server_connection(
                                 },
                                 bincode::serialize(&ConnectRequestPayload {
                                     target: connect_target,
+                                    compression,
                                 })
                                 .unwrap(),
                             ))
@@ -693,14 +830,18 @@ pub fn server_connection(
                                         match s.entry(slot) {
                                             Entry::Occupied(mut e) => {
                                                 if e.get().is_initiating() {
-                                                    let (tunnel_to_tcp_tx, mut tunnel_to_channel) = mpsc::channel::<Bytes>(4);
+                                                    let (tunnel_to_tcp_tx, mut tunnel_to_channel) = mpsc::channel::<Vec<u8>>(4);
                                                     let (stop_handle, mut stop_wait) = stop_handle::<()>();
+
+                                                    let compression = e.get().get_compression().unwrap();
+
+                                                    let compressors = Arc::new(Mutex::new(Compressors::new(compression)));
 
                                                     let ready_connection_resolver = mem::replace(e.get_mut(), ServerConnection::Established(Connection {
                                                         stop_handle,
                                                         tunnel_to_tcp_tx,
-                                                    })).take_initiating().unwrap();
-
+                                                        compressors: compressors.clone(),
+                                                    })).take_initiating_stream().unwrap();
 
                                                     let (channel, mut from_tunnel_tx, mut to_tunnel_rx) = to_async_rw(16, 16);
 
@@ -710,23 +851,31 @@ pub fn server_connection(
 
                                                     tokio::spawn({
                                                         shadow_clone!(storage);
+                                                        shadow_clone!(compressors);
                                                         shadow_clone!(outgoing_messages_tx);
+                                                        shadow_clone!(just_closed_by_us);
                                                         shadow_clone!(just_closed_by_us);
 
                                                         async move {
                                                             let forward_to_tunnel = {
                                                                 shadow_clone!(outgoing_messages_tx);
+                                                                shadow_clone!(compressors);
 
                                                                 async move {
                                                                     while let Some(buf) = to_tunnel_rx.next().await {
                                                                         for chunk in buf.chunks(MAX_PAYLOAD_LEN) {
                                                                             shadow_clone!(mut outgoing_messages_tx);
 
+                                                                            let (maybe_compressed, is_compressed) = compressors
+                                                                                .lock()
+                                                                                .compressor
+                                                                                .compress(chunk.to_vec());
+
                                                                             outgoing_messages_tx.send((
                                                                                 ServerPacket {
-                                                                                    header: ServerHeader::Common(CommonHeader::Data),
+                                                                                    header: ServerHeader::Common(if is_compressed { CommonHeader::DataCompressed } else { CommonHeader::DataPlain }),
                                                                                     slot,
-                                                                                }, chunk.to_vec()
+                                                                                }, maybe_compressed
                                                                             )).await
                                                                                 .map_err(|_|
                                                                                     io::Error::new(io::ErrorKind::Other, "channel closed")
@@ -738,16 +887,20 @@ pub fn server_connection(
                                                                 }.fuse()
                                                             };
 
-                                                            let forward_to_connection = async move {
-                                                                while let Some(buf) = tunnel_to_channel.next().await {
-                                                                    from_tunnel_tx
-                                                                        .send(buf.to_vec())
-                                                                        .await
-                                                                        .map_err(|_| io::Error::new(io::ErrorKind::Other, "tunnel closed: could not send to from_tunnel_tx"))
-                                                                        ?;
-                                                                }
-                                                                Ok::<(), io::Error>(())
-                                                            }.fuse();
+                                                            let forward_to_connection = {
+                                                                shadow_clone!(compressors);
+
+                                                                async move {
+                                                                    while let Some(buf) = tunnel_to_channel.next().await {
+                                                                        from_tunnel_tx
+                                                                            .send(buf)
+                                                                            .await
+                                                                            .map_err(|_| io::Error::new(io::ErrorKind::Other, "tunnel closed: could not send to from_tunnel_tx"))
+                                                                            ?;
+                                                                    }
+                                                                    Ok::<(), io::Error>(())
+                                                                }.fuse()
+                                                            };
 
                                                             let forwarders = {
                                                                 shadow_clone!(mut outgoing_messages_tx);
@@ -832,17 +985,27 @@ pub fn server_connection(
                                             }
                                         }
                                     }
-                                    ClientHeader::Common(CommonHeader::Data) => {
+                                    ClientHeader::Common(CommonHeader::DataPlain) |  ClientHeader::Common(CommonHeader::DataCompressed) => {
                                         let res = storage
                                             .lock()
                                             .get(&slot)
                                             .map(|r| r.established().cloned());
                                         if let Some(slot) = res {
                                             if let Some(conn) = slot {
+                                                let decompressed = if let ClientHeader::Common(CommonHeader::DataCompressed) = header {
+                                                    conn
+                                                        .compressors
+                                                        .lock()
+                                                        .decompressor
+                                                        .decompress(payload)?
+                                                } else {
+                                                    payload
+                                                };
+
                                                 conn
                                                     .tunnel_to_tcp_tx
                                                     .clone()
-                                                    .send(payload.freeze())
+                                                    .send(decompressed)
                                                     .await?;
                                             } else {
                                                 warn!("received data while connection is not in established state");
@@ -881,10 +1044,7 @@ pub fn server_connection(
                 }
             }.fuse();
 
-            let write_future = outgoing_messages_rx
-                .map(|(a, b)| Ok((a, b.into())))
-                .forward(tx)
-                .fuse();
+            let write_future = outgoing_messages_rx.map(Ok).forward(tx).fuse();
 
             pin_mut!(read_future);
             pin_mut!(write_future);
@@ -994,28 +1154,40 @@ mod test {
 
                 {
                     let mut tunneled1 = connector
-                        .retrieve_connection("backend.upstream.exg".parse().unwrap())
+                        .retrieve_connection(
+                            "backend.upstream.exg".parse().unwrap(),
+                            Compression::Zstd,
+                        )
                         .await
                         .unwrap();
                     tunneled1.write_all(&buf1).await.unwrap();
                 }
 
                 let mut tunneled2 = connector
-                    .retrieve_connection("backend.upstream.exg".parse().unwrap())
+                    .retrieve_connection(
+                        "backend.upstream.exg".parse().unwrap(),
+                        Compression::Plain,
+                    )
                     .await
                     .unwrap();
                 tunneled2.write_all(&buf2).await.unwrap();
 
                 {
                     let _tunneled3 = connector
-                        .retrieve_connection("backend.upstream.exg".parse().unwrap())
+                        .retrieve_connection(
+                            "backend.upstream.exg".parse().unwrap(),
+                            Compression::Zstd,
+                        )
                         .await
                         .unwrap();
                 }
 
                 {
                     let mut tunneled4 = connector
-                        .retrieve_connection("backend.upstream.exg".parse().unwrap())
+                        .retrieve_connection(
+                            "backend.upstream.exg".parse().unwrap(),
+                            Compression::Plain,
+                        )
                         .await
                         .unwrap();
                     tunneled4.write_all(&buf4).await.unwrap();

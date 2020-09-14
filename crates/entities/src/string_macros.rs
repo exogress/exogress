@@ -1,4 +1,4 @@
-pub const MIN_STRING_IDENTIFIER_LENGTH: usize = 1;
+pub const MIN_STRING_IDENTIFIER_LENGTH: usize = 2;
 pub const MAX_STRING_IDENTIFIER_LENGTH: usize = 46;
 
 #[derive(thiserror::Error, Debug)]
@@ -177,7 +177,7 @@ mod test {
     #[test]
     pub fn test_validation() {
         validate_test_identifier("asd!").err().unwrap();
-        validate_test_identifier("asd").err().unwrap();
+        validate_test_identifier("a").err().unwrap();
         validate_test_identifier("asdf").unwrap();
         validate_test_identifier("asdf-gh").unwrap();
         validate_test_identifier("asdf-gh_asf").unwrap();
@@ -186,13 +186,13 @@ mod test {
 
     #[test]
     pub fn parse_string() {
-        TestIdentifier::from_str("asd").err().unwrap();
+        TestIdentifier::from_str("a").err().unwrap();
         TestIdentifier::from_str("asdf-gh_asf").unwrap();
     }
 
     #[test]
     pub fn parse_bytes() {
-        TestIdentifier::try_from(Bytes::from_static("asd".as_bytes()))
+        TestIdentifier::try_from(Bytes::from_static("a".as_bytes()))
             .err()
             .unwrap();
         TestIdentifier::try_from(Bytes::from_static("asd-asdasd-aa-1123".as_bytes())).unwrap();
@@ -205,7 +205,7 @@ mod test {
 
     #[test]
     pub fn parse_serde() {
-        serde_json::from_str::<Container>(r#"{"id": "asd"}"#)
+        serde_json::from_str::<Container>(r#"{"id": "a"}"#)
             .err()
             .unwrap();
         serde_json::from_str::<Container>(r#"{"id": "asd-asd-123"}"#).unwrap();

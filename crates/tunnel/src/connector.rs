@@ -14,10 +14,16 @@ use crate::TunneledConnection;
 use core::fmt;
 use std::str::FromStr;
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum Compression {
+    Plain,
+    Zstd,
+}
+
 /// Connect through established TCP tunnel
 #[derive(Clone)]
 pub struct Connector {
-    req_tx: mpsc::Sender<(oneshot::Sender<Box<dyn Conn + 'static>>, ConnectTarget)>,
+    req_tx: mpsc::Sender<ConnectorRequest>,
 }
 
 impl fmt::Debug for Connector {
@@ -94,28 +100,40 @@ impl FromStr for ConnectTarget {
     }
 }
 
+pub struct ConnectorRequest {
+    pub tx: oneshot::Sender<Box<dyn Conn + 'static>>,
+    pub target: ConnectTarget,
+    pub compression: Compression,
+}
+
 impl Connector {
-    pub fn new(
-        req_tx: mpsc::Sender<(oneshot::Sender<Box<dyn Conn + 'static>>, ConnectTarget)>,
-    ) -> Self {
+    pub fn new(req_tx: mpsc::Sender<ConnectorRequest>) -> Self {
         Connector { req_tx }
     }
 
     pub fn retrieve_connection(
         &self,
         connect_target: ConnectTarget,
+        compression: Compression,
     ) -> BoxFuture<'static, Result<TunneledConnection, crate::Error>> {
         let mut req_tx = self.req_tx.clone();
 
         async move {
             let (wait_tx, wait_rx) = oneshot::channel();
 
-            req_tx.send((wait_tx, connect_target)).await.map_err(|_| {
-                io::Error::new(
-                    io::ErrorKind::Other,
-                    "tunnel already closed: could not invoke request for new connection",
-                )
-            })?;
+            req_tx
+                .send(ConnectorRequest {
+                    tx: wait_tx,
+                    target: connect_target,
+                    compression,
+                })
+                .await
+                .map_err(|_| {
+                    io::Error::new(
+                        io::ErrorKind::Other,
+                        "tunnel already closed: could not invoke request for new connection",
+                    )
+                })?;
 
             let c = wait_rx.await.map_err(|_| {
                 io::Error::new(
@@ -143,6 +161,7 @@ impl tower::Service<Uri> for Connector {
     type Error = crate::Error;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
+    // TODO: implement poll_ready?
     fn poll_ready(&mut self, _cx: &mut task::Context<'_>) -> Poll<Result<(), Self::Error>> {
         Poll::Ready(Ok(()))
     }
@@ -150,7 +169,7 @@ impl tower::Service<Uri> for Connector {
     fn call(&mut self, dst: Uri) -> Self::Future {
         let target_result: Result<ConnectTarget, crate::Error> = extract_connect_target(dst);
         match target_result {
-            Ok(target) => self.retrieve_connection(target),
+            Ok(target) => self.retrieve_connection(target, Compression::Zstd),
             Err(e) => futures::future::ready(Err(e)).boxed(),
         }
     }

@@ -147,7 +147,7 @@ mod test {
     use super::*;
     use bytes::Bytes;
     use exogress_config_core::{
-        ClientConfig, ClientConfigRevision, ConfigVersion, UpstreamDefinition, CURRENT_VERSION,
+        ClientConfig, ClientConfigRevision, UpstreamDefinition, CURRENT_VERSION,
     };
     use futures::{AsyncReadExt, AsyncWriteExt};
     use parking_lot::lock_api::RwLock;

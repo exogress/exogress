@@ -255,7 +255,7 @@ impl Client {
 
                         async move {
                             let mut backoff =
-                                Backoff::new(Duration::from_millis(5), Duration::from_secs(20));
+                                Backoff::new(Duration::from_millis(100), Duration::from_secs(20));
 
                             let retry = Arc::new(AtomicUsize::new(0));
 

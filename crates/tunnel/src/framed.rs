@@ -16,7 +16,8 @@ fn parse_client_header(value: u64) -> Result<ClientPacket, Error> {
     let code = (value & CODE_MASK).try_into()?;
 
     let client_header = match code {
-        COMMON_CODE_DATA => ClientHeader::Common(CommonHeader::Data),
+        COMMON_CODE_DATA_PLAIN => ClientHeader::Common(CommonHeader::DataPlain),
+        COMMON_CODE_DATA_COMPRESSED => ClientHeader::Common(CommonHeader::DataCompressed),
         COMMON_CODE_CLOSED => ClientHeader::Common(CommonHeader::Closed),
         CLIENT_CODE_ACCEPTED => ClientHeader::Accepted,
         CLIENT_CODE_REJECTED => ClientHeader::Rejected,
@@ -34,7 +35,8 @@ fn parse_server_header(value: u64) -> Result<ServerPacket, Error> {
     let code = (value & CODE_MASK).try_into()?;
 
     let server_header = match code {
-        COMMON_CODE_DATA => ServerHeader::Common(CommonHeader::Data),
+        COMMON_CODE_DATA_PLAIN => ServerHeader::Common(CommonHeader::DataPlain),
+        COMMON_CODE_DATA_COMPRESSED => ServerHeader::Common(CommonHeader::DataCompressed),
         COMMON_CODE_CLOSED => ServerHeader::Common(CommonHeader::Closed),
         SERVER_CODE_CONNECT_REQUEST => ServerHeader::ConnectRequest,
         code => return Err(Error::UnknownCode { code }),
@@ -54,7 +56,8 @@ fn encode_server_header(slot: Slot, header: ServerHeader) -> Result<u64, Error> 
     assert!(slot_val <= MAX_SLOT_NUM);
 
     let code = match header {
-        Common(Data) => COMMON_CODE_DATA,
+        Common(DataPlain) => COMMON_CODE_DATA_PLAIN,
+        Common(DataCompressed) => COMMON_CODE_DATA_COMPRESSED,
         Common(Closed) => COMMON_CODE_CLOSED,
         ConnectRequest { .. } => SERVER_CODE_CONNECT_REQUEST,
     };
@@ -72,7 +75,8 @@ fn encode_client_header(slot: Slot, header: ClientHeader) -> Result<u64, Error> 
     assert!(slot_val <= MAX_HEADER_CODE);
 
     let code = match header {
-        Common(Data) => COMMON_CODE_DATA,
+        Common(DataPlain) => COMMON_CODE_DATA_PLAIN,
+        Common(DataCompressed) => COMMON_CODE_DATA_COMPRESSED,
         Common(Closed) => COMMON_CODE_CLOSED,
         Accepted => CLIENT_CODE_ACCEPTED,
         Rejected => CLIENT_CODE_REJECTED,
@@ -97,22 +101,25 @@ fn length_delimited(
 #[inline]
 pub fn server_framed(
     io: impl AsyncRead + AsyncWrite + Send + 'static,
-) -> impl Stream<Item = Result<(ClientPacket, BytesMut), Error>>
-       + Sink<(ServerPacket, Bytes), Error = Error>
+) -> impl Stream<Item = Result<(ClientPacket, Vec<u8>), Error>>
+       + Sink<(ServerPacket, Vec<u8>), Error = Error>
        + Send
        + 'static {
     length_delimited(io)
         .err_into()
         .and_then(|mut bytes| async move {
             let mut header = bytes.split_to(HEADER_BYTES);
-            Ok((parse_client_header(header.get_uint(HEADER_BYTES))?, bytes))
+            Ok((
+                parse_client_header(header.get_uint(HEADER_BYTES))?,
+                bytes.to_vec(),
+            ))
         })
-        .with(|(packet, bytes): (ServerPacket, Bytes)| async move {
+        .with(|(packet, bytes): (ServerPacket, Vec<u8>)| async move {
             let mut out = BytesMut::with_capacity(bytes.len() + HEADER_BYTES);
             let header_bytes = encode_server_header(packet.slot, packet.header)?;
 
             out.put_uint(header_bytes, 3);
-            out.put(bytes);
+            out.put_slice(bytes.as_slice());
 
             Ok(out.freeze())
         })
@@ -121,22 +128,23 @@ pub fn server_framed(
 #[inline]
 pub fn client_framed(
     io: impl AsyncRead + AsyncWrite + Send + 'static,
-) -> impl Stream<Item = Result<(ServerPacket, BytesMut), Error>>
-       + Sink<(ClientPacket, Bytes), Error = Error>
+) -> impl Stream<Item = Result<(ServerPacket, Vec<u8>), Error>>
+       + Sink<(ClientPacket, Vec<u8>), Error = Error>
        + Send
        + 'static {
     length_delimited(io)
         .err_into()
         .and_then(|mut bytes| async move {
             let mut header = bytes.split_to(HEADER_BYTES);
-            Ok((parse_server_header(header.get_uint(3))?, bytes))
+            Ok((parse_server_header(header.get_uint(3))?, bytes.to_vec()))
         })
-        .with(|(packet, bytes): (ClientPacket, Bytes)| async move {
+        .with(|(packet, bytes): (ClientPacket, Vec<u8>)| async move {
             let mut out = BytesMut::with_capacity(bytes.len() + HEADER_BYTES);
             let header_bytes = encode_client_header(packet.slot, packet.header)?;
 
             out.put_uint(header_bytes, 3);
-            out.put(bytes);
+            out.put_slice(bytes.as_slice());
+
             Ok(out.freeze())
         })
 }
@@ -150,7 +158,7 @@ mod test {
     fn test_server_headers() {
         let server_headers = vec![
             ServerHeader::ConnectRequest,
-            ServerHeader::Common(CommonHeader::Data),
+            ServerHeader::Common(CommonHeader::DataPlain),
             ServerHeader::Common(CommonHeader::Closed),
         ];
 
@@ -173,7 +181,7 @@ mod test {
         let client_headers = vec![
             ClientHeader::Accepted,
             ClientHeader::Rejected,
-            ClientHeader::Common(CommonHeader::Data),
+            ClientHeader::Common(CommonHeader::DataPlain),
             ClientHeader::Common(CommonHeader::Closed),
         ];
 
