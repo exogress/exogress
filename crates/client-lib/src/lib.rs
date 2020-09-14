@@ -4,12 +4,12 @@ use tokio::runtime::{Handle, Runtime};
 use trust_dns_resolver::TokioAsyncResolver;
 
 use exogress_client_core::Client;
-use exogress_entities::{tracing, ClientId};
+use exogress_entities::{tracing, AccessKeyId};
 use tracing::Level;
 
 pub fn spawn(
-    client_id: String,
-    client_secret: String,
+    access_key_id: String,
+    secret_access_key: String,
     account: String,
     project: String,
 ) -> Result<(), anyhow::Error> {
@@ -28,12 +28,12 @@ pub fn spawn(
 
             Ok::<_, anyhow::Error>(
                 Client::builder()
-                    .client_id(
-                        client_id
-                            .parse::<ClientId>()
+                    .access_key_id(
+                        access_key_id
+                            .parse::<AccessKeyId>()
                             .map_err(|e| anyhow::Error::msg(e.to_string()))?,
                     )
-                    .client_secret(client_secret)
+                    .secret_access_key(secret_access_key)
                     .account(account)
                     .project(project)
                     .build()

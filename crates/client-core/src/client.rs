@@ -17,7 +17,7 @@ use trust_dns_resolver::TokioAsyncResolver;
 use url::Url;
 
 use exogress_config_core::{ClientConfig, Config};
-use exogress_entities::{ClientId, LabelName, LabelValue};
+use exogress_entities::{AccessKeyId, LabelName, LabelValue};
 
 use crate::{signal_client, tunnel};
 
@@ -46,10 +46,10 @@ pub struct Client {
     pub watch_config: bool,
 
     #[builder(setter(into))]
-    pub client_id: ClientId,
+    pub access_key_id: AccessKeyId,
 
     #[builder(setter(into))]
-    pub client_secret: String,
+    pub secret_access_key: String,
 
     #[builder(setter(into))]
     pub project: String,
@@ -77,7 +77,7 @@ pub enum Error {
 }
 
 #[derive(Debug, thiserror::Error)]
-pub enum ClientSecretError {
+pub enum SecretAccessKeyError {
     #[error("PEM parse error")]
     Jwt(#[from] jsonwebtoken::errors::Error),
 
@@ -85,12 +85,12 @@ pub enum ClientSecretError {
     Base58(#[from] bs58::decode::Error),
 }
 
-fn client_secret_private_key(
-    client_secret: &str,
-) -> Result<jsonwebtoken::EncodingKey, ClientSecretError> {
+fn secret_access_key_private_key(
+    secret_access_key: &str,
+) -> Result<jsonwebtoken::EncodingKey, SecretAccessKeyError> {
     let pem = pem::Pem {
         tag: "PRIVATE KEY".to_string(),
-        contents: bs58::decode(client_secret)
+        contents: bs58::decode(secret_access_key)
             .with_alphabet(bs58::alphabet::FLICKR)
             .into_vec()?,
     };
@@ -100,8 +100,8 @@ fn client_secret_private_key(
 
 impl Client {
     pub async fn spawn(self, resolver: TokioAsyncResolver) -> Result<(), anyhow::Error> {
-        let jwt_encoding_key = client_secret_private_key(self.client_secret.as_str())
-            .context("client_secret error")?;
+        let jwt_encoding_key = secret_access_key_private_key(self.secret_access_key.as_str())
+            .context("secret_access_key error")?;
 
         let instance_id_storage = Arc::new(Mutex::new(None));
 
@@ -220,7 +220,7 @@ impl Client {
                 url,
                 send_tx,
                 recv_rx,
-                self.client_id,
+                self.access_key_id,
                 jwt_encoding_key,
                 Duration::from_millis(50),
                 Duration::from_secs(30),
@@ -348,8 +348,8 @@ mod tests {
 
         let bg = tokio::spawn(async move {
             let f = Client::builder()
-                .client_id(ClientId::new())
-                .client_secret("client_secret".to_string())
+                .access_key_id(AccessKeyId::new())
+                .secret_access_key("secret_access_key".to_string())
                 .account("account".to_string())
                 .project("project".to_string())
                 .labels(

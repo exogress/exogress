@@ -20,7 +20,7 @@ use exogress_signaling::{SignalerHandshakeResponse, TunnelRequest};
 
 use exogress_common_utils::ws_client;
 use exogress_common_utils::ws_client::connect_ws;
-use exogress_entities::{ClientId, InstanceId};
+use exogress_entities::{AccessKeyId, InstanceId};
 use jsonwebtoken::EncodingKey;
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
@@ -53,7 +53,7 @@ pub async fn spawn(
     url: Url,
     mut tx: mpsc::Sender<TunnelRequest>,
     mut rx: mpsc::Receiver<String>,
-    client_id: ClientId,
+    access_key_id: AccessKeyId,
     jwt_encoding_key: EncodingKey,
     backoff_min_duration: Duration,
     backoff_max_duration: Duration,
@@ -68,7 +68,7 @@ pub async fn spawn(
             &instance_id_storage,
             &mut config_rx,
             &current_config,
-            &client_id,
+            &access_key_id,
             &jwt_encoding_key,
             backoff_handle,
             &url,
@@ -147,7 +147,7 @@ async fn do_conection(
     instance_id_storage: &Arc<Mutex<Option<InstanceId>>>,
     config_rx: &mut Receiver<ClientConfig>,
     current_config_storage: &RwLock<ClientConfig>,
-    client_id: &ClientId,
+    access_key_id: &AccessKeyId,
     jwt_encoding_key: &EncodingKey,
     backoff_handle: BackoffHandle,
     url: &Url,
@@ -164,7 +164,7 @@ async fn do_conection(
 
             async move {
                 let claims = Claims {
-                    iss: client_id.to_string().into(),
+                    iss: access_key_id.to_string().into(),
                 };
 
                 let authorization = jsonwebtoken::encode(
