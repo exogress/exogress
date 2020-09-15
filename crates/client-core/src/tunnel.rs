@@ -5,7 +5,7 @@ use std::net::SocketAddr;
 
 use core::time::Duration;
 use exogress_config_core::ClientConfig;
-use exogress_entities::InstanceId;
+use exogress_entities::{AccountName, InstanceId, ProjectName};
 use exogress_tunnel::{
     client_framed, client_listener, MixedChannel, TunnelHello, TunnelHelloResponse,
 };
@@ -41,8 +41,11 @@ pub enum Error {
     EstablishTimeout,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn spawn(
     client_config: Arc<RwLock<ClientConfig>>,
+    account_name: AccountName,
+    project_name: ProjectName,
     instance_id: InstanceId,
     gw_hostname: String,
     internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
@@ -68,7 +71,11 @@ pub async fn spawn(
 
         let hello = TunnelHello {
             config_name: client_config.read().name.clone(),
+            account_name,
+            project_name,
             instance_id,
+            access_key_id: Default::default(),
+            secret_access_key: "".to_string(),
         };
 
         let encoded_hello: Vec<u8> = bincode::serialize(&hello).unwrap();

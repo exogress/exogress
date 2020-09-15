@@ -17,7 +17,7 @@ use trust_dns_resolver::TokioAsyncResolver;
 use url::Url;
 
 use exogress_config_core::{ClientConfig, Config};
-use exogress_entities::{AccessKeyId, LabelName, LabelValue};
+use exogress_entities::{AccessKeyId, AccountName, LabelName, LabelValue, ProjectName};
 
 use crate::{signal_client, tunnel};
 
@@ -100,6 +100,8 @@ fn secret_access_key_private_key(
 
 impl Client {
     pub async fn spawn(self, resolver: TokioAsyncResolver) -> Result<(), anyhow::Error> {
+        let project_name: ProjectName = self.project.parse()?;
+        let account_name: AccountName = self.account.parse()?;
         let jwt_encoding_key = secret_access_key_private_key(self.secret_access_key.as_str())
             .context("secret_access_key error")?;
 
@@ -244,6 +246,8 @@ impl Client {
             {
                 for _ in 0..max_tunnels_count {
                     tokio::spawn({
+                        shadow_clone!(account_name);
+                        shadow_clone!(project_name);
                         shadow_clone!(instance_id_storage);
                         shadow_clone!(hostname);
                         shadow_clone!(current_config);
@@ -283,6 +287,8 @@ impl Client {
                                     if let Some(instance_id) = maybe_instance_id {
                                         let r = tunnel::spawn(
                                             current_config.clone(),
+                                            account_name.clone(),
+                                            project_name.clone(),
                                             instance_id,
                                             hostname.clone(),
                                             internal_server_connector.clone(),
