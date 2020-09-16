@@ -482,6 +482,7 @@ dependencies = [
  "hostname",
  "http",
  "jsonwebtoken",
+ "mime_guess",
  "notify",
  "parking_lot",
  "pem",
