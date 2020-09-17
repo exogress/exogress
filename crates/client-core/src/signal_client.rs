@@ -18,6 +18,7 @@ use exogress_common_utils::backoff::{Backoff, BackoffHandle};
 use exogress_config_core::ClientConfig;
 use exogress_signaling::{SignalerHandshakeResponse, TunnelRequest};
 
+use crate::TunnelsStorage;
 use exogress_common_utils::ws_client;
 use exogress_common_utils::ws_client::connect_ws;
 use exogress_entities::{AccessKeyId, InstanceId};
@@ -50,6 +51,7 @@ pub async fn spawn(
     instance_id_storage: Arc<Mutex<Option<InstanceId>>>,
     current_config: Arc<RwLock<ClientConfig>>,
     mut config_rx: Receiver<ClientConfig>,
+    tunnels: TunnelsStorage,
     url: Url,
     mut tx: mpsc::Sender<TunnelRequest>,
     mut rx: mpsc::Receiver<String>,
@@ -98,6 +100,8 @@ pub async fn spawn(
                 warn!("Error on signal server connection: {}", e);
             }
         }
+
+        tunnels.lock().clear();
     }
 
     Ok(())
