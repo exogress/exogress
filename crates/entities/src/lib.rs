@@ -5,6 +5,7 @@ pub use smartstring::alias::String;
 pub use tracing;
 pub use ulid::{self, Ulid, ULID_LEN};
 
+pub use config_id::ConfigId;
 pub use label_value::LabelValue;
 pub use string_macros::{
     StringIdentifierError, StringIdentifierParseError, MAX_STRING_IDENTIFIER_LENGTH,
@@ -12,6 +13,7 @@ pub use string_macros::{
 };
 pub use ulid_macro::UlidIdentifierParseError;
 
+mod config_id;
 mod label_value;
 mod string_macros;
 mod ulid_macro;

@@ -30,7 +30,7 @@ use tracing_futures::Instrument;
 use crate::internal_server::internal_server;
 use exogress_common_utils::backoff::Backoff;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use tokio::time::delay_for;
@@ -238,75 +238,84 @@ impl Client {
 
         tokio::spawn(internal_server(new_conn_rx));
 
+        let mut tunnels = HashSet::new();
+
         let tunnel_requests_processor = tokio::spawn(async move {
             while let Some(TunnelRequest {
                 hostname,
                 max_tunnels_count,
             }) = send_rx.next().await
             {
-                for _ in 0..max_tunnels_count {
-                    tokio::spawn({
-                        shadow_clone!(account_name);
-                        shadow_clone!(project_name);
-                        shadow_clone!(instance_id_storage);
-                        shadow_clone!(hostname);
-                        shadow_clone!(current_config);
-                        shadow_clone!(resolver);
-                        shadow_clone!(mut internal_server_connector);
-                        shadow_clone!(mut small_rng);
+                if !tunnels.contains(&hostname) {
+                    tunnels.insert(hostname.clone());
 
-                        async move {
-                            let mut backoff =
-                                Backoff::new(Duration::from_millis(100), Duration::from_secs(20));
+                    for tunnel_index in 0..max_tunnels_count {
+                        tokio::spawn({
+                            shadow_clone!(account_name);
+                            shadow_clone!(project_name);
+                            shadow_clone!(instance_id_storage);
+                            shadow_clone!(hostname);
+                            shadow_clone!(current_config);
+                            shadow_clone!(resolver);
+                            shadow_clone!(mut internal_server_connector);
+                            shadow_clone!(mut small_rng);
 
-                            let retry = Arc::new(AtomicUsize::new(0));
-
-                            loop {
-                                info!(
-                                    "try to establish tunnel attempt {}",
-                                    retry.load(Ordering::SeqCst)
+                            async move {
+                                let mut backoff = Backoff::new(
+                                    Duration::from_millis(100),
+                                    Duration::from_secs(20),
                                 );
-                                let backoff_handle = backoff.next().await.unwrap();
 
-                                let existence = Arc::new(Mutex::new(()));
-                                let weak = Arc::downgrade(&existence);
-                                tokio::spawn({
-                                    let retry = retry.clone();
+                                let retry = Arc::new(AtomicUsize::new(0));
 
-                                    async move {
-                                        delay_for(Duration::from_secs(10)).await;
-                                        if weak.upgrade().is_some() {
-                                            debug!("Tunnel is ok. Reset backoff");
-                                            backoff_handle.reset();
-                                            retry.store(0, Ordering::SeqCst);
+                                loop {
+                                    info!(
+                                        "try to establish tunnel {} attempt {}",
+                                        tunnel_index,
+                                        retry.load(Ordering::SeqCst)
+                                    );
+                                    let backoff_handle = backoff.next().await.unwrap();
+
+                                    let existence = Arc::new(Mutex::new(()));
+                                    let weak = Arc::downgrade(&existence);
+                                    tokio::spawn({
+                                        let retry = retry.clone();
+
+                                        async move {
+                                            delay_for(Duration::from_secs(10)).await;
+                                            if weak.upgrade().is_some() {
+                                                debug!("Tunnel is ok. Reset backoff");
+                                                backoff_handle.reset();
+                                                retry.store(0, Ordering::SeqCst);
+                                            }
                                         }
-                                    }
-                                });
-                                {
-                                    let maybe_instance_id = *instance_id_storage.lock();
-                                    if let Some(instance_id) = maybe_instance_id {
-                                        let r = tunnel::spawn(
-                                            current_config.clone(),
-                                            account_name.clone(),
-                                            project_name.clone(),
-                                            instance_id,
-                                            hostname.clone(),
-                                            internal_server_connector.clone(),
-                                            resolver.clone(),
-                                            &mut small_rng,
-                                        )
-                                        .await;
-                                        if let Err(e) = r {
-                                            error!("error in tunnel {}", e);
+                                    });
+                                    {
+                                        let maybe_instance_id = *instance_id_storage.lock();
+                                        if let Some(instance_id) = maybe_instance_id {
+                                            let r = tunnel::spawn(
+                                                current_config.clone(),
+                                                account_name.clone(),
+                                                project_name.clone(),
+                                                instance_id,
+                                                hostname.clone(),
+                                                internal_server_connector.clone(),
+                                                resolver.clone(),
+                                                &mut small_rng,
+                                            )
+                                            .await;
+                                            if let Err(e) = r {
+                                                error!("error in tunnel {}", e);
+                                            }
                                         }
+                                        mem::drop(existence);
                                     }
-                                    mem::drop(existence);
+
+                                    retry.fetch_add(1, Ordering::SeqCst);
                                 }
-
-                                retry.fetch_add(1, Ordering::SeqCst);
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             }
         })
