@@ -336,9 +336,11 @@ impl Client {
                                         if let Entry::Occupied(mut tunnel_entry) =
                                             locked.entry(hostname.clone())
                                         {
+                                            info!("tunnel index {} closed", tunnel_index);
                                             tunnel_entry.get_mut().remove(&tunnel_index);
 
                                             if tunnel_entry.get().is_empty() {
+                                                info!("tunnels finally empty. remove whole entry");
                                                 tunnel_entry.remove_entry();
                                             }
                                         }
@@ -346,6 +348,8 @@ impl Client {
                                 }
                             });
                         }
+                    } else {
+                        warn!("skip request to connect to {}: already connected", hostname);
                     }
                 }
             }
