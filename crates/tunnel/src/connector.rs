@@ -59,8 +59,8 @@ pub enum ConnectTargetParseError {
     BadUpstream(#[from] StringIdentifierParseError),
 }
 
-const UPSTREAM_SUFFIX: &str = ".upstream.exg";
-const INT_SUFFIX: &str = ".int.exg";
+pub const UPSTREAM_SUFFIX: &str = ".upstream.exg";
+pub const INT_SUFFIX: &str = ".int.exg";
 
 impl ConnectTarget {
     pub fn hostname(&self) -> String {

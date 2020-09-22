@@ -241,7 +241,7 @@ impl Client {
 
         let (internal_server_connector, new_conn_rx) = mpsc::channel(1);
 
-        tokio::spawn(internal_server(new_conn_rx));
+        tokio::spawn(internal_server(new_conn_rx, current_config.clone()));
 
         let tunnel_requests_processor = tokio::spawn(async move {
             while let Some(TunnelRequest {

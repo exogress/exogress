@@ -46,6 +46,8 @@ bytes = "0.5"
 tokio-util = { version = "0.3.1", features = ["compat"] }
 urlencoding = "1.1.1"
 mime_guess = "2.0.3"
+headers = "0.3.2"
+percent-encoding = "2.1.0"
 
 exogress-common-utils = { path = "../common-utils", version = "0.1" }
 exogress-config-core = { path = "../config-core", version = "0.1" }
