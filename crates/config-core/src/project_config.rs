@@ -1,5 +1,6 @@
 use hashbrown::HashSet;
 
+use crate::auth::{AclEntry, AuthDefinition};
 use crate::path_segment::UrlPathSegmentOrQueryPart;
 use crate::{Auth, AuthProvider, Config, ConfigVersion};
 use crate::{ClientHandler, ClientHandlerVariant, CURRENT_VERSION};
@@ -30,7 +31,12 @@ impl ProjectConfig {
             handler_name,
             ProjectHandler {
                 variant: ProjectHandlerVariant::Auth(Auth {
-                    provider: AuthProvider::Google,
+                    providers: vec![AuthDefinition {
+                        provider: AuthProvider::Google,
+                        acl: vec![AclEntry::Pass {
+                            pass: "*".to_string(),
+                        }],
+                    }],
                 }),
                 base_path: vec![],
                 priority: 10,

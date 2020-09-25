@@ -169,10 +169,9 @@ pub struct ClientMount {
 pub enum ClientHandlerVariant {
     #[serde(rename = "proxy")]
     Proxy(Proxy),
-    //
+
     // #[serde(rename = "static_app")]
     // StaticApp(StaticApp),
-    //
     #[serde(rename = "static_dir")]
     StaticDir(StaticDir),
 

@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate serde;
 
-pub use auth::{Auth, AuthProvider};
+pub use auth::{AclEntry, Auth, AuthDefinition, AuthProvider};
 pub use client_config::{ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant};
 pub use config::Config;
 use lazy_static::lazy_static;
