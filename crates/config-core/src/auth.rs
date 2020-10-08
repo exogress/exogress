@@ -10,15 +10,21 @@ pub struct Auth {
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct AuthDefinition {
-    pub provider: AuthProvider,
+    pub name: AuthProvider,
     pub acl: Vec<AclEntry>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(untagged)]
 pub enum AclEntry {
-    Pass { pass: String },
-    Deny { deny: String },
+    Allow {
+        #[serde(rename = "allow")]
+        identity: String,
+    },
+    Deny {
+        #[serde(rename = "deny")]
+        identity: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
@@ -54,7 +60,6 @@ impl fmt::Display for AuthProvider {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::ClientHandler;
 
     #[test]
@@ -65,11 +70,11 @@ mod tests {
 type: auth
 priority: 1
 providers:
-  - provider: google
+  - name: google
     acl:
       - deny: "*@domain.tld"
-      - pass: "*"
-  - provider: github
+      - allow: "*"
+  - name: github
     acl: []
 "#,
         )

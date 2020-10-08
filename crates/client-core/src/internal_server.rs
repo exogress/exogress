@@ -198,6 +198,7 @@ pub struct File {
 
 // Silly wrapper since Arc<PathBuf> doesn't implement AsRef<Path> ;_;
 #[derive(Clone, Debug)]
+#[allow(clippy::rc_buffer)]
 struct ArcPath(Arc<PathBuf>);
 
 impl AsRef<Path> for ArcPath {

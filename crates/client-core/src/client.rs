@@ -254,6 +254,7 @@ impl Client {
                     if !locked.contains_key(&hostname) {
                         for tunnel_index in 0..max_tunnels_count {
                             let (stop_tunnel_tx, stop_tunnel_rx) = oneshot::channel();
+
                             locked
                                 .entry(hostname.clone())
                                 .or_default()
@@ -304,7 +305,7 @@ impl Client {
                                             {
                                                 let maybe_instance_id = *instance_id_storage.lock();
                                                 if let Some(instance_id) = maybe_instance_id {
-                                                    let r = tunnel::spawn(
+                                                    let tunnel_spawn_result = tunnel::spawn(
                                                         current_config.clone(),
                                                         account_name.clone(),
                                                         project_name.clone(),
@@ -315,7 +316,7 @@ impl Client {
                                                         &mut small_rng,
                                                     )
                                                     .await;
-                                                    if let Err(e) = r {
+                                                    if let Err(e) = tunnel_spawn_result {
                                                         error!("error in tunnel {}", e);
                                                     }
                                                 }

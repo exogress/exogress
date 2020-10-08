@@ -1,4 +1,3 @@
-use smartstring::alias::String;
 use std::io;
 use std::time::Duration;
 
@@ -168,7 +167,7 @@ async fn do_conection(
 
             async move {
                 let claims = Claims {
-                    iss: access_key_id.to_string().into(),
+                    iss: access_key_id.to_string(),
                 };
 
                 let authorization = jsonwebtoken::encode(
@@ -258,10 +257,7 @@ async fn do_conection(
         // forward incoming messages, pings and poings to websocket
         let forward_sent_messages = {
             async {
-                while let Some(msg) = select(&mut send_rx, rx.map(|r| Message::Text(r.to_string())))
-                    .next()
-                    .await
-                {
+                while let Some(msg) = select(&mut send_rx, rx.map(Message::Text)).next().await {
                     debug!("Send to WS: {:?}", msg);
                     if ws_tx.send(msg).await.is_err() {
                         break;
@@ -322,7 +318,7 @@ async fn do_conection(
                             let _ = incoming_pongs_tx.send(v).await;
                         }
                         Ok(Message::Text(s)) => {
-                            let _ = recv_tx.send(s.into()).await;
+                            let _ = recv_tx.send(s).await;
                         }
                         Ok(Message::Close(Some(CloseFrame { code, .. })))
                             if u16::from(code) == 4001 =>

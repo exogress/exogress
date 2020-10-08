@@ -2,15 +2,19 @@ use hashbrown::HashSet;
 
 use serde::{Deserialize, Serialize};
 
-use exogress_entities::{ConfigName, HandlerName, MountPointName, Upstream};
+use exogress_entities::{
+    ConfigName, ExceptionName, HandlerName, MountPointName, StaticResponseName, Upstream,
+};
 
+use crate::catch::Catch;
+use crate::config::default_rules;
 use crate::config::Config;
 use crate::path_segment::UrlPathSegmentOrQueryPart;
 use crate::proxy::Proxy;
 use crate::static_dir::StaticDir;
 use crate::upstream::UpstreamDefinition;
-use crate::CURRENT_VERSION;
-use crate::{Auth, ConfigVersion};
+use crate::{Auth, ConfigVersion, Rule};
+use crate::{StaticResponse, CURRENT_VERSION};
 use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 
@@ -30,6 +34,7 @@ pub struct ClientConfig {
     pub version: ConfigVersion,
     pub revision: ClientConfigRevision,
     pub name: ConfigName,
+    #[serde(rename = "mount-points")]
     pub mount_points: BTreeMap<MountPointName, ClientMount>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub upstreams: BTreeMap<Upstream, UpstreamDefinition>,
@@ -66,12 +71,30 @@ impl ClientConfig {
                     upstream: upstream_name,
                 }),
                 base_path: vec![],
+                replace_base_path: vec![],
+                rules: default_rules(),
                 priority: 10,
+                catch: Default::default(),
             },
         );
 
-        let mut mount_points = BTreeMap::new();
-        mount_points.insert(mount_point_name, ClientMount { handlers });
+        let static_responses = btreemap! {
+            // response_name => btreemap!{
+            //     "application/html".to_string() => StaticResponse {
+            //         content: "<html><body>Not found. Generated at {{ this.time }} </body></html>"
+            //             .to_string(),
+            //         engine: None,
+            //     },
+            // }
+        };
+
+        let mount_points = btreemap! {
+            mount_point_name => ClientMount {
+                handlers,
+                catch: Default::default(),
+                static_responses,
+            }
+        };
 
         ClientConfig {
             version: CURRENT_VERSION.clone(),
@@ -162,6 +185,14 @@ impl Config for ClientConfig {
 #[serde(deny_unknown_fields)]
 pub struct ClientMount {
     pub handlers: BTreeMap<HandlerName, ClientHandler>,
+    #[serde(default)]
+    pub catch: BTreeMap<ExceptionName, Catch>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        rename = "static-responses"
+    )]
+    pub static_responses: BTreeMap<StaticResponseName, StaticResponse>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
@@ -170,9 +201,7 @@ pub enum ClientHandlerVariant {
     #[serde(rename = "proxy")]
     Proxy(Proxy),
 
-    // #[serde(rename = "static_app")]
-    // StaticApp(StaticApp),
-    #[serde(rename = "static_dir")]
+    #[serde(rename = "static-dir")]
     StaticDir(StaticDir),
 
     #[serde(rename = "auth")]
@@ -185,11 +214,20 @@ pub enum ClientHandlerVariant {
 pub struct ClientHandler {
     #[serde(flatten)]
     pub variant: ClientHandlerVariant,
-    #[serde(default)]
+
+    #[serde(default, rename = "base-path")]
     pub base_path: Vec<UrlPathSegmentOrQueryPart>,
+
+    #[serde(default, rename = "replace-base-path")]
+    pub replace_base_path: Vec<UrlPathSegmentOrQueryPart>,
+
+    #[serde(default = "default_rules")]
+    pub rules: Vec<Rule>,
+
     pub priority: u16,
-    // #[serde(default)]
-    // mappings: Vec<Mapping>,
+
+    #[serde(default)]
+    pub catch: Catch,
 }
 
 #[cfg(test)]
@@ -205,13 +243,50 @@ name: repository-1
 upstreams:
   backend:
     port: 3000
-mount_points:
+mount-points:
   mount_point:
     handlers:
       main:
         type: proxy
         priority: 30
         upstream: backend
+        base-path: ["my"]
+        replace-base-path: []
+        rules:
+          - filter:
+              path: ["a", "b"]
+            action:
+              kind: invoke
+              catch:
+                actions:
+                  status-codes:
+                    - status-codes-range: 5xx
+                      action: static-response
+                      static-response-name: tmpl
+                    - status-codes-range: 3xx
+                      action: throw
+                      exception: asd
+                    - status-codes-range: 200-220
+                      action: next-handler
+                      set-status-code: 200
+          - filter:
+              path: ["*"]
+            action:
+              kind: invoke
+    static-responses:
+      tmpl:
+        kind: raw
+        status-code: 200
+        headers: {}
+        body:
+          - content-type: application/html
+            content: "<html><body><h1>{{ this.message }}</h1></body>/html>"
+            engine: handlebars
+      plain:
+        kind: raw
+        body:
+          - content-type: application/html
+            content: "<html><body><h1>not found</h1></body>/html>"
 "#;
         serde_yaml::from_str::<ClientConfig>(YAML).unwrap();
     }
@@ -225,7 +300,7 @@ name: repository-1
 upstreams:
   backend2: 
     port: 3000
-mount_points:
+mount-points:
   mount_point:
     handlers:
       main:
@@ -253,7 +328,7 @@ upstreams:
     port: 3000
   backend2:
     port: 4000
-mount_points:
+mount-points:
   mount_point:
     handlers:
       main:
@@ -269,7 +344,7 @@ mount_points:
 version: 0.0.1
 name: repository-1
 revision: 10
-mount_points:
+mount-points:
   mount_point:
     handlers:
       main2:
@@ -290,5 +365,12 @@ upstreams:
         let c2 = serde_yaml::from_str::<ClientConfig>(YAML2).unwrap();
 
         assert_eq!(c1.checksum(), c2.checksum());
+    }
+
+    #[test]
+    pub fn test_sample() {
+        let sample = ClientConfig::sample(None, None, None, None);
+        let yaml = serde_yaml::to_string(&sample).unwrap();
+        let _: ClientConfig = serde_yaml::from_str(&yaml).unwrap();
     }
 }

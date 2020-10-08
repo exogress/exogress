@@ -1,4 +1,3 @@
-use smartstring::alias::String;
 use std::fmt;
 
 use regex::Regex;
@@ -7,6 +6,7 @@ use serde::ser::SerializeSeq;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::path_segment::UrlPathSegmentOrQueryPart;
+use std::hash::{Hash, Hasher};
 
 pub const ANY_SEGMENTS_MATCH_STR: &str = "*";
 pub const ANY_STR: &str = "?";
@@ -17,7 +17,28 @@ pub enum MatchPathSegment {
     Any,
     Exact(UrlPathSegmentOrQueryPart),
     Regex(Regex),
-    Choice(Vec<UrlPathSegmentOrQueryPart>),
+    // Choice(Vec<UrlPathSegmentOrQueryPart>),
+}
+
+impl Hash for MatchPathSegment {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            MatchPathSegment::Any => {
+                state.write(&[1]);
+            }
+            MatchPathSegment::Exact(exact) => {
+                state.write(&[2]);
+                exact.hash(state);
+            }
+            MatchPathSegment::Regex(regex) => {
+                state.write(&[3]);
+                regex.as_str().hash(state);
+            } // MatchPathSegment::Choice(choice) => {
+              //     state.write(&[4]);
+              //     choice.hash(state);
+              // }
+        }
+    }
 }
 
 impl PartialEq for MatchPathSegment {
@@ -28,50 +49,55 @@ impl PartialEq for MatchPathSegment {
             (Any, Any) => true,
             (Exact(l), Exact(r)) => l.eq(r),
             (Regex(l), Regex(r)) => l.as_str().eq(r.as_str()),
-            (Choice(l), Choice(r)) => l.eq(r),
+            // (Choice(l), Choice(r)) => l.eq(r),
             _ => false,
         }
     }
 }
 
-// impl MatchPathSegment {
-//     pub fn is_any_single_path_segment(&self) -> bool {
-//         match self {
-//             MatchPathSegment::Any => true,
-//             _ => false,
-//         }
-//     }
-//
-//     pub fn single_segment(&self) -> Option<&UrlPathSegmentOrQueryPart> {
-//         match self {
-//             MatchPathSegment::Exact(segment) => Some(segment),
-//             _ => None,
-//         }
-//     }
-//
-//     pub fn single_regex(&self) -> Option<&Regex> {
-//         match self {
-//             MatchPathSegment::Regex(regex) => Some(regex),
-//             _ => None,
-//         }
-//     }
-//
-//     pub fn choice(&self) -> Option<&Vec<UrlPathSegmentOrQueryPart>> {
-//         match self {
-//             MatchPathSegment::Choice(segments) => Some(segments),
-//             _ => None,
-//         }
-//     }
-// }
+impl MatchPathSegment {
+    pub fn is_any_single_path_segment(&self) -> bool {
+        matches!(self, MatchPathSegment::Any)
+    }
 
-#[derive(Debug, Clone, PartialEq)]
+    pub fn single_segment(&self) -> Option<&UrlPathSegmentOrQueryPart> {
+        match self {
+            MatchPathSegment::Exact(segment) => Some(segment),
+            _ => None,
+        }
+    }
+
+    pub fn single_regex(&self) -> Option<&Regex> {
+        match self {
+            MatchPathSegment::Regex(regex) => Some(regex),
+            _ => None,
+        }
+    }
+
+    // pub fn choice(&self) -> Option<&Vec<UrlPathSegmentOrQueryPart>> {
+    //     match self {
+    //         MatchPathSegment::Choice(segments) => Some(segments),
+    //         _ => None,
+    //     }
+    // }
+
+    pub fn is_match(&self, s: &str) -> bool {
+        match self {
+            MatchPathSegment::Any => true,
+            MatchPathSegment::Exact(segment) => segment.as_ref() == s,
+            MatchPathSegment::Regex(re) => re.is_match(s),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Hash)]
 pub enum MatchingPath {
     // /
     Root,
     // *
     Wildcard,
     // A / B / C
-    Simple(Vec<MatchPathSegment>),
+    Strict(Vec<MatchPathSegment>),
     // Left / * / Right
     LeftWildcardRight(Vec<MatchPathSegment>, Vec<MatchPathSegment>),
     // Left / *
@@ -80,54 +106,46 @@ pub enum MatchingPath {
     WildcardRight(Vec<MatchPathSegment>),
 }
 
-// impl MatchingPath {
-//     pub fn is_root(&self) -> bool {
-//         if let MatchingPath::Root = self {
-//             true
-//         } else {
-//             false
-//         }
-//     }
-//     pub fn is_wildcard(&self) -> bool {
-//         if let MatchingPath::Wildcard = self {
-//             true
-//         } else {
-//             false
-//         }
-//     }
-//
-//     pub fn simple(&self) -> Option<&Vec<MatchPathSegment>> {
-//         if let MatchingPath::Simple(simple) = self {
-//             Some(simple)
-//         } else {
-//             None
-//         }
-//     }
-//
-//     pub fn left_wildcard(&self) -> Option<&Vec<MatchPathSegment>> {
-//         if let MatchingPath::LeftWildcard(left) = self {
-//             Some(left)
-//         } else {
-//             None
-//         }
-//     }
-//
-//     pub fn left_wildcard_right(&self) -> Option<(&Vec<MatchPathSegment>, &Vec<MatchPathSegment>)> {
-//         if let MatchingPath::LeftWildcardRight(left, right) = self {
-//             Some((left, right))
-//         } else {
-//             None
-//         }
-//     }
-//
-//     pub fn wildcard_right(&self) -> Option<&Vec<MatchPathSegment>> {
-//         if let MatchingPath::WildcardRight(right) = self {
-//             Some(right)
-//         } else {
-//             None
-//         }
-//     }
-// }
+impl MatchingPath {
+    pub fn is_root(&self) -> bool {
+        matches!(self, MatchingPath::Root)
+    }
+    pub fn is_wildcard(&self) -> bool {
+        matches!(self, MatchingPath::Wildcard)
+    }
+
+    pub fn simple(&self) -> Option<&Vec<MatchPathSegment>> {
+        if let MatchingPath::Strict(simple) = self {
+            Some(simple)
+        } else {
+            None
+        }
+    }
+
+    pub fn left_wildcard(&self) -> Option<&Vec<MatchPathSegment>> {
+        if let MatchingPath::LeftWildcard(left) = self {
+            Some(left)
+        } else {
+            None
+        }
+    }
+
+    pub fn left_wildcard_right(&self) -> Option<(&Vec<MatchPathSegment>, &Vec<MatchPathSegment>)> {
+        if let MatchingPath::LeftWildcardRight(left, right) = self {
+            Some((left, right))
+        } else {
+            None
+        }
+    }
+
+    pub fn wildcard_right(&self) -> Option<&Vec<MatchPathSegment>> {
+        if let MatchingPath::WildcardRight(right) = self {
+            Some(right)
+        } else {
+            None
+        }
+    }
+}
 
 impl Serialize for MatchingPath {
     fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
@@ -144,7 +162,7 @@ impl Serialize for MatchingPath {
                 seq.serialize_element(ANY_SEGMENTS_MATCH_STR)?;
                 seq.end()
             }
-            MatchingPath::Simple(segments) => {
+            MatchingPath::Strict(segments) => {
                 let mut seq = serializer.serialize_seq(Some(segments.len()))?;
                 for element in segments {
                     seq.serialize_element(element)?;
@@ -191,13 +209,13 @@ impl Serialize for MatchPathSegment {
             MatchPathSegment::Any => serializer.serialize_str(ANY_STR),
             MatchPathSegment::Exact(s) => serializer.serialize_str(s.as_str()),
             MatchPathSegment::Regex(s) => serializer.serialize_str(format!("/{}/", s).as_str()),
-            MatchPathSegment::Choice(s) => {
-                let mut seq = serializer.serialize_seq(Some(s.len()))?;
-                for element in s {
-                    seq.serialize_element(element.as_str())?;
-                }
-                seq.end()
-            }
+            // MatchPathSegment::Choice(s) => {
+            //     let mut seq = serializer.serialize_seq(Some(s.len()))?;
+            //     for element in s {
+            //         seq.serialize_element(element.as_str())?;
+            //     }
+            //     seq.end()
+            // }
         }
     }
 }
@@ -234,25 +252,25 @@ impl<'de> Visitor<'de> for MatchPathSegmentVisitor {
         }
     }
 
-    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-    where
-        V: SeqAccess<'de>,
-    {
-        let mut vec = Vec::new();
-
-        while let Some(elem) = visitor.next_element::<String>()? {
-            match elem.parse() {
-                Ok(r) => {
-                    vec.push(r);
-                }
-                Err(e) => {
-                    return Err(de::Error::custom(e));
-                }
-            }
-        }
-
-        Ok(MatchPathSegment::Choice(vec))
-    }
+    // fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+    // where
+    //     V: SeqAccess<'de>,
+    // {
+    //     let mut vec = Vec::new();
+    //
+    //     while let Some(elem) = visitor.next_element::<String>()? {
+    //         match elem.parse() {
+    //             Ok(r) => {
+    //                 vec.push(r);
+    //             }
+    //             Err(e) => {
+    //                 return Err(de::Error::custom(e));
+    //             }
+    //         }
+    //     }
+    //
+    //     Ok(MatchPathSegment::Choice(vec))
+    // }
 }
 
 impl<'de> Deserialize<'de> for MatchPathSegment {
@@ -260,7 +278,7 @@ impl<'de> Deserialize<'de> for MatchPathSegment {
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_any(MatchPathSegmentVisitor)
+        deserializer.deserialize_str(MatchPathSegmentVisitor)
     }
 }
 
@@ -286,7 +304,7 @@ impl<'de> Visitor<'de> for PathVisitor {
 
         while let Some(elem) = visitor.next_element::<String>()? {
             is_first = false;
-            if &elem == ANY_SEGMENTS_MATCH_STR {
+            if elem == ANY_SEGMENTS_MATCH_STR {
                 if !is_left_active {
                     return Err(de::Error::custom("`*` is allowed only once"));
                 }
@@ -311,7 +329,7 @@ impl<'de> Visitor<'de> for PathVisitor {
         }
 
         if is_left_active {
-            Ok(MatchingPath::Simple(left.unwrap()))
+            Ok(MatchingPath::Strict(left.unwrap()))
         } else {
             //right
             if right.is_none() || right.as_ref().map(|r| r.is_empty()).unwrap_or(false) {
@@ -339,135 +357,134 @@ impl<'de> Deserialize<'de> for MatchingPath {
         deserializer.deserialize_seq(PathVisitor)
     }
 }
-//
-// #[cfg(test)]
-// mod test {
-//     use super::*;
-//
-//     #[test]
-//     pub fn test_path_segment_deserialize() {
-//         const YAML: &str = r#"
-// ---
-// - "?"
-// - "a"
-// - /.+/
-// - ["a", "b"]
-// "#;
-//
-//         let mut parsed = serde_yaml::from_str::<Vec<MatchPathSegment>>(YAML)
-//             .unwrap()
-//             .into_iter();
-//
-//         assert!(parsed.next().unwrap().is_any_single_path_segment());
-//         assert_eq!(
-//             MatchPathSegment::Exact("a".parse().unwrap()),
-//             parsed.next().unwrap()
-//         );
-//         assert_eq!(
-//             MatchPathSegment::Regex(r".+".parse().unwrap()),
-//             parsed.next().unwrap()
-//         );
-//
-//         assert_eq!(
-//             MatchPathSegment::Choice(vec!["a".parse().unwrap(), "b".parse().unwrap()]),
-//             parsed.next().unwrap()
-//         );
-//     }
-//
-//     #[test]
-//     pub fn test_path_segment_serialize() {
-//         assert_eq!(
-//             "---\n\"?\"",
-//             serde_yaml::to_string(&MatchPathSegment::Any).unwrap()
-//         );
-//         assert_eq!(
-//             "---\nseg",
-//             serde_yaml::to_string(&MatchPathSegment::Exact("seg".parse().unwrap())).unwrap()
-//         );
-//         assert_eq!(
-//             "---\n\"/[a-z]{1,}/\"",
-//             serde_yaml::to_string(&MatchPathSegment::Regex("[a-z]{1,}".parse().unwrap())).unwrap()
-//         );
-//         assert_eq!(
-//             "---\n- seg\n- seg2",
-//             serde_yaml::to_string(&MatchPathSegment::Choice(vec![
-//                 "seg".parse().unwrap(),
-//                 "seg2".parse().unwrap()
-//             ]))
-//             .unwrap()
-//         );
-//     }
-//
-//     #[test]
-//     pub fn test_path_segment_error() {
-//         assert!(serde_yaml::from_str::<MatchPathSegment>("\"..\"").is_err());
-//         assert!(serde_yaml::from_str::<MatchPathSegment>("\".\"").is_err());
-//         assert!(serde_yaml::from_str::<MatchPathSegment>("\"*\"").is_err());
-//         assert!(serde_yaml::from_str::<MatchPathSegment>("\"\"").is_err());
-//         assert!(serde_yaml::from_str::<MatchPathSegment>("\"a\"").is_ok());
-//     }
-//
-//     #[test]
-//     pub fn test_path_deserialize() {
-//         const YAML: &str = r#"
-// ---
-// - []
-// - ["*"]
-// - ["a"]
-// - ["a", "b"]
-// - ["a", "b", "*"]
-// - ["a", "b", "*", "/.+(jpg|gif|png)/"]
-// - ["*", "c"]
-// "#;
-//         let mut parsed = serde_yaml::from_str::<Vec<MatchingPath>>(YAML)
-//             .unwrap()
-//             .into_iter();
-//
-//         assert!(parsed.next().unwrap().is_root());
-//
-//         assert!(parsed.next().unwrap().is_wildcard());
-//         assert_eq!(
-//             MatchingPath::Simple(vec![MatchPathSegment::Exact("a".parse().unwrap())]),
-//             parsed.next().unwrap()
-//         );
-//         assert_eq!(
-//             MatchingPath::Simple(vec![
-//                 MatchPathSegment::Exact("a".parse().unwrap()),
-//                 MatchPathSegment::Exact("b".parse().unwrap())
-//             ]),
-//             parsed.next().unwrap()
-//         );
-//         assert_eq!(
-//             MatchingPath::LeftWildcard(vec![
-//                 MatchPathSegment::Exact("a".parse().unwrap()),
-//                 MatchPathSegment::Exact("b".parse().unwrap())
-//             ]),
-//             parsed.next().unwrap()
-//         );
-//
-//         assert_eq!(
-//             MatchingPath::LeftWildcardRight(
-//                 vec![
-//                     MatchPathSegment::Exact("a".parse().unwrap()),
-//                     MatchPathSegment::Exact("b".parse().unwrap())
-//                 ],
-//                 vec![MatchPathSegment::Regex(
-//                     r#".+(jpg|gif|png)"#.parse().unwrap()
-//                 )]
-//             ),
-//             parsed.next().unwrap()
-//         );
-//
-//         assert_eq!(
-//             MatchingPath::WildcardRight(vec![MatchPathSegment::Exact("c".parse().unwrap())]),
-//             parsed.next().unwrap()
-//         );
-//     }
-//
-//     #[test]
-//     pub fn test_path_error() {
-//         assert!(serde_yaml::from_str::<MatchingPath>("[\"*\", \"*\"]").is_err());
-//         assert!(serde_yaml::from_str::<MatchingPath>("[\"*\", a, \"*\"]").is_err());
-//         assert!(serde_yaml::from_str::<MatchingPath>("[a, \"*\", b, \"*\", c]").is_err());
-//     }
-// }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    pub fn test_path_segment_deserialize() {
+        const YAML: &str = r#"
+---
+- "?"
+- "a"
+- /.+/
+"#;
+
+        let mut parsed = serde_yaml::from_str::<Vec<MatchPathSegment>>(YAML)
+            .unwrap()
+            .into_iter();
+
+        assert!(parsed.next().unwrap().is_any_single_path_segment());
+        assert_eq!(
+            MatchPathSegment::Exact("a".parse().unwrap()),
+            parsed.next().unwrap()
+        );
+        assert_eq!(
+            MatchPathSegment::Regex(r".+".parse().unwrap()),
+            parsed.next().unwrap()
+        );
+
+        // assert_eq!(
+        //     MatchPathSegment::Choice(vec!["a".parse().unwrap(), "b".parse().unwrap()]),
+        //     parsed.next().unwrap()
+        // );
+    }
+
+    #[test]
+    pub fn test_path_segment_serialize() {
+        assert_eq!(
+            "---\n\"?\"",
+            serde_yaml::to_string(&MatchPathSegment::Any).unwrap()
+        );
+        assert_eq!(
+            "---\nseg",
+            serde_yaml::to_string(&MatchPathSegment::Exact("seg".parse().unwrap())).unwrap()
+        );
+        assert_eq!(
+            "---\n\"/[a-z]{1,}/\"",
+            serde_yaml::to_string(&MatchPathSegment::Regex("[a-z]{1,}".parse().unwrap())).unwrap()
+        );
+        // assert_eq!(
+        //     "---\n- seg\n- seg2",
+        //     serde_yaml::to_string(&MatchPathSegment::Choice(vec![
+        //         "seg".parse().unwrap(),
+        //         "seg2".parse().unwrap()
+        //     ]))
+        //     .unwrap()
+        // );
+    }
+
+    #[test]
+    pub fn test_path_segment_error() {
+        assert!(serde_yaml::from_str::<MatchPathSegment>("\"..\"").is_err());
+        assert!(serde_yaml::from_str::<MatchPathSegment>("\".\"").is_err());
+        assert!(serde_yaml::from_str::<MatchPathSegment>("\"*\"").is_err());
+        assert!(serde_yaml::from_str::<MatchPathSegment>("\"\"").is_err());
+        assert!(serde_yaml::from_str::<MatchPathSegment>("\"a\"").is_ok());
+    }
+
+    #[test]
+    pub fn test_path_deserialize() {
+        const YAML: &str = r#"
+---
+- []
+- ["*"]
+- ["a"]
+- ["a", "b"]
+- ["a", "b", "*"]
+- ["a", "b", "*", "/.+(jpg|gif|png)/"]
+- ["*", "c"]
+"#;
+        let mut parsed = serde_yaml::from_str::<Vec<MatchingPath>>(YAML)
+            .unwrap()
+            .into_iter();
+
+        assert!(parsed.next().unwrap().is_root());
+
+        assert!(parsed.next().unwrap().is_wildcard());
+        assert_eq!(
+            MatchingPath::Strict(vec![MatchPathSegment::Exact("a".parse().unwrap())]),
+            parsed.next().unwrap()
+        );
+        assert_eq!(
+            MatchingPath::Strict(vec![
+                MatchPathSegment::Exact("a".parse().unwrap()),
+                MatchPathSegment::Exact("b".parse().unwrap())
+            ]),
+            parsed.next().unwrap()
+        );
+        assert_eq!(
+            MatchingPath::LeftWildcard(vec![
+                MatchPathSegment::Exact("a".parse().unwrap()),
+                MatchPathSegment::Exact("b".parse().unwrap())
+            ]),
+            parsed.next().unwrap()
+        );
+
+        assert_eq!(
+            MatchingPath::LeftWildcardRight(
+                vec![
+                    MatchPathSegment::Exact("a".parse().unwrap()),
+                    MatchPathSegment::Exact("b".parse().unwrap())
+                ],
+                vec![MatchPathSegment::Regex(
+                    r#".+(jpg|gif|png)"#.parse().unwrap()
+                )],
+            ),
+            parsed.next().unwrap()
+        );
+
+        assert_eq!(
+            MatchingPath::WildcardRight(vec![MatchPathSegment::Exact("c".parse().unwrap())]),
+            parsed.next().unwrap()
+        );
+    }
+
+    #[test]
+    pub fn test_path_error() {
+        assert!(serde_yaml::from_str::<MatchingPath>("[\"*\", \"*\"]").is_err());
+        assert!(serde_yaml::from_str::<MatchingPath>("[\"*\", a, \"*\"]").is_err());
+        assert!(serde_yaml::from_str::<MatchingPath>("[a, \"*\", b, \"*\", c]").is_err());
+    }
+}

@@ -6,7 +6,6 @@ use futures::future::BoxFuture;
 use futures::task::Poll;
 use futures::{task, FutureExt, SinkExt};
 use hyper::Uri;
-use smartstring::alias::*;
 use url::Url;
 
 use crate::tunnel::Conn;

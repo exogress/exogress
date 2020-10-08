@@ -2,7 +2,6 @@
 extern crate serde;
 
 use exogress_entities::InstanceId;
-use smartstring::alias::String;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TunnelRequest {

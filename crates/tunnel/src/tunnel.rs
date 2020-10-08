@@ -11,6 +11,7 @@ use std::time::Duration;
 use std::{io, mem};
 
 use bytes::BytesMut;
+use exogress_entities::{AccessKeyId, AccountName, ConfigName, InstanceId, ProjectName, TunnelId};
 use futures::channel::{mpsc, oneshot};
 use futures::select_biased;
 use futures::stream::StreamExt;
@@ -25,8 +26,6 @@ use tokio::macros::support::Pin;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 use trust_dns_resolver::TokioAsyncResolver;
-
-use exogress_entities::{AccessKeyId, AccountName, ConfigName, InstanceId, ProjectName, TunnelId};
 
 use crate::connector::{Compression, ConnectTarget, Connector};
 use crate::mixed_channel::to_async_rw;
@@ -995,7 +994,7 @@ pub fn server_connection(
                                             }
                                         }
                                     }
-                                    ClientHeader::Common(CommonHeader::DataPlain) |  ClientHeader::Common(CommonHeader::DataCompressed) => {
+                                    ClientHeader::Common(CommonHeader::DataPlain) | ClientHeader::Common(CommonHeader::DataCompressed) => {
                                         let res = storage
                                             .lock()
                                             .get(&slot)
@@ -1120,6 +1119,7 @@ impl AsyncWrite for TunneledConnection {
 
 #[cfg(test)]
 mod test {
+    use exogress_config_core::CURRENT_VERSION;
     use std::net::{IpAddr, SocketAddr};
 
     use tokio::net::TcpListener;
@@ -1128,7 +1128,7 @@ mod test {
 
     use super::*;
     use exogress_config_core::UpstreamDefinition;
-    use exogress_config_core::{ClientConfig, ClientConfigRevision, ConfigVersion};
+    use exogress_config_core::{ClientConfig, ClientConfigRevision};
     use std::collections::BTreeMap;
     use tokio::runtime::Handle;
 
@@ -1222,7 +1222,7 @@ mod test {
 
         let client_config = Arc::new(RwLock::new(
             ClientConfig {
-                version: ConfigVersion("0.0.1".parse().unwrap()),
+                version: CURRENT_VERSION.clone(),
                 revision: ClientConfigRevision(1),
                 name: "my-config".parse().unwrap(),
                 mount_points: Default::default(),

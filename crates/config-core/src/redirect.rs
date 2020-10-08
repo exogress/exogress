@@ -1,4 +1,3 @@
-use smartstring::alias::String;
 use std::fmt;
 
 use serde::de::{IntoDeserializer, SeqAccess, Visitor};

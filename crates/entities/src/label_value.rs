@@ -1,4 +1,3 @@
-use smartstring::alias::*;
 use std::fmt;
 use std::str::FromStr;
 
@@ -18,7 +17,7 @@ impl FromStr for LabelValue {
 
 impl From<std::string::String> for LabelValue {
     fn from(s: std::string::String) -> Self {
-        LabelValue { inner: s.into() }
+        LabelValue { inner: s }
     }
 }
 

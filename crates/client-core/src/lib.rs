@@ -16,5 +16,4 @@ use hashbrown::HashMap;
 use parking_lot::Mutex;
 use std::sync::Arc;
 
-type TunnelsStorage =
-    Arc<Mutex<HashMap<smartstring::alias::String, HashMap<u16, oneshot::Sender<()>>>>>;
+type TunnelsStorage = Arc<Mutex<HashMap<String, HashMap<u16, oneshot::Sender<()>>>>>;

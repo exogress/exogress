@@ -63,7 +63,7 @@ macro_rules! string_type {
         #[derive(Debug, Clone, $crate::serde::Serialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
         #[serde(transparent)]
         pub struct $x {
-            inner: $crate::String,
+            inner: String,
         }
 
         paste::item! {
@@ -158,7 +158,7 @@ macro_rules! string_type {
             }
         }
 
-        impl From<$x> for $crate::String {
+        impl From<$x> for String {
             fn from(v: $x) -> Self {
                 v.inner.clone()
             }

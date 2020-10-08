@@ -1,4 +1,3 @@
-use smartstring::alias::String;
 use std::io;
 
 use std::net::SocketAddr;
@@ -85,16 +84,14 @@ pub async fn spawn(
         stream.write_all(&encoded_hello).await?;
 
         let resp_len = stream.read_u16().await?.into();
-        let mut tunnel_hello_reponse = vec![0u8; resp_len];
-        stream.read_exact(&mut tunnel_hello_reponse).await?;
-        let hello_response = bincode::deserialize::<TunnelHelloResponse>(&tunnel_hello_reponse)
+        let mut tunnel_hello_response = vec![0u8; resp_len];
+        stream.read_exact(&mut tunnel_hello_response).await?;
+        let hello_response = bincode::deserialize::<TunnelHelloResponse>(&tunnel_hello_response)
             .map_err(exogress_tunnel::Error::DecodeError)?;
 
         match hello_response {
             TunnelHelloResponse::Ok { tunnel_id } => Ok((tunnel_id, stream)),
-            TunnelHelloResponse::Err { msg } => {
-                return Err(Error::Rejected(msg.into()));
-            }
+            TunnelHelloResponse::Err { msg } => Err(Error::Rejected(msg)),
         }
     })
     .await

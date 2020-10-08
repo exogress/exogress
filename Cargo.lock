@@ -499,7 +499,6 @@ dependencies = [
  "shadow-clone",
  "shellexpand",
  "smallvec",
- "smartstring",
  "stop-handle",
  "thiserror",
  "tokio",
@@ -570,6 +569,9 @@ dependencies = [
  "http-serde",
  "humantime-serde",
  "lazy_static",
+ "maplit",
+ "mime",
+ "mime_serde_shim",
  "percent-encoding",
  "regex",
  "seahash",
@@ -578,7 +580,6 @@ dependencies = [
  "serde_with",
  "serde_yaml",
  "shadow-clone",
- "smartstring",
  "thiserror",
  "tracing",
  "url",
@@ -594,7 +595,6 @@ dependencies = [
  "serde",
  "serde_json",
  "shadow-clone",
- "smartstring",
  "thiserror",
  "tracing",
  "ulid",
@@ -606,7 +606,6 @@ version = "0.1.0"
 dependencies = [
  "exogress-entities",
  "serde",
- "smartstring",
 ]
 
 [[package]]
@@ -626,7 +625,6 @@ dependencies = [
  "rw-stream-sink",
  "serde",
  "shadow-clone",
- "smartstring",
  "stop-handle",
  "thiserror",
  "tokio",
@@ -1210,6 +1208,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b540fdaf0182f58a5ecac3e5e7d0fcf9ff4f460ff9d7c121cede6d031c03bb30"
 
 [[package]]
+name = "maplit"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d"
+
+[[package]]
 name = "match_cfg"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1250,6 +1254,16 @@ checksum = "2684d4c2e97d99848d30b324b00c8fcc7e5c897b7cbb5819b09e7c90e8baf212"
 dependencies = [
  "mime",
  "unicase",
+]
+
+[[package]]
+name = "mime_serde_shim"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab9c5b33b135e34aab675cef7f678c688b30740ba299d75e3a8c0af89b5d5cea"
+dependencies = [
+ "mime",
+ "serde",
 ]
 
 [[package]]
@@ -2022,9 +2036,9 @@ dependencies = [
 
 [[package]]
 name = "serde_with"
-version = "1.4.0"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89d3d595d64120bbbc70b7f6d5ae63298b62a3d9f373ec2f56acf5365ca8a444"
+checksum = "f87df303fd746404ca055fffb3a1850243ee3404f9bda4dc5760132814dd0734"
 dependencies = [
  "serde",
  "serde_with_macros",
@@ -2032,10 +2046,11 @@ dependencies = [
 
 [[package]]
 name = "serde_with_macros"
-version = "1.1.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4070d2c9b9d258465ad1d82aabb985b84cd9a3afa94da25ece5a9938ba5f1606"
+checksum = "738e6b326723cdf0d9afce8d386dc6a967ffa91e0b4de82f6450c154199ae798"
 dependencies = [
+ "darling",
  "proc-macro2",
  "quote",
  "syn",
@@ -2134,16 +2149,6 @@ name = "smallvec"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbee7696b84bbf3d89a1c2eccff0850e3047ed46bfcd2e92c29a2d074d57e252"
-
-[[package]]
-name = "smartstring"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bdec7d62192ad94e7b16d49856c007d81ae1cf541cd29b4c04b755df39fd80d"
-dependencies = [
- "serde",
- "static_assertions",
-]
 
 [[package]]
 name = "socket2"
@@ -2723,6 +2728,7 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+ "serde",
 ]
 
 [[package]]

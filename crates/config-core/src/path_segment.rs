@@ -3,7 +3,6 @@ use serde::de::Visitor;
 
 use crate::path::ANY_SEGMENTS_MATCH_STR;
 use serde::{de, Deserialize, Deserializer};
-use smartstring::alias::String;
 use std::fmt;
 use std::str::{FromStr, Utf8Error};
 
@@ -25,6 +24,12 @@ pub enum PathSegmentParseError {
 #[derive(Debug, Hash, Eq, Serialize, PartialEq, Clone)]
 #[serde(transparent)]
 pub struct UrlPathSegmentOrQueryPart(String);
+
+impl AsRef<str> for UrlPathSegmentOrQueryPart {
+    fn as_ref(&self) -> &str {
+        self.0.as_ref()
+    }
+}
 
 impl FromStr for UrlPathSegmentOrQueryPart {
     type Err = PathSegmentParseError;

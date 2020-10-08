@@ -1,7 +1,6 @@
 pub use bytes;
 pub use rand;
 pub use serde;
-pub use smartstring::alias::String;
 pub use tracing;
 pub use ulid::{self, Ulid, ULID_LEN};
 
@@ -31,3 +30,5 @@ string_type!(HandlerName);
 string_type!(ConfigName);
 string_type!(Upstream);
 string_type!(LabelName);
+string_type!(StaticResponseName);
+string_type!(ExceptionName);
