@@ -17,7 +17,6 @@ jobs:
           - command: fmt
             args: --all -- --check
           - command: clippy
-            args: -- -D warnings
     env:
       RUST_BACKTRACE: 1
     steps:
