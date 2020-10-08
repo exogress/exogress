@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 
 use core::time::Duration;
 use exogress_config_core::ClientConfig;
-use exogress_entities::{AccountName, InstanceId, ProjectName};
+use exogress_entities::{AccessKeyId, AccountName, InstanceId, ProjectName};
 use exogress_tunnel::{
     client_framed, client_listener, MixedChannel, TunnelHello, TunnelHelloResponse,
 };
@@ -46,6 +46,8 @@ pub async fn spawn(
     account_name: AccountName,
     project_name: ProjectName,
     instance_id: InstanceId,
+    access_key_id: AccessKeyId,
+    secret_access_key: String,
     gw_hostname: String,
     internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
     resolver: TokioAsyncResolver,
@@ -73,8 +75,8 @@ pub async fn spawn(
             account_name,
             project_name,
             instance_id,
-            access_key_id: Default::default(),
-            secret_access_key: "".to_string(),
+            access_key_id,
+            secret_access_key,
         };
 
         let encoded_hello: Vec<u8> = bincode::serialize(&hello).unwrap();

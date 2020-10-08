@@ -56,6 +56,8 @@ fn encode_server_header(slot: Slot, header: ServerHeader) -> Result<u64, Error> 
     assert!(slot_val <= MAX_SLOT_NUM);
 
     let code = match header {
+        Common(Ping) => COMMON_CODE_PING,
+        Common(Pong) => COMMON_CODE_PONG,
         Common(DataPlain) => COMMON_CODE_DATA_PLAIN,
         Common(DataCompressed) => COMMON_CODE_DATA_COMPRESSED,
         Common(Closed) => COMMON_CODE_CLOSED,
@@ -78,6 +80,8 @@ fn encode_client_header(slot: Slot, header: ClientHeader) -> Result<u64, Error> 
         Common(DataPlain) => COMMON_CODE_DATA_PLAIN,
         Common(DataCompressed) => COMMON_CODE_DATA_COMPRESSED,
         Common(Closed) => COMMON_CODE_CLOSED,
+        Common(Ping) => COMMON_CODE_PING,
+        Common(Pong) => COMMON_CODE_PONG,
         Accepted => CLIENT_CODE_ACCEPTED,
         Rejected => CLIENT_CODE_REJECTED,
     };

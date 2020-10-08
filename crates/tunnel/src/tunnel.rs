@@ -1,15 +1,4 @@
 use crate::connector::ConnectorRequest;
-use std::convert::{TryFrom, TryInto};
-use std::fmt;
-use std::fmt::Formatter;
-use std::net::IpAddr;
-use std::net::SocketAddr;
-use std::sync::atomic::AtomicU32;
-use std::sync::atomic::Ordering;
-use std::sync::Arc;
-use std::time::Duration;
-use std::{io, mem};
-
 use bytes::BytesMut;
 use exogress_entities::{AccessKeyId, AccountName, ConfigName, InstanceId, ProjectName, TunnelId};
 use futures::channel::{mpsc, oneshot};
@@ -20,11 +9,21 @@ use futures::{pin_mut, Future, FutureExt, Sink, SinkExt, Stream};
 use hashbrown::hash_map::Entry;
 use hashbrown::HashMap;
 use parking_lot::Mutex;
+use std::convert::{TryFrom, TryInto};
+use std::fmt;
+use std::fmt::Formatter;
+use std::net::IpAddr;
+use std::net::SocketAddr;
+use std::sync::atomic::AtomicU32;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
+use std::time::Duration;
+use std::{io, mem};
 use stop_handle::{stop_handle, StopHandle};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::macros::support::Pin;
 use tokio::net::TcpStream;
-use tokio::time::timeout;
+use tokio::time::{delay_for, timeout};
 use trust_dns_resolver::TokioAsyncResolver;
 
 use crate::connector::{Compression, ConnectTarget, Connector};
@@ -113,6 +112,8 @@ pub enum CommonHeader {
     DataPlain,
     DataCompressed,
     Closed,
+    Ping,
+    Pong,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -143,11 +144,13 @@ pub struct ClientPacket {
 pub const COMMON_CODE_DATA_PLAIN: u8 = 0;
 pub const COMMON_CODE_DATA_COMPRESSED: u8 = 1;
 pub const COMMON_CODE_CLOSED: u8 = 2;
+pub const COMMON_CODE_PING: u8 = 3;
+pub const COMMON_CODE_PONG: u8 = 4;
 
-pub const CLIENT_CODE_ACCEPTED: u8 = 3;
-pub const CLIENT_CODE_REJECTED: u8 = 4;
+pub const CLIENT_CODE_ACCEPTED: u8 = 5;
+pub const CLIENT_CODE_REJECTED: u8 = 6;
 
-pub const SERVER_CODE_CONNECT_REQUEST: u8 = 3;
+pub const SERVER_CODE_CONNECT_REQUEST: u8 = 5;
 
 pub const HEADER_BYTES: usize = 3;
 pub const CODE_BITS_RESERVED: u64 = 4;
@@ -259,12 +262,46 @@ pub async fn client_listener(
     let (tx, mut rx) = tunnel.split();
 
     let (outgoing_messages_tx, outgoing_messages_rx) = mpsc::channel::<(_, Vec<u8>)>(16);
+    let ping_period = Duration::from_secs(5);
+    let wait_pong_timeout = ping_period * 3;
+
+    let (mut received_pongs_tx, received_pongs_rx) = mpsc::channel(1);
+
+    let periodic_pinger = {
+        shadow_clone!(mut outgoing_messages_tx);
+
+        #[allow(unreachable_code)]
+        async move {
+            loop {
+                delay_for(ping_period).await;
+                let payload = vec![];
+                outgoing_messages_tx
+                    .send((
+                        ClientPacket {
+                            header: ClientHeader::Common(CommonHeader::Ping),
+                            slot: 0u32.try_into().unwrap(),
+                        },
+                        payload,
+                    ))
+                    .await?;
+            }
+
+            Ok(())
+        }
+    }
+    .fuse();
+
+    let pongs_timeout = async move {
+        let mut pongs = tokio::stream::StreamExt::timeout(received_pongs_rx, wait_pong_timeout);
+        while pongs.next().await.is_some() {}
+    };
 
     let read_future = {
         shadow_clone!(client_config);
         shadow_clone!(storage);
         shadow_clone!(outgoing_messages_tx);
         shadow_clone!(just_closed_by_us);
+        shadow_clone!(mut outgoing_messages_tx);
 
         async move {
             while let Some(res) = rx.next().await {
@@ -684,6 +721,19 @@ pub async fn client_listener(
                                     debug!("ignore unknown slot, possible race-condition");
                                 }
                             }
+                            ServerHeader::Common(CommonHeader::Ping) => {
+                                let payload = vec![];
+                                outgoing_messages_tx.send((
+                                    ClientPacket {
+                                        header: ClientHeader::Common(CommonHeader::Pong),
+                                        slot,
+                                    },
+                                    payload,
+                                )).await?;
+                            },
+                            ServerHeader::Common(CommonHeader::Pong) => {
+                                received_pongs_tx.send(()).await?;
+                            },
                         }
                     }
                     Err(e) => {
@@ -705,6 +755,11 @@ pub async fn client_listener(
     let res = tokio::select! {
         r = read_future => r,
         r = write_future => r,
+        _ = pongs_timeout => {
+            warn!("timeout waiting for pong on tunnel. closing");
+            Ok(())
+        },
+        r = periodic_pinger => r,
     };
 
     info!("tunnel closed with result {:?}", res);
@@ -773,6 +828,11 @@ pub fn server_connection(
         Duration::from_secs(5),
     )));
 
+    let (mut received_pongs_tx, received_pongs_rx) = mpsc::channel(1);
+
+    let ping_period = Duration::from_secs(5);
+    let wait_pong_timeout = ping_period * 3;
+
     let f = {
         async move {
             let slot_counter = AtomicU32::new(0);
@@ -826,7 +886,7 @@ pub fn server_connection(
 
             let read_future = {
                 shadow_clone!(storage);
-                shadow_clone!(outgoing_messages_tx);
+                shadow_clone!(mut outgoing_messages_tx);
 
                 async move {
                     while let Some(res) = rx.next().await {
@@ -1040,6 +1100,19 @@ pub fn server_connection(
                                             }
                                         }
                                     }
+                                    ClientHeader::Common(CommonHeader::Ping) => {
+                                        let payload = vec![];
+                                        outgoing_messages_tx.send((
+                                            ServerPacket {
+                                                header: ServerHeader::Common(CommonHeader::Pong),
+                                                slot,
+                                            },
+                                            payload,
+                                        )).await?;
+                                    }
+                                    ClientHeader::Common(CommonHeader::Pong) => {
+                                        received_pongs_tx.send(()).await?;
+                                    }
                                 }
                             }
                             Err(e) => {
@@ -1054,15 +1127,52 @@ pub fn server_connection(
             }.fuse();
 
             let write_future = outgoing_messages_rx.map(Ok).forward(tx).fuse();
+            let pongs_timeout = async move {
+                let mut pongs =
+                    tokio::stream::StreamExt::timeout(received_pongs_rx, wait_pong_timeout);
+                while pongs.next().await.is_some() {}
+            }
+            .fuse();
+
+            #[allow(unreachable_code)]
+            let periodic_pinger = {
+                shadow_clone!(mut outgoing_messages_tx);
+
+                async move {
+                    loop {
+                        delay_for(ping_period).await;
+                        let payload = vec![];
+                        outgoing_messages_tx
+                            .send((
+                                ServerPacket {
+                                    header: ServerHeader::Common(CommonHeader::Ping),
+                                    slot: 0u32.try_into().unwrap(),
+                                },
+                                payload,
+                            ))
+                            .await?;
+                    }
+
+                    Ok(())
+                }
+            }
+            .fuse();
 
             pin_mut!(read_future);
             pin_mut!(write_future);
             pin_mut!(accept_connect_future);
+            pin_mut!(pongs_timeout);
+            pin_mut!(periodic_pinger);
 
             select_biased! {
                 r = accept_connect_future => r,
                 r = read_future => r,
                 r = write_future => r,
+                r = periodic_pinger => r,
+                r = pongs_timeout => {
+                    warn!("timeout waiting for pong on tunnel. closing");
+                    Ok(r)
+                }
             }
         }
     };
