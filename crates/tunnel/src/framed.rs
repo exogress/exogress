@@ -19,6 +19,8 @@ fn parse_client_header(value: u64) -> Result<ClientPacket, Error> {
         COMMON_CODE_DATA_PLAIN => ClientHeader::Common(CommonHeader::DataPlain),
         COMMON_CODE_DATA_COMPRESSED => ClientHeader::Common(CommonHeader::DataCompressed),
         COMMON_CODE_CLOSED => ClientHeader::Common(CommonHeader::Closed),
+        COMMON_CODE_PING => ClientHeader::Common(CommonHeader::Ping),
+        COMMON_CODE_PONG => ClientHeader::Common(CommonHeader::Pong),
         CLIENT_CODE_ACCEPTED => ClientHeader::Accepted,
         CLIENT_CODE_REJECTED => ClientHeader::Rejected,
         code => return Err(Error::UnknownCode { code }),
@@ -38,6 +40,8 @@ fn parse_server_header(value: u64) -> Result<ServerPacket, Error> {
         COMMON_CODE_DATA_PLAIN => ServerHeader::Common(CommonHeader::DataPlain),
         COMMON_CODE_DATA_COMPRESSED => ServerHeader::Common(CommonHeader::DataCompressed),
         COMMON_CODE_CLOSED => ServerHeader::Common(CommonHeader::Closed),
+        COMMON_CODE_PING => ServerHeader::Common(CommonHeader::Ping),
+        COMMON_CODE_PONG => ServerHeader::Common(CommonHeader::Pong),
         SERVER_CODE_CONNECT_REQUEST => ServerHeader::ConnectRequest,
         code => return Err(Error::UnknownCode { code }),
     };
