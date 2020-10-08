@@ -28,9 +28,9 @@ use std::sync::Arc;
 use tracing_futures::Instrument;
 
 use crate::internal_server::internal_server;
+use dashmap::DashMap;
 use exogress_common_utils::backoff::Backoff;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
-use hashbrown::hash_map::Entry;
 use hashbrown::HashMap;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
@@ -211,7 +211,7 @@ impl Client {
                 .unwrap();
         }
 
-        let tunnels = Arc::new(Mutex::new(Default::default()));
+        let tunnels = Arc::new(DashMap::new());
 
         let connector_result = tokio::spawn({
             shadow_clone!(tunnels);
@@ -254,12 +254,11 @@ impl Client {
                 }) = send_rx.next().await
                 {
                     {
-                        let mut locked = tunnels.lock();
-                        if !locked.contains_key(&hostname) {
+                        if !tunnels.contains_key(&hostname) {
                             for tunnel_index in 0..max_tunnels_count {
                                 let (stop_tunnel_tx, stop_tunnel_rx) = oneshot::channel();
 
-                                locked
+                                tunnels
                                     .entry(hostname.clone())
                                     .or_default()
                                     .insert(tunnel_index, stop_tunnel_tx);
@@ -342,9 +341,9 @@ impl Client {
                                         }
 
                                         {
-                                            let mut locked = tunnels.lock();
-                                            if let Entry::Occupied(mut tunnel_entry) =
-                                                locked.entry(hostname.clone())
+                                            if let dashmap::mapref::entry::Entry::Occupied(
+                                                mut tunnel_entry,
+                                            ) = tunnels.entry(hostname.clone())
                                             {
                                                 info!("tunnel index {} closed", tunnel_index);
                                                 tunnel_entry.get_mut().remove(&tunnel_index);
