@@ -100,7 +100,7 @@ pub async fn spawn(
             }
         }
 
-        tunnels.clear();
+        tunnels.lock().clear();
     }
 
     Ok(())

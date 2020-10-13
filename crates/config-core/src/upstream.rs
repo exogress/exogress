@@ -26,21 +26,21 @@ impl UpstreamDefinition {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub enum ProbeKind {
     #[serde(rename = "liveness")]
     Liveness,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Probe {
     pub kind: ProbeKind,
     pub target: ProbeTarget,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ProbeTarget {
     pub path: String,
