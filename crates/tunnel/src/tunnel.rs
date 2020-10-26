@@ -211,7 +211,7 @@ impl Decompressor {
     pub fn decompress(&mut self, buf: Vec<u8>) -> Result<Vec<u8>, io::Error> {
         match self {
             Decompressor::Plain => Ok(buf),
-            Decompressor::Zstd(compressor) => compressor.decompress(&buf, buf.len() * 10),
+            Decompressor::Zstd(compressor) => compressor.decompress(&buf, MAX_PAYLOAD_LEN),
         }
     }
 }
