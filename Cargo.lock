@@ -613,7 +613,6 @@ name = "exogress-tunnel"
 version = "0.1.0"
 dependencies = [
  "bincode",
- "byteorder",
  "bytes",
  "exogress-config-core",
  "exogress-entities",
