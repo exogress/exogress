@@ -179,13 +179,24 @@ impl Compressor {
         match self {
             Compressor::Plain => (buf, false),
             Compressor::Zstd(compressor) => {
-                let compressed = compressor.compress(&buf, 0).expect("Unable to compress");
+                let mut compressed = compressor.compress(&buf, 0).expect("Unable to compress");
 
                 // info!(
                 //     "compress ratio = {}",
                 //     buf.len() as f32 / compressed.len() as f32
                 // );
-                if compressed.len() < buf.len() {
+
+                // make sure there is enough space to add initial buffer len
+                if compressed.len() < buf.len() && compressed.len() + 2 <= MAX_PAYLOAD_LEN {
+                    use byteorder::{BigEndian, ByteOrder};
+
+                    let payload_len = compressed.len();
+                    compressed.resize(payload_len + 2, 0);
+                    BigEndian::write_u16(
+                        &mut compressed[payload_len..],
+                        buf.len().try_into().unwrap(),
+                    );
+
                     (compressed, true)
                 } else {
                     (buf, false)
@@ -211,7 +222,13 @@ impl Decompressor {
     pub fn decompress(&mut self, buf: Vec<u8>) -> Result<Vec<u8>, io::Error> {
         match self {
             Decompressor::Plain => Ok(buf),
-            Decompressor::Zstd(compressor) => compressor.decompress(&buf, buf.len() * 10),
+            Decompressor::Zstd(compressor) => {
+                use byteorder::{BigEndian, ByteOrder};
+
+                let (compressed_payload, capacity_buf) = buf.split_at(buf.len() - 2);
+                let capacity = BigEndian::read_u16(capacity_buf);
+                compressor.decompress(&compressed_payload, capacity.try_into().unwrap())
+            }
         }
     }
 }
