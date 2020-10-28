@@ -79,9 +79,6 @@ pub enum Error {
 
 #[derive(Debug, thiserror::Error)]
 pub enum SecretAccessKeyError {
-    #[error("PEM parse error")]
-    Jwt(#[from] jsonwebtoken::errors::Error),
-
     #[error("base58 decoding error")]
     Base58(#[from] bs58::decode::Error),
 }
@@ -89,14 +86,10 @@ pub enum SecretAccessKeyError {
 fn secret_access_key_private_key(
     secret_access_key: &str,
 ) -> Result<jsonwebtoken::EncodingKey, SecretAccessKeyError> {
-    let pem = pem::Pem {
-        tag: "PRIVATE KEY".to_string(),
-        contents: bs58::decode(secret_access_key)
-            .with_alphabet(bs58::alphabet::FLICKR)
-            .into_vec()?,
-    };
-    let pem_key = pem::encode(&pem);
-    Ok(jsonwebtoken::EncodingKey::from_ec_pem(pem_key.as_ref())?)
+    let der = bs58::decode(secret_access_key)
+        .with_alphabet(bs58::alphabet::FLICKR)
+        .into_vec()?;
+    Ok(jsonwebtoken::EncodingKey::from_ec_der(der.as_ref()))
 }
 
 impl Client {
