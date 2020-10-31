@@ -30,6 +30,7 @@ use tracing_futures::Instrument;
 
 use crate::internal_server::internal_server;
 use exogress_common_utils::backoff::Backoff;
+use exogress_common_utils::jwt::jwt_token;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
 use hashbrown::HashMap;
 use std::sync::atomic::AtomicUsize;
@@ -77,27 +78,10 @@ pub enum Error {
     Io(#[from] io::Error),
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum SecretAccessKeyError {
-    #[error("base58 decoding error")]
-    Base58(#[from] bs58::decode::Error),
-}
-
-fn secret_access_key_private_key(
-    secret_access_key: &str,
-) -> Result<jsonwebtoken::EncodingKey, SecretAccessKeyError> {
-    let der = bs58::decode(secret_access_key)
-        .with_alphabet(bs58::alphabet::FLICKR)
-        .into_vec()?;
-    Ok(jsonwebtoken::EncodingKey::from_ec_der(der.as_ref()))
-}
-
 impl Client {
     pub async fn spawn(self, resolver: TokioAsyncResolver) -> Result<(), anyhow::Error> {
         let project_name: ProjectName = self.project.parse()?;
         let account_name: AccountName = self.account.parse()?;
-        let jwt_encoding_key = secret_access_key_private_key(self.secret_access_key.as_str())
-            .context("secret_access_key error")?;
 
         let instance_id_storage = Arc::new(Mutex::new(None));
 
@@ -206,6 +190,8 @@ impl Client {
 
         let tunnels = Arc::new(Mutex::new(HashMap::new()));
 
+        let authorization = jwt_token(&self.access_key_id, self.secret_access_key.as_str())?;
+
         let connector_result = tokio::spawn({
             shadow_clone!(tunnels);
             shadow_clone!(resolver);
@@ -220,8 +206,7 @@ impl Client {
                 url,
                 send_tx,
                 recv_rx,
-                self.access_key_id,
-                jwt_encoding_key,
+                authorization,
                 Duration::from_millis(50),
                 Duration::from_secs(30),
                 resolver,
@@ -389,6 +374,20 @@ mod tests {
     use tokio::runtime::Handle;
     use tokio::time::delay_for;
     use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
+
+    #[test]
+    fn test_jwt() {
+        let jwt_encoding_key = secret_access_key_private_key(
+            "2eoAYVjpjtztomf7mL94fJeZVS5TSkvEDSYB97v1CQxDDyfeg3cLChF1hCdKZm27Py2vFUCg7dn6yzQRPXtgFHQFt9ULpGLFxB7ypAX2XhySYFNQSmGHx8mvV8S9zqVA8L6iEyVhupZ8zMZHkm7ABHRv6pEXNiXADfQ7bMV6uHtESvKLGY1GMwYnmRfrP"
+        ).unwrap();
+
+        jsonwebtoken::encode(
+            &jsonwebtoken::Header::new(jsonwebtoken::Algorithm::ES256),
+            &(),
+            &jwt_encoding_key,
+        )
+        .unwrap();
+    }
 
     #[tokio::test]
     async fn test_minimal() {

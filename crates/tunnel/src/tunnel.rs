@@ -1,6 +1,8 @@
 use crate::connector::ConnectorRequest;
 use bytes::BytesMut;
-use exogress_entities::{AccessKeyId, AccountName, ConfigName, InstanceId, ProjectName, TunnelId};
+use exogress_entities::{
+    AccessKeyId, AccountName, AccountUniqueId, ConfigName, InstanceId, ProjectName, TunnelId,
+};
 use futures::channel::{mpsc, oneshot};
 use futures::select_biased;
 use futures::stream::StreamExt;

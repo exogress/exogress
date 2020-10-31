@@ -1,9 +1,10 @@
-use crate::{AccountName, ConfigName, ProjectName};
+use crate::{AccountName, AccountUniqueId, ConfigName, ProjectName};
 use std::fmt;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize, Hash, Eq, PartialEq)]
 pub struct ConfigId {
     pub account_name: AccountName,
+    pub account_unique_id: AccountUniqueId,
     pub project_name: ProjectName,
     pub config_name: ConfigName,
 }

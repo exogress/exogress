@@ -21,6 +21,7 @@ ulid_type!(InstanceId);
 ulid_type!(EnvironmentId);
 ulid_type!(AccessKeyId);
 ulid_type!(TunnelId);
+ulid_type!(AccountUniqueId);
 
 string_type!(RateLimiterName);
 string_type!(ProjectName);

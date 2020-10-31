@@ -18,20 +18,15 @@ use exogress_config_core::ClientConfig;
 use exogress_signaling::{SignalerHandshakeResponse, TunnelRequest};
 
 use crate::TunnelsStorage;
+use exogress_common_utils::jwt::JwtError;
 use exogress_common_utils::ws_client;
 use exogress_common_utils::ws_client::connect_ws;
 use exogress_entities::{AccessKeyId, InstanceId};
-use jsonwebtoken::EncodingKey;
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tokio::sync::watch::Receiver;
 use tokio_tungstenite::tungstenite::http::{Method, Request};
 use tokio_tungstenite::tungstenite::protocol::CloseFrame;
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    iss: String,
-}
 
 #[derive(Debug, thiserror::Error)]
 pub enum CloudConnectError {
@@ -54,8 +49,7 @@ pub async fn spawn(
     url: Url,
     mut tx: mpsc::Sender<TunnelRequest>,
     mut rx: mpsc::Receiver<String>,
-    access_key_id: AccessKeyId,
-    jwt_encoding_key: EncodingKey,
+    authorization: String,
     backoff_min_duration: Duration,
     backoff_max_duration: Duration,
     resolver: TokioAsyncResolver,
@@ -69,8 +63,7 @@ pub async fn spawn(
             &instance_id_storage,
             &mut config_rx,
             &current_config,
-            &access_key_id,
-            &jwt_encoding_key,
+            &authorization,
             backoff_handle,
             &url,
             &mut tx,
@@ -139,7 +132,7 @@ pub enum Error {
     Json(#[from] serde_json::Error),
 
     #[error("JWT generation error: `{0}`")]
-    Jwt(#[from] jsonwebtoken::errors::Error),
+    Jwt(#[from] JwtError),
 
     #[error("handshake error")]
     HandshakeError,
@@ -150,8 +143,7 @@ async fn do_conection(
     instance_id_storage: &Arc<Mutex<Option<InstanceId>>>,
     config_rx: &mut Receiver<ClientConfig>,
     current_config_storage: &RwLock<ClientConfig>,
-    access_key_id: &AccessKeyId,
-    jwt_encoding_key: &EncodingKey,
+    authorization: &str,
     backoff_handle: BackoffHandle,
     url: &Url,
     tx: &mut mpsc::Sender<TunnelRequest>,
@@ -166,16 +158,6 @@ async fn do_conection(
             let current_config = current_config.clone();
 
             async move {
-                let claims = Claims {
-                    iss: access_key_id.to_string(),
-                };
-
-                let authorization = jsonwebtoken::encode(
-                    &jsonwebtoken::Header::new(jsonwebtoken::Algorithm::ES256),
-                    &claims,
-                    jwt_encoding_key,
-                )?;
-
                 let req = Request::builder()
                     .method(Method::GET)
                     .uri(url.to_string())

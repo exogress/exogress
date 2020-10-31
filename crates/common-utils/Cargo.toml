@@ -17,6 +17,10 @@ tracing = "0.1"
 tracing-subscriber = "0.2"
 rand = { version = "0.7", features = ["small_rng"] }
 pin-project = "0.4"
+jsonwebtoken = "7.2.0"
+thiserror = "1.0.20"
+bs58 = "0.3.1"
+serde = { version = "1.0.105", features = ["derive"] }
 
 url = { version = "2.1.1", optional = true }
 trust-dns-resolver = { version = "0.19.5", optional = true }
@@ -28,7 +32,7 @@ rustls-native-certs = { version = "0.4.0", optional = true }
 tokio-tungstenite = { version = "0.11.0", optional = true }
 tokio-either = { version = "0.1.4", optional = true }
 
-thiserror = "1.0.20"
+exogress-entities = { path =  "../entities", version = "0.1" }
 
 [dev-dependencies]
 tokio = { version = "0.2", features = ["macros", "rt-threaded", "rt-core"] }
