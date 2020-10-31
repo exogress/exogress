@@ -375,20 +375,6 @@ mod tests {
     use tokio::time::delay_for;
     use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 
-    #[test]
-    fn test_jwt() {
-        let jwt_encoding_key = secret_access_key_private_key(
-            "2eoAYVjpjtztomf7mL94fJeZVS5TSkvEDSYB97v1CQxDDyfeg3cLChF1hCdKZm27Py2vFUCg7dn6yzQRPXtgFHQFt9ULpGLFxB7ypAX2XhySYFNQSmGHx8mvV8S9zqVA8L6iEyVhupZ8zMZHkm7ABHRv6pEXNiXADfQ7bMV6uHtESvKLGY1GMwYnmRfrP"
-        ).unwrap();
-
-        jsonwebtoken::encode(
-            &jsonwebtoken::Header::new(jsonwebtoken::Algorithm::ES256),
-            &(),
-            &jwt_encoding_key,
-        )
-        .unwrap();
-    }
-
     #[tokio::test]
     async fn test_minimal() {
         let resolver = TokioAsyncResolver::new(
