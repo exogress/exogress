@@ -190,7 +190,7 @@ pub struct ClientMount {
     #[serde(
         default,
         skip_serializing_if = "BTreeMap::is_empty",
-        rename = "legal-responses"
+        rename = "static-responses"
     )]
     pub static_responses: BTreeMap<StaticResponseName, StaticResponse>,
 }
@@ -201,7 +201,7 @@ pub enum ClientHandlerVariant {
     #[serde(rename = "proxy")]
     Proxy(Proxy),
 
-    #[serde(rename = "legal-dir")]
+    #[serde(rename = "static-dir")]
     StaticDir(StaticDir),
 
     #[serde(rename = "auth")]

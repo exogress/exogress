@@ -146,7 +146,7 @@ pub struct ProjectMount {
     #[serde(
         default,
         skip_serializing_if = "BTreeMap::is_empty",
-        rename = "legal-responses"
+        rename = "static-responses"
     )]
     pub static_responses: BTreeMap<StaticResponseName, StaticResponse>,
 }

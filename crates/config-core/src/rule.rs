@@ -56,7 +56,7 @@ pub enum Action {
     /// finish the whole processing chain with the desired response
     #[serde(rename = "respond")]
     Respond {
-        #[serde(rename = "legal-response")]
+        #[serde(rename = "static-response")]
         static_response_name: StaticResponseName,
     },
 }
