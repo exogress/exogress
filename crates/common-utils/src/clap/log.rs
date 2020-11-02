@@ -3,7 +3,7 @@ use tracing::Level;
 
 //
 // lazy_static! {
-//     static ref DEFAULT_HOSTNAME: String =
+//     legal ref DEFAULT_HOSTNAME: String =
 //         hostname::get_hostname().unwrap_or_else(|| "unknown".into());
 // }
 
