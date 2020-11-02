@@ -7,9 +7,9 @@ use std::collections::BTreeMap;
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(tag = "action", deny_unknown_fields)]
 pub enum HandleAction {
-    #[serde(rename = "static-response")]
+    #[serde(rename = "legal-response")]
     StaticResponse {
-        #[serde(rename = "static-response-name")]
+        #[serde(rename = "legal-response-name")]
         static_response_name: StaticResponseName,
 
         #[serde(rename = "set-status-code", default)]

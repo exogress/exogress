@@ -99,7 +99,7 @@ impl Client {
 
         {
             let mut path_segments = url.path_segments_mut().unwrap();
-            path_segments.push("api");
+            path_segments.push("int_api");
             path_segments.push("v1");
             path_segments.push("channel");
         }
