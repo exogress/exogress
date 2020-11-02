@@ -1,6 +1,6 @@
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
-use rustls::internal::pemfile::pkcs8_private_keys;
+use rustls::internal::pemfile::{certs, pkcs8_private_keys};
 use std::io;
 use std::io::Cursor;
 use std::net::IpAddr;
@@ -82,7 +82,9 @@ pub async fn connect_ws(
         if let Some(mut identity_pem) = maybe_identity {
             let mut c = Cursor::new(&mut identity_pem);
             let pkey = pkcs8_private_keys(&mut c).expect("FIXME").pop().unwrap();
-            config.set_single_client_cert(vec![], pkey)?;
+            let mut c = Cursor::new(&mut identity_pem);
+            let certs = certs(&mut c).expect("FIXME");
+            config.set_single_client_cert(certs, pkey)?;
         }
         config.root_store =
             rustls_native_certs::load_native_certs().expect("could not load platform certs");
