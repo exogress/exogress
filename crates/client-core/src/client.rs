@@ -64,6 +64,9 @@ pub struct Client {
 
     #[builder(setter(into), default = "Default::default()")]
     pub labels: HashMap<LabelName, LabelValue>,
+
+    #[builder(setter(into), default = "Default::default()")]
+    pub maybe_identity: Option<Vec<u8>>,
 }
 
 impl Client {
@@ -82,6 +85,7 @@ impl Client {
     pub async fn spawn(self, resolver: TokioAsyncResolver) -> Result<(), anyhow::Error> {
         let project_name: ProjectName = self.project.parse()?;
         let account_name: AccountName = self.account.parse()?;
+        let maybe_identity = self.maybe_identity.clone();
 
         let instance_id_storage = Arc::new(Mutex::new(None));
 
@@ -209,6 +213,7 @@ impl Client {
                 authorization,
                 Duration::from_millis(50),
                 Duration::from_secs(30),
+                maybe_identity,
                 resolver,
             )
             .instrument(tracing::info_span!("cloud connector"))

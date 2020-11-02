@@ -1,6 +1,8 @@
 use rand::seq::IteratorRandom;
 use rand::thread_rng;
+use rustls::internal::pemfile::pkcs8_private_keys;
 use std::io;
+use std::io::Cursor;
 use std::net::IpAddr;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -36,11 +38,15 @@ pub enum Error {
 
     #[error("websocket (tungstenite) error: {}", _0)]
     WebsocketError(#[from] tungstenite::Error),
+
+    #[error("TLS error: {}", _0)]
+    TlsError(#[from] rustls::TLSError),
 }
 
 pub async fn connect_ws(
     req: Request<()>,
     resolver: TokioAsyncResolver,
+    maybe_identity: Option<Vec<u8>>,
 ) -> Result<
     (
         WebSocketStream<Either<TlsStream<TcpStream>, TcpStream>>,
@@ -72,6 +78,12 @@ pub async fn connect_ws(
 
     let stream = if is_tls {
         let mut config = ClientConfig::new();
+
+        if let Some(mut identity_pem) = maybe_identity {
+            let mut c = Cursor::new(&mut identity_pem);
+            let pkey = pkcs8_private_keys(&mut c).expect("FIXME").pop().unwrap();
+            config.set_single_client_cert(vec![], pkey)?;
+        }
         config.root_store =
             rustls_native_certs::load_native_certs().expect("could not load platform certs");
         let config = TlsConnector::from(Arc::new(config));

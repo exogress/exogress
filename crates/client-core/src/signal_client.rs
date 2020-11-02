@@ -52,6 +52,7 @@ pub async fn spawn(
     authorization: String,
     backoff_min_duration: Duration,
     backoff_max_duration: Duration,
+    maybe_identity: Option<Vec<u8>>,
     resolver: TokioAsyncResolver,
 ) -> Result<(), CloudConnectError> {
     let mut backoff = Backoff::new(backoff_min_duration, backoff_max_duration);
@@ -68,6 +69,7 @@ pub async fn spawn(
             &url,
             &mut tx,
             &mut rx,
+            maybe_identity.clone(),
             &resolver,
             &mut small_rng,
         )
@@ -148,6 +150,7 @@ async fn do_conection(
     url: &Url,
     tx: &mut mpsc::Sender<TunnelRequest>,
     rx: &mut mpsc::Receiver<String>,
+    maybe_identity: Option<Vec<u8>>,
     resolver: &TokioAsyncResolver,
     _small_rng: &mut SmallRng,
 ) -> Result<(), Error> {
@@ -165,7 +168,8 @@ async fn do_conection(
                     .body(())
                     .unwrap();
 
-                let (mut ws_stream, resp) = connect_ws(req, resolver.clone()).await?;
+                let (mut ws_stream, resp) =
+                    connect_ws(req, resolver.clone(), maybe_identity).await?;
 
                 match resp.status() {
                     StatusCode::UNAUTHORIZED => {
