@@ -43,5 +43,5 @@ mod version;
 pub const DEFAULT_CONFIG_FILE: &str = "Exofile";
 
 lazy_static! {
-    pub static ref CURRENT_VERSION: ConfigVersion = ConfigVersion(Version::new(0, 0, 1));
+    pub static ref CURRENT_VERSION: ConfigVersion = ConfigVersion(Version::new(1, 0, 0));
 }

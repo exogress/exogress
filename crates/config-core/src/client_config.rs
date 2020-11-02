@@ -237,7 +237,7 @@ mod test {
     #[test]
     pub fn test_parsing() {
         const YAML: &str = r#"---
-version: 0.0.1
+version: 1.0.0
 revision: 10
 name: repository-1
 upstreams:
@@ -294,7 +294,7 @@ mount-points:
     #[test]
     pub fn test_validate_upstream_not_defined() {
         const YAML: &str = r#"---
-version: 0.0.1
+version: 1.0.0
 revision: 10
 name: repository-1
 upstreams:
@@ -320,7 +320,7 @@ mount-points:
     #[test]
     pub fn test_checksum() {
         const YAML1: &str = r#"---
-version: 0.0.1
+version: 1.0.0
 revision: 10
 name: repository-1
 upstreams:
@@ -341,7 +341,7 @@ mount-points:
         upstream: backend2
 "#;
         const YAML2: &str = r#"---
-version: 0.0.1
+version: 1.0.0
 name: repository-1
 revision: 10
 mount-points:
