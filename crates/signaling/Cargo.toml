@@ -6,4 +6,6 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1.0.105", features = ["derive"] }
+
 exogress-entities = { path =  "../entities", version = "0.1" }
+exogress-config-core = { path =  "../config-core", version = "0.1" }

@@ -15,7 +15,9 @@ use url::Url;
 
 use exogress_common_utils::backoff::{Backoff, BackoffHandle};
 use exogress_config_core::ClientConfig;
-use exogress_signaling::{SignalerHandshakeResponse, TunnelRequest};
+use exogress_signaling::{
+    InstanceConfigMessage, SignalerHandshakeResponse, TunnelRequest, WsInstanceToCloudMessage,
+};
 
 use crate::TunnelsStorage;
 use exogress_common_utils::jwt::JwtError;
@@ -189,7 +191,12 @@ async fn do_conection(
 
                 ws_stream
                     .send(Message::Text(
-                        serde_json::to_string(&current_config).unwrap(),
+                        serde_json::to_string(&WsInstanceToCloudMessage::InstanceConfig(
+                            InstanceConfigMessage {
+                                config: current_config.clone(),
+                            },
+                        ))
+                        .unwrap(),
                     ))
                     .await?;
 
@@ -232,7 +239,12 @@ async fn do_conection(
             while let Some(config) = config_rx.recv().await {
                 info!("The new config uploaded");
                 send_tx2
-                    .send(Message::Text(serde_json::to_string(&config).unwrap()))
+                    .send(Message::Text(
+                        serde_json::to_string(&WsInstanceToCloudMessage::InstanceConfig(
+                            InstanceConfigMessage { config },
+                        ))
+                        .unwrap(),
+                    ))
                     .await?;
             }
 
