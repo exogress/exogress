@@ -1,5 +1,4 @@
 use anyhow::anyhow;
-use anyhow::Context;
 use futures::channel::{mpsc, oneshot};
 use futures::{pin_mut, select_biased, FutureExt, StreamExt};
 use hashbrown::hash_map::Entry;
@@ -308,8 +307,17 @@ impl Client {
                                                             &mut small_rng,
                                                         )
                                                         .await;
-                                                        if let Err(e) = tunnel_spawn_result {
-                                                            error!("error in tunnel {}", e);
+                                                        match tunnel_spawn_result {
+                                                            Ok(true) => {
+                                                                // should retry
+                                                            }
+                                                            Ok(false) => {
+                                                                // stop retrying
+                                                                break;
+                                                            }
+                                                            Err(e) => {
+                                                                error!("error in tunnel {}. will re-connect", e);
+                                                            }
                                                         }
                                                     }
                                                     mem::drop(existence);

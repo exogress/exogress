@@ -52,7 +52,7 @@ pub async fn spawn(
     internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
     resolver: TokioAsyncResolver,
     small_rng: &mut SmallRng,
-) -> Result<(), Error> {
+) -> Result<bool, Error> {
     let (tunnel_id, stream) = tokio::time::timeout(Duration::from_secs(5), async {
         info!("connecting tunnel to server");
         let gw_addrs = resolver.lookup_ip(gw_hostname.to_string()).await.unwrap();
@@ -101,7 +101,7 @@ pub async fn spawn(
 
     info!("tunnel established. tunnel_id = {}", tunnel_id);
 
-    client_listener(
+    let r = client_listener(
         client_framed(stream),
         client_config,
         internal_server_connector,
@@ -109,5 +109,5 @@ pub async fn spawn(
     )
     .await?;
 
-    Ok(())
+    Ok(r)
 }

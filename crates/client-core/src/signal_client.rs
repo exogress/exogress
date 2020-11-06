@@ -23,7 +23,7 @@ use crate::TunnelsStorage;
 use exogress_common_utils::jwt::JwtError;
 use exogress_common_utils::ws_client;
 use exogress_common_utils::ws_client::connect_ws;
-use exogress_entities::{AccessKeyId, InstanceId};
+use exogress_entities::InstanceId;
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tokio::sync::watch::Receiver;

@@ -13,7 +13,7 @@ use tokio_util::codec::length_delimited::LengthDelimitedCodec;
 
 fn parse_client_header(value: u64) -> Result<ClientPacket, Error> {
     let slot_val: u64 = value >> CODE_BITS_RESERVED;
-    let code = (value & CODE_MASK).try_into()?;
+    let code = (value & MAX_CODE_VALUE).try_into()?;
 
     let client_header = match code {
         COMMON_CODE_DATA_PLAIN => ClientHeader::Common(CommonHeader::DataPlain),
@@ -34,7 +34,7 @@ fn parse_client_header(value: u64) -> Result<ClientPacket, Error> {
 
 fn parse_server_header(value: u64) -> Result<ServerPacket, Error> {
     let slot_val: u64 = value >> CODE_BITS_RESERVED;
-    let code = (value & CODE_MASK).try_into()?;
+    let code = (value & MAX_CODE_VALUE).try_into()?;
 
     let server_header = match code {
         COMMON_CODE_DATA_PLAIN => ServerHeader::Common(CommonHeader::DataPlain),
@@ -43,6 +43,7 @@ fn parse_server_header(value: u64) -> Result<ServerPacket, Error> {
         COMMON_CODE_PING => ServerHeader::Common(CommonHeader::Ping),
         COMMON_CODE_PONG => ServerHeader::Common(CommonHeader::Pong),
         SERVER_CODE_CONNECT_REQUEST => ServerHeader::ConnectRequest,
+        SERVER_CODE_TUNNEL_CLOSE => ServerHeader::TunnelClose,
         code => return Err(Error::UnknownCode { code }),
     };
 
@@ -66,6 +67,7 @@ fn encode_server_header(slot: Slot, header: ServerHeader) -> Result<u64, Error> 
         Common(DataCompressed) => COMMON_CODE_DATA_COMPRESSED,
         Common(Closed) => COMMON_CODE_CLOSED,
         ConnectRequest { .. } => SERVER_CODE_CONNECT_REQUEST,
+        TunnelClose { .. } => SERVER_CODE_TUNNEL_CLOSE,
     };
 
     let res = (slot_val << CODE_BITS_RESERVED) | u64::from(code);

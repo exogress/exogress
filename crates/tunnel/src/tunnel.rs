@@ -119,6 +119,7 @@ pub enum CommonHeader {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ServerHeader {
     ConnectRequest,
+    TunnelClose,
     Common(CommonHeader),
 }
 
@@ -147,14 +148,15 @@ pub const COMMON_CODE_CLOSED: u8 = 2;
 pub const COMMON_CODE_PING: u8 = 3;
 pub const COMMON_CODE_PONG: u8 = 4;
 
-pub const CLIENT_CODE_ACCEPTED: u8 = 5;
-pub const CLIENT_CODE_REJECTED: u8 = 6;
+pub const CLIENT_CODE_ACCEPTED: u8 = (MAX_CODE_VALUE - 0) as u8;
+pub const CLIENT_CODE_REJECTED: u8 = (MAX_CODE_VALUE - 1) as u8;
 
-pub const SERVER_CODE_CONNECT_REQUEST: u8 = 5;
+pub const SERVER_CODE_CONNECT_REQUEST: u8 = (MAX_CODE_VALUE - 0) as u8;
+pub const SERVER_CODE_TUNNEL_CLOSE: u8 = (MAX_CODE_VALUE - 1) as u8;
 
 pub const HEADER_BYTES: usize = 3;
 pub const CODE_BITS_RESERVED: u64 = 4;
-pub const CODE_MASK: u64 = (1 << CODE_BITS_RESERVED) - 1;
+pub const MAX_CODE_VALUE: u64 = (1 << CODE_BITS_RESERVED) - 1;
 pub const MAX_HEADER_CODE: u64 = 0xffffff;
 pub const MAX_SLOT_NUM: u64 = MAX_HEADER_CODE >> 4;
 //3 bytes - 4 bits, reserved for codes
@@ -253,7 +255,7 @@ pub async fn client_listener(
     client_config: Arc<RwLock<ClientConfig>>,
     mut internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
     resolver: TokioAsyncResolver,
-) -> Result<(), crate::error::Error> {
+) -> Result<bool, crate::error::Error> {
     let storage = Arc::new(Mutex::new(HashMap::<Slot, Connection>::new()));
     let just_closed_by_us = Arc::new(Mutex::new(LruCache::<Slot, ()>::with_expiry_duration(
         Duration::from_secs(5),
@@ -286,7 +288,7 @@ pub async fn client_listener(
                     .await?;
             }
 
-            Ok(())
+            Ok::<_, crate::error::Error>(())
         }
     }
     .fuse();
@@ -308,6 +310,9 @@ pub async fn client_listener(
                 match res {
                     Ok((ServerPacket { header, slot }, payload)) => {
                         match header {
+                            ServerHeader::TunnelClose => {
+                                return Ok(false);
+                            }
                             ServerHeader::ConnectRequest => {
                                 let req = bincode::deserialize::<ConnectRequestPayload>(&payload)?;
                                 let target = req.target;
@@ -743,7 +748,7 @@ pub async fn client_listener(
                 }
             }
 
-            Ok::<(), crate::Error>(())
+            Ok::<bool, crate::Error>(true)
         }
     }.fuse();
 
@@ -754,12 +759,14 @@ pub async fn client_listener(
 
     let res = tokio::select! {
         r = read_future => r,
-        r = write_future => r,
+        _r = write_future => {
+            Ok::<bool, crate::error::Error>(true)
+        },
         _ = pongs_timeout => {
             warn!("timeout waiting for pong on tunnel. closing");
-            Ok(())
+            Ok(true)
         },
-        r = periodic_pinger => r,
+        _r = periodic_pinger => Ok::<bool, crate::error::Error>(true),
     };
 
     info!("tunnel closed with result {:?}", res);
