@@ -191,7 +191,7 @@ impl From<ProjectHandler> for ClientHandler {
             variant: v,
             base_path: f.base_path,
             replace_base_path: f.replace_base_path,
-            rules: vec![],
+            rules: f.rules,
             priority: f.priority,
             catch: f.catch,
         }
