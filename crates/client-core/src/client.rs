@@ -36,7 +36,7 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use tokio::time::delay_for;
 
-pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.sexogress.com/";
+pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.exogress.com/";
 
 #[derive(Default, Builder, Debug)]
 pub struct Client {
