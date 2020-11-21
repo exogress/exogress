@@ -20,7 +20,9 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio_rustls::webpki::DNSNameRef;
 use tokio_rustls::{rustls, TlsConnector};
+use trust_dns_resolver::error::ResolveError;
 use trust_dns_resolver::TokioAsyncResolver;
+use webpki::InvalidDNSNameError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -38,6 +40,15 @@ pub enum Error {
 
     #[error("tunnel establish timeout")]
     EstablishTimeout,
+
+    #[error("resolve error: `{_0}`")]
+    ResolveError(#[from] ResolveError),
+
+    #[error("no addresses resolved")]
+    NothingResolved,
+
+    #[error("invalid DNS name: `{_0}`")]
+    BadDnsName(#[from] InvalidDNSNameError),
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -55,8 +66,11 @@ pub async fn spawn(
 ) -> Result<bool, Error> {
     let (tunnel_id, stream) = tokio::time::timeout(Duration::from_secs(5), async {
         info!("connecting tunnel to server");
-        let gw_addrs = resolver.lookup_ip(gw_hostname.to_string()).await.unwrap();
-        let gw_addr = gw_addrs.iter().choose(small_rng).unwrap();
+        let gw_addrs = resolver.lookup_ip(gw_hostname.to_string()).await?;
+        let gw_addr = gw_addrs
+            .iter()
+            .choose(small_rng)
+            .ok_or_else(|| Error::NothingResolved)?;
 
         let socket = TcpStream::connect(SocketAddr::new(gw_addr, 10714)).await?;
         let _ = socket.set_nodelay(true);
@@ -64,7 +78,7 @@ pub async fn spawn(
         config.root_store =
             rustls_native_certs::load_native_certs().expect("could not load platform certs");
         let config = TlsConnector::from(Arc::new(config));
-        let dnsname = DNSNameRef::try_from_ascii_str(&gw_hostname).unwrap();
+        let dnsname = DNSNameRef::try_from_ascii_str(&gw_hostname)?;
 
         info!("connect to {}, addr={}", gw_hostname, gw_addr);
 
