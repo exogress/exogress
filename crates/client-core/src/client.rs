@@ -28,6 +28,7 @@ use std::sync::Arc;
 use tracing_futures::Instrument;
 
 use crate::internal_server::internal_server;
+use dashmap::DashMap;
 use exogress_common_utils::backoff::Backoff;
 use exogress_common_utils::jwt::jwt_token;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
@@ -191,7 +192,7 @@ impl Client {
                 .unwrap();
         }
 
-        let tunnels = Arc::new(Mutex::new(HashMap::new()));
+        let tunnels = Arc::new(DashMap::new());
 
         let authorization = jwt_token(&self.access_key_id, self.secret_access_key.as_str())?;
 
@@ -236,12 +237,11 @@ impl Client {
                 }) = send_rx.next().await
                 {
                     {
-                        if !tunnels.lock().contains_key(&hostname) {
+                        if !tunnels.contains_key(&hostname) {
                             for tunnel_index in 0..max_tunnels_count {
                                 let (stop_tunnel_tx, stop_tunnel_rx) = oneshot::channel();
 
                                 tunnels
-                                    .lock()
                                     .entry(hostname.clone())
                                     .or_default()
                                     .insert(tunnel_index, stop_tunnel_tx);
@@ -332,20 +332,16 @@ impl Client {
                                             _ = stop_tunnel_rx => {},
                                         }
 
+                                        if let dashmap::mapref::entry::Entry::Occupied(mut tunnel_entry) = tunnels.entry(hostname.clone())
                                         {
-                                            let mut locked = tunnels.lock();
-                                            if let Entry::Occupied(mut tunnel_entry) =
-                                                locked.entry(hostname.clone())
-                                            {
-                                                info!("tunnel index {} closed", tunnel_index);
-                                                tunnel_entry.get_mut().remove(&tunnel_index);
+                                            info!("tunnel index {} closed", tunnel_index);
+                                            tunnel_entry.get_mut().remove(&tunnel_index);
 
-                                                if tunnel_entry.get().is_empty() {
-                                                    info!(
-                                                        "tunnels finally empty. remove whole entry"
-                                                    );
-                                                    tunnel_entry.remove_entry();
-                                                }
+                                            if tunnel_entry.get().is_empty() {
+                                                info!(
+                                                    "tunnels finally empty. remove whole entry"
+                                                );
+                                                tunnel_entry.remove_entry();
                                             }
                                         }
                                     }
