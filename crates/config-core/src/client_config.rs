@@ -1,4 +1,4 @@
-use hashbrown::HashSet;
+use hashbrown::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
@@ -12,11 +12,12 @@ use crate::config::Config;
 use crate::path_segment::UrlPathSegmentOrQueryPart;
 use crate::proxy::Proxy;
 use crate::static_dir::StaticDir;
-use crate::upstream::UpstreamDefinition;
+use crate::upstream::{UpstreamDefinition, UpstreamSocketAddr};
 use crate::{Auth, ConfigVersion, Rule};
 use crate::{StaticResponse, CURRENT_VERSION};
 use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
+use std::mem;
 
 #[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone, PartialOrd, Ord)]
 #[serde(transparent)]
@@ -57,8 +58,10 @@ impl ClientConfig {
         upstreams.insert(
             upstream_name.clone(),
             UpstreamDefinition {
-                port: 3000,
-                host: None,
+                addr: UpstreamSocketAddr {
+                    port: 3000,
+                    host: None,
+                },
                 health: vec![],
             },
         );
@@ -103,6 +106,22 @@ impl ClientConfig {
             mount_points,
             upstreams,
         }
+    }
+
+    pub fn parse_with_redefined_upstreams(
+        yaml: impl AsRef<[u8]>,
+        redefined_upstreams: &HashMap<Upstream, UpstreamSocketAddr>,
+    ) -> Result<Self, serde_yaml::Error> {
+        let mut cfg = serde_yaml::from_slice::<ClientConfig>(yaml.as_ref())?;
+
+        for (upstream_name, addr) in redefined_upstreams {
+            let upstream = cfg.upstreams.get_mut(upstream_name);
+            if let Some(definition) = upstream {
+                let _ = mem::replace(&mut definition.addr, addr.clone());
+            }
+        }
+
+        Ok(cfg)
     }
 
     pub fn resolve_upstream(&self, upstream: &Upstream) -> Option<UpstreamDefinition> {
@@ -288,7 +307,7 @@ mount-points:
           - content-type: application/html
             content: "<html><body><h1>not found</h1></body>/html>"
 "#;
-        serde_yaml::from_str::<ClientConfig>(YAML).unwrap();
+        ClientConfig::parse_with_redefined_upstreams(YAML, &Default::default()).unwrap();
     }
 
     #[test]
@@ -308,7 +327,7 @@ mount-points:
         priority: 30
         upstream: backend
 "#;
-        let e = serde_yaml::from_str::<ClientConfig>(YAML)
+        let e = ClientConfig::parse_with_redefined_upstreams(YAML, &Default::default())
             .unwrap()
             .validate()
             .err()
@@ -361,8 +380,8 @@ upstreams:
   backend2:
     port: 4000
 "#;
-        let c1 = serde_yaml::from_str::<ClientConfig>(YAML1).unwrap();
-        let c2 = serde_yaml::from_str::<ClientConfig>(YAML2).unwrap();
+        let c1 = ClientConfig::parse_with_redefined_upstreams(YAML1, &Default::default()).unwrap();
+        let c2 = ClientConfig::parse_with_redefined_upstreams(YAML2, &Default::default()).unwrap();
 
         assert_eq!(c1.checksum(), c2.checksum());
     }

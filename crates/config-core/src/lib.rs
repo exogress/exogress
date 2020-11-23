@@ -19,7 +19,7 @@ pub use rule::{Action, Filter, Rule};
 use semver::Version;
 pub use static_dir::StaticDir;
 pub use status_code::StatusCodeRange;
-pub use upstream::{Probe, UpstreamDefinition};
+pub use upstream::{Probe, UpstreamDefinition, UpstreamSocketAddr};
 pub use version::ConfigVersion;
 
 mod app;

@@ -16,8 +16,8 @@ use tokio::sync::watch;
 use trust_dns_resolver::TokioAsyncResolver;
 use url::Url;
 
-use exogress_config_core::{ClientConfig, Config};
-use exogress_entities::{AccessKeyId, AccountName, LabelName, LabelValue, ProjectName};
+use exogress_config_core::{ClientConfig, Config, UpstreamDefinition, UpstreamSocketAddr};
+use exogress_entities::{AccessKeyId, AccountName, LabelName, LabelValue, ProjectName, Upstream};
 
 use crate::{signal_client, tunnel};
 
@@ -33,6 +33,8 @@ use exogress_common_utils::backoff::Backoff;
 use exogress_common_utils::jwt::jwt_token;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
 use hashbrown::HashMap;
+use std::net::{AddrParseError, IpAddr, SocketAddr};
+use std::num::ParseIntError;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use tokio::time::delay_for;
@@ -67,6 +69,9 @@ pub struct Client {
 
     #[builder(setter(into), default = "Default::default()")]
     pub maybe_identity: Option<Vec<u8>>,
+
+    #[builder(setter(into), default = "Default::default()")]
+    pub refined_upstream_addrs: HashMap<Upstream, UpstreamSocketAddr>,
 }
 
 impl Client {
@@ -126,6 +131,8 @@ impl Client {
         let config_tx;
         let config_rx;
 
+        let refined_upstream_addrs = self.refined_upstream_addrs;
+
         let mut config = Vec::new();
         File::open(&config_path)
             .await
@@ -133,7 +140,8 @@ impl Client {
             .read_to_end(&mut config)
             .await
             .unwrap();
-        let client_config = serde_yaml::from_slice::<ClientConfig>(&config).unwrap();
+        let client_config =
+            ClientConfig::parse_with_redefined_upstreams(&config, &refined_upstream_addrs).unwrap();
         client_config.validate()?;
 
         let current_config = Arc::new(RwLock::new(client_config.clone()));
@@ -151,6 +159,7 @@ impl Client {
             watcher = Watcher::new_immediate({
                 shadow_clone!(config_path);
                 shadow_clone!(current_config);
+                shadow_clone!(refined_upstream_addrs);
 
                 move |event: Result<Event, notify::Error>| {
                     debug!("received fs event: {:?}", event);
@@ -163,7 +172,7 @@ impl Client {
                                 .unwrap()
                                 .read_to_end(&mut config)
                                 .unwrap();
-                            match serde_yaml::from_slice::<ClientConfig>(&config) {
+                            match ClientConfig::parse_with_redefined_upstreams(config, &refined_upstream_addrs) {
                                 Ok(client_config) => {
                                     if let Err(err) = client_config.validate() {
                                         error!("Error in config: {}. Changes are not applied", err);
@@ -232,9 +241,9 @@ impl Client {
 
             async move {
                 while let Some(TunnelRequest {
-                    hostname,
-                    max_tunnels_count,
-                }) = send_rx.next().await
+                                   hostname,
+                                   max_tunnels_count,
+                               }) = send_rx.next().await
                 {
                     {
                         if !tunnels.contains_key(&hostname) {
@@ -306,7 +315,7 @@ impl Client {
                                                             resolver.clone(),
                                                             &mut small_rng,
                                                         )
-                                                        .await;
+                                                            .await;
                                                         match tunnel_spawn_result {
                                                             Ok(true) => {
                                                                 // should retry
@@ -354,7 +363,7 @@ impl Client {
                 }
             }
         })
-        .fuse();
+            .fuse();
 
         pin_mut!(connector_result);
         pin_mut!(tunnel_requests_processor);

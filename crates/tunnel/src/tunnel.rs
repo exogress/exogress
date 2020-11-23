@@ -380,7 +380,7 @@ pub async fn client_listener(
                                                             }
                                                         }
                                                     };
-                                                    let connect_to: SocketAddr = (ip_addr, upstream_target.port).into();
+                                                    let connect_to: SocketAddr = (ip_addr, upstream_target.addr.port).into();
                                                     let res = timeout(
                                                         CONNECT_TIMEOUT,
                                                         TcpStream::connect(connect_to),
