@@ -31,6 +31,7 @@ url = "2.1.1"
 lru_time_cache = "0.11.0"
 tracing-subscriber = "0.2"
 zstd = "0.5.3"
+lazy_static = "1.4.0"
 
 # will be used for id reuse
 #slot_generator = "0.1.0"
