@@ -2,12 +2,11 @@ use std::io;
 
 use std::net::SocketAddr;
 
-use crate::ALPN_PROTOCOL;
 use core::time::Duration;
 use exogress_config_core::ClientConfig;
 use exogress_entities::{AccessKeyId, AccountName, InstanceId, ProjectName};
 use exogress_tunnel::{
-    client_framed, client_listener, MixedChannel, TunnelHello, TunnelHelloResponse,
+    client_framed, client_listener, MixedChannel, TunnelHello, TunnelHelloResponse, ALPN_PROTOCOL,
 };
 use futures::channel::mpsc;
 use parking_lot::RwLock;
