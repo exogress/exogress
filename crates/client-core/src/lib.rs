@@ -12,6 +12,11 @@ pub use client::{Client, ClientBuilder, DEFAULT_CLOUD_ENDPOINT};
 use dashmap::DashMap;
 use futures::channel::oneshot;
 use hashbrown::HashMap;
+use lazy_static::lazy_static;
 use std::sync::Arc;
 
 type TunnelsStorage = Arc<DashMap<String, HashMap<u16, oneshot::Sender<()>>>>;
+
+lazy_static! {
+    static ref ALPN_PROTOCOL: Vec<u8> = AsRef::<[u8]>::as_ref("exotun").to_vec();
+}

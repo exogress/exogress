@@ -2,6 +2,7 @@ use std::io;
 
 use std::net::SocketAddr;
 
+use crate::ALPN_PROTOCOL;
 use core::time::Duration;
 use exogress_config_core::ClientConfig;
 use exogress_entities::{AccessKeyId, AccountName, InstanceId, ProjectName};
@@ -75,6 +76,7 @@ pub async fn spawn(
         let socket = TcpStream::connect(SocketAddr::new(gw_addr, 10714)).await?;
         let _ = socket.set_nodelay(true);
         let mut config = RustlsClientConfig::new();
+        config.alpn_protocols = vec![ALPN_PROTOCOL.to_vec()];
         config.root_store =
             rustls_native_certs::load_native_certs().expect("could not load platform certs");
         let config = TlsConnector::from(Arc::new(config));
