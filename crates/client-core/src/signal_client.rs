@@ -400,7 +400,7 @@ async fn do_conection(
             res = forward_received_messages => {
                 res
             }
-            res = send_updated_config => {
+            _ = send_updated_config => {
                 unreachable!()
             }
             _ = forward_sent_messages => {
@@ -409,7 +409,7 @@ async fn do_conection(
             _ = accept_connection_with_delay => {
                 unreachable!()
             }
-            res = pinger => {
+            _ = pinger => {
                 unreachable!()
             }
         };

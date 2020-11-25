@@ -1,7 +1,6 @@
 use anyhow::anyhow;
 use futures::channel::{mpsc, oneshot};
 use futures::{pin_mut, select_biased, FutureExt, StreamExt};
-use hashbrown::hash_map::Entry;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
@@ -16,7 +15,7 @@ use tokio::sync::watch;
 use trust_dns_resolver::TokioAsyncResolver;
 use url::Url;
 
-use exogress_config_core::{ClientConfig, Config, UpstreamDefinition, UpstreamSocketAddr};
+use exogress_config_core::{ClientConfig, Config, UpstreamSocketAddr};
 use exogress_entities::{AccessKeyId, AccountName, LabelName, LabelValue, ProjectName, Upstream};
 
 use crate::{signal_client, tunnel};
@@ -33,8 +32,6 @@ use exogress_common_utils::backoff::Backoff;
 use exogress_common_utils::jwt::jwt_token;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
 use hashbrown::HashMap;
-use std::net::{AddrParseError, IpAddr, SocketAddr};
-use std::num::ParseIntError;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use tokio::time::delay_for;
@@ -375,7 +372,7 @@ impl Client {
                     return Ok(());
                 }
             }
-            res = tunnel_requests_processor => {
+            _ = tunnel_requests_processor => {
             }
         }
 
