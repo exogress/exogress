@@ -24,7 +24,5 @@ pub fn extract_matches(matches: &ArgMatches) -> usize {
         .parse()
         .expect("bad num_threads");
 
-    info!("Using {} threads", num_threads);
-
     num_threads
 }

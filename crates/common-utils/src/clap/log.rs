@@ -41,7 +41,6 @@ pub fn add_args<'a>(app: clap::App<'a, 'a>) -> clap::App<'a, 'a> {
 }
 
 pub fn handle(matches: &ArgMatches, _service_name: &'static str) {
-    // let gelf_own_hostname = matches.value_of("gelf_own_hostname").unwrap().to_string();
     let log_level = match &matches
         .value_of("log_level")
         .expect("Please provide --log-level")
@@ -58,37 +57,4 @@ pub fn handle(matches: &ArgMatches, _service_name: &'static str) {
     let subscriber = tracing_subscriber::fmt().with_max_level(log_level).finish();
 
     tracing::subscriber::set_global_default(subscriber).expect("no global subscriber has been set");
-
-    // if let Some(gelf_server) = matches.value_of("gelf_server") {
-    //     println!("Logging to gelf server {}", gelf_server);
-    //     let gelf_drain = slog_gelf::Gelf::new(&gelf_own_hostname, gelf_server)
-    //         .unwrap()
-    //         .fuse();
-    //     let async_drain = slog_async::Async::new(gelf_drain).build().fuse();
-    //     let level_filter = LevelFilter::new(async_drain, log_level.as_level()).fuse();
-    //
-    //     match duplicate_drain {
-    //         Some(drain) => {
-    //             let d = Duplicate::new(level_filter, drain.fuse()).fuse();
-    //             slog::Logger::root(d, o!("service" => service_name))
-    //         }
-    //         None => slog::Logger::root(level_filter, o!("service" => service_name)),
-    //     }
-    // } else {
-    //     let mut terminal_logger_builder = TerminalLoggerBuilder::new();
-    //     terminal_logger_builder.level(log_level);
-    //
-    //     let terminal = LoggerBuilder::Terminal(terminal_logger_builder)
-    //         .build()
-    //         .unwrap()
-    //         .fuse();
-    //
-    //     match duplicate_drain {
-    //         Some(drain) => {
-    //             let d = Duplicate::new(terminal, drain.fuse()).fuse();
-    //             slog::Logger::root(d, o!())
-    //         }
-    //         None => slog::Logger::root(terminal, o!()),
-    //     }
-    // }
 }
