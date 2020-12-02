@@ -1,6 +1,8 @@
 use crate::connector::ConnectorRequest;
 use bytes::BytesMut;
-use exogress_entities::{AccessKeyId, AccountName, ConfigName, InstanceId, ProjectName, TunnelId};
+use exogress_entities::{
+    AccessKeyId, AccountName, ConfigName, InstanceId, ProjectName, SmolStr, TunnelId,
+};
 use futures::channel::{mpsc, oneshot};
 use futures::select_biased;
 use futures::stream::StreamExt;
@@ -59,7 +61,7 @@ pub struct TunnelHello {
     pub project_name: ProjectName,
     pub instance_id: InstanceId,
     pub access_key_id: AccessKeyId,
-    pub secret_access_key: String,
+    pub secret_access_key: SmolStr,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

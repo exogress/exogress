@@ -2,11 +2,11 @@
 extern crate serde;
 
 use exogress_config_core::ClientConfig;
-use exogress_entities::InstanceId;
+use exogress_entities::{InstanceId, SmolStr};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TunnelRequest {
-    pub hostname: String,
+    pub hostname: SmolStr,
     pub max_tunnels_count: u16,
 }
 

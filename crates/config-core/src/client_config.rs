@@ -19,7 +19,7 @@ use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 use std::mem;
 
-#[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone, PartialOrd, Ord)]
+#[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone, PartialOrd, Ord, Copy)]
 #[serde(transparent)]
 pub struct ClientConfigRevision(pub u64);
 
@@ -205,7 +205,7 @@ impl Config for ClientConfig {
 pub struct ClientMount {
     pub handlers: BTreeMap<HandlerName, ClientHandler>,
     #[serde(default)]
-    pub catch: BTreeMap<ExceptionName, Catch>,
+    pub catch: Catch,
     #[serde(
         default,
         skip_serializing_if = "BTreeMap::is_empty",

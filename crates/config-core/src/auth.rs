@@ -1,4 +1,5 @@
 use core::fmt;
+use smol_str::SmolStr;
 use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
@@ -19,11 +20,11 @@ pub struct AuthDefinition {
 pub enum AclEntry {
     Allow {
         #[serde(rename = "allow")]
-        identity: String,
+        identity: SmolStr,
     },
     Deny {
         #[serde(rename = "deny")]
-        identity: String,
+        identity: SmolStr,
     },
 }
 

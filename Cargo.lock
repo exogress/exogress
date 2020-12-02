@@ -530,6 +530,7 @@ dependencies = [
  "headers",
  "hostname",
  "http",
+ "hyper",
  "lazy_static",
  "mime_guess",
  "notify",
@@ -631,6 +632,7 @@ dependencies = [
  "serde_with",
  "serde_yaml",
  "shadow-clone",
+ "smol_str",
  "thiserror",
  "tracing",
  "url",
@@ -646,6 +648,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shadow-clone",
+ "smol_str",
  "thiserror",
  "tracing",
  "ulid",
@@ -2039,8 +2042,7 @@ dependencies = [
 [[package]]
 name = "seahash"
 version = "4.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39ee459cae272d224928ca09a1df5406da984f263dc544f9f8bde92a8c3dc916"
+source = "git+https://gitlab.redox-os.org/redox-os/seahash.git#2f078b870b2a7fbd1e4cd617edd99dfc065c78fa"
 
 [[package]]
 name = "security-framework"
@@ -2239,6 +2241,15 @@ name = "smallvec"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbee7696b84bbf3d89a1c2eccff0850e3047ed46bfcd2e92c29a2d074d57e252"
+
+[[package]]
+name = "smol_str"
+version = "0.1.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ca0f7ce3a29234210f0f4f0b56f8be2e722488b95cb522077943212da3b32eb"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "socket2"

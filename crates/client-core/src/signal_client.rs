@@ -23,7 +23,7 @@ use crate::TunnelsStorage;
 use exogress_common_utils::jwt::JwtError;
 use exogress_common_utils::ws_client;
 use exogress_common_utils::ws_client::connect_ws;
-use exogress_entities::InstanceId;
+use exogress_entities::{InstanceId, SmolStr};
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tokio::sync::watch::Receiver;
@@ -50,8 +50,8 @@ pub async fn spawn(
     tunnels: TunnelsStorage,
     url: Url,
     mut tx: mpsc::Sender<TunnelRequest>,
-    mut rx: mpsc::Receiver<String>,
-    authorization: String,
+    mut rx: mpsc::Receiver<SmolStr>,
+    authorization: SmolStr,
     backoff_min_duration: Duration,
     backoff_max_duration: Duration,
     maybe_identity: Option<Vec<u8>>,
@@ -151,7 +151,7 @@ async fn do_conection(
     backoff_handle: BackoffHandle,
     url: &Url,
     tx: &mut mpsc::Sender<TunnelRequest>,
-    rx: &mut mpsc::Receiver<String>,
+    rx: &mut mpsc::Receiver<SmolStr>,
     maybe_identity: Option<Vec<u8>>,
     resolver: &TokioAsyncResolver,
     _small_rng: &mut SmallRng,
@@ -255,7 +255,10 @@ async fn do_conection(
         // forward incoming messages, pings and poings to websocket
         let forward_sent_messages = {
             async {
-                while let Some(msg) = select(&mut send_rx, rx.map(Message::Text)).next().await {
+                while let Some(msg) = select(&mut send_rx, rx.map(|s| Message::Text(s.to_string())))
+                    .next()
+                    .await
+                {
                     debug!("Send to WS: {:?}", msg);
                     if ws_tx.send(msg).await.is_err() {
                         break;

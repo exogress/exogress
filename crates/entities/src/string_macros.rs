@@ -29,7 +29,7 @@ pub enum StringIdentifierParseError {
 
 #[macro_export]
 macro_rules! string_type {
-    ($x:ident) => {
+    ($x:ident, $string_ty:ty) => {
         paste::item! {
             pub fn [<validate_ $x:snake>](s: &str) -> Result<(), $crate::StringIdentifierError> {
                 let len = s.len();
@@ -63,7 +63,7 @@ macro_rules! string_type {
         #[derive(Debug, Clone, $crate::serde::Serialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
         #[serde(transparent)]
         pub struct $x {
-            inner: String,
+            inner: $string_ty,
         }
 
         paste::item! {
@@ -160,7 +160,7 @@ macro_rules! string_type {
 
         impl From<$x> for String {
             fn from(v: $x) -> Self {
-                v.inner.clone()
+                v.inner.to_string()
             }
         }
     };
@@ -172,7 +172,7 @@ mod test {
     use std::convert::TryFrom;
     use std::str::FromStr;
 
-    string_type!(TestIdentifier);
+    string_type!(TestIdentifier, String);
 
     #[test]
     pub fn test_validation() {

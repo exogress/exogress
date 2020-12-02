@@ -46,6 +46,7 @@ headers = "0.3.2"
 percent-encoding = "2.1.0"
 dashmap = "3.11.10"
 lazy_static = "1.4.0"
+hyper = "0.13.9"
 
 exogress-common-utils = { path = "../common-utils", version = "0.1" }
 exogress-config-core = { path = "../config-core", version = "0.1" }

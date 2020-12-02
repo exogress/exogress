@@ -1,3 +1,4 @@
+use smol_str::SmolStr;
 use std::hash::{Hash, Hasher};
 use std::net::AddrParseError;
 use std::num::ParseIntError;
@@ -101,7 +102,7 @@ pub struct Probe {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ProbeTarget {
-    pub path: String,
+    pub path: SmolStr,
 
     #[serde(with = "humantime_serde")]
     pub timeout: Duration,

@@ -4,7 +4,7 @@ extern crate serde;
 extern crate maplit;
 
 pub use auth::{AclEntry, Auth, AuthDefinition, AuthProvider};
-pub use catch::Catch;
+pub use catch::{Catch, CatchAction, CatchActions, StatusCodeRangeHandler};
 pub use client_config::{ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant};
 pub use config::Config;
 use lazy_static::lazy_static;
@@ -18,7 +18,7 @@ pub use response::{
 pub use rule::{Action, Filter, Rule};
 use semver::Version;
 pub use static_dir::StaticDir;
-pub use status_code::StatusCodeRange;
+pub use status_code::{StatusCode, StatusCodeRange};
 pub use upstream::{Probe, UpstreamDefinition, UpstreamSocketAddr};
 pub use version::ConfigVersion;
 

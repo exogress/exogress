@@ -16,7 +16,9 @@ use trust_dns_resolver::TokioAsyncResolver;
 use url::Url;
 
 use exogress_config_core::{ClientConfig, Config, UpstreamSocketAddr};
-use exogress_entities::{AccessKeyId, AccountName, LabelName, LabelValue, ProjectName, Upstream};
+use exogress_entities::{
+    AccessKeyId, AccountName, LabelName, LabelValue, ProjectName, SmolStr, Upstream,
+};
 
 use crate::{signal_client, tunnel};
 
@@ -40,26 +42,29 @@ pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.exogress.com/";
 
 #[derive(Default, Builder, Debug)]
 pub struct Client {
-    #[builder(setter(into), default = "DEFAULT_CONFIG_FILE.to_string()")]
-    pub config_path: String,
+    #[builder(setter(into), default = "DEFAULT_CONFIG_FILE.into()")]
+    pub config_path: SmolStr,
 
     #[builder(default = "true")]
     pub watch_config: bool,
+
+    #[builder(setter(into), default = "443")]
+    pub gw_tunnels_port: u16,
 
     #[builder(setter(into))]
     pub access_key_id: AccessKeyId,
 
     #[builder(setter(into))]
-    pub secret_access_key: String,
+    pub secret_access_key: SmolStr,
 
     #[builder(setter(into))]
-    pub project: String,
+    pub project: SmolStr,
 
     #[builder(setter(into))]
-    pub account: String,
+    pub account: SmolStr,
 
-    #[builder(setter(into), default = "DEFAULT_CLOUD_ENDPOINT.to_string()")]
-    pub cloud_endpoint: String,
+    #[builder(setter(into), default = "DEFAULT_CLOUD_ENDPOINT.into()")]
+    pub cloud_endpoint: SmolStr,
 
     #[builder(setter(into), default = "Default::default()")]
     pub labels: HashMap<LabelName, LabelValue>,
@@ -92,7 +97,7 @@ impl Client {
         let instance_id_storage = Arc::new(Mutex::new(None));
 
         let config_path = fs::canonicalize(PathBuf::from(
-            shellexpand::full(&self.config_path)?.into_owned(),
+            shellexpand::full(self.config_path.as_str())?.into_owned(),
         ))?;
         info!("Use config at {}", config_path.as_path().display());
 
@@ -200,7 +205,7 @@ impl Client {
 
         let tunnels = Arc::new(DashMap::new());
 
-        let authorization = jwt_token(&self.access_key_id, self.secret_access_key.as_str())?;
+        let authorization = jwt_token(&self.access_key_id, self.secret_access_key.as_str())?.into();
 
         let connector_result = tokio::spawn({
             shadow_clone!(tunnels);
@@ -235,6 +240,7 @@ impl Client {
         let tunnel_requests_processor = tokio::spawn({
             let access_key_id = self.access_key_id;
             let secret_access_key = self.secret_access_key;
+            let gw_tunnels_port = self.gw_tunnels_port;
 
             async move {
                 while let Some(TunnelRequest {
@@ -256,6 +262,7 @@ impl Client {
                                     shadow_clone!(account_name);
                                     shadow_clone!(project_name);
                                     shadow_clone!(secret_access_key);
+                                    shadow_clone!(gw_tunnels_port);
                                     shadow_clone!(access_key_id);
                                     shadow_clone!(instance_id_storage);
                                     shadow_clone!(hostname);
@@ -308,6 +315,7 @@ impl Client {
                                                             access_key_id,
                                                             secret_access_key.clone(),
                                                             hostname.clone(),
+                                                            gw_tunnels_port.clone(),
                                                             internal_server_connector.clone(),
                                                             resolver.clone(),
                                                             &mut small_rng,

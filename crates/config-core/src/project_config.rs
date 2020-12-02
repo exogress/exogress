@@ -2,11 +2,12 @@ use hashbrown::HashSet;
 
 use crate::auth::{AclEntry, AuthDefinition};
 use crate::catch::Catch;
+use crate::client_config::ClientMount;
 use crate::config::default_rules;
 use crate::path_segment::UrlPathSegmentOrQueryPart;
 use crate::{Auth, AuthProvider, Config, ConfigVersion, Rule};
 use crate::{ClientHandler, ClientHandlerVariant, StaticResponse, CURRENT_VERSION};
-use exogress_entities::{HandlerName, MountPointName, StaticResponseName};
+use exogress_entities::{ExceptionName, HandlerName, MountPointName, StaticResponseName};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
@@ -41,7 +42,7 @@ impl ProjectConfig {
                     providers: vec![AuthDefinition {
                         name: AuthProvider::Google,
                         acl: vec![AclEntry::Allow {
-                            identity: "*".to_string(),
+                            identity: "*".into(),
                         }],
                     }],
                 }),
@@ -149,6 +150,16 @@ pub struct ProjectMount {
         rename = "static-responses"
     )]
     pub static_responses: BTreeMap<StaticResponseName, StaticResponse>,
+}
+
+impl From<ProjectMount> for ClientMount {
+    fn from(m: ProjectMount) -> Self {
+        ClientMount {
+            handlers: m.handlers.into_iter().map(|(k, v)| (k, v.into())).collect(),
+            catch: m.catch,
+            static_responses: m.static_responses,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]

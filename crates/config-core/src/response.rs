@@ -1,4 +1,5 @@
 use http::{HeaderMap, StatusCode};
+use smol_str::SmolStr;
 use std::hash::{Hash, Hasher};
 use url::Url;
 
@@ -77,8 +78,8 @@ pub struct RedirectResponse {
 #[serde(deny_unknown_fields)]
 pub struct ResponseBody {
     #[serde(rename = "content-type")]
-    pub content_type: String,
-    pub content: String,
+    pub content_type: SmolStr,
+    pub content: SmolStr,
     pub engine: Option<TemplateEngine>,
 }
 

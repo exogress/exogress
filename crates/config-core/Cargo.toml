@@ -22,8 +22,11 @@ exogress-entities = { version = "0.1", path = "../entities" }
 shadow-clone = "1.2.1"
 hashbrown = { version = "0.9", features = ["serde"] }
 tracing = "0.1"
-seahash = "4.0.1"
+#seahash = "4.0.1"
+seahash = { git = "https://gitlab.redox-os.org/redox-os/seahash.git" }
+
 lazy_static = "1.4.0"
 mime = "0.3.16"
 mime_serde_shim = "0.2"
 maplit = "1.0.2"
+smol_str = { version = "0.1.17", features = ["serde"] }

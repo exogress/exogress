@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 
 use core::time::Duration;
 use exogress_config_core::ClientConfig;
-use exogress_entities::{AccessKeyId, AccountName, InstanceId, ProjectName};
+use exogress_entities::{AccessKeyId, AccountName, InstanceId, ProjectName, SmolStr};
 use exogress_tunnel::{
     client_framed, client_listener, MixedChannel, TunnelHello, TunnelHelloResponse, ALPN_PROTOCOL,
 };
@@ -22,6 +22,7 @@ use tokio_rustls::webpki::DNSNameRef;
 use tokio_rustls::{rustls, TlsConnector};
 use trust_dns_resolver::error::ResolveError;
 use trust_dns_resolver::TokioAsyncResolver;
+use warp::hyper::client::conn;
 use webpki::InvalidDNSNameError;
 
 #[derive(thiserror::Error, Debug)]
@@ -31,6 +32,9 @@ pub enum Error {
 
     #[error("io error: `{0}`")]
     Io(#[from] io::Error),
+
+    #[error("hyper error: `{0}`")]
+    Hyper(#[from] hyper::Error),
 
     #[error("tunnel error: `{0}`")]
     Tunnel(#[from] exogress_tunnel::Error),
@@ -49,6 +53,9 @@ pub enum Error {
 
     #[error("invalid DNS name: `{_0}`")]
     BadDnsName(#[from] InvalidDNSNameError),
+
+    #[error("bad http status code: `{_0}`")]
+    BadHttpStatus(http::StatusCode),
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -58,8 +65,9 @@ pub async fn spawn(
     project_name: ProjectName,
     instance_id: InstanceId,
     access_key_id: AccessKeyId,
-    secret_access_key: String,
-    gw_hostname: String,
+    secret_access_key: SmolStr,
+    gw_hostname: SmolStr,
+    gw_port: u16,
     internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
     resolver: TokioAsyncResolver,
     small_rng: &mut SmallRng,
@@ -72,10 +80,10 @@ pub async fn spawn(
             .choose(small_rng)
             .ok_or_else(|| Error::NothingResolved)?;
 
-        let socket = TcpStream::connect(SocketAddr::new(gw_addr, 10714)).await?;
+        let socket = TcpStream::connect(SocketAddr::new(gw_addr, gw_port)).await?;
         let _ = socket.set_nodelay(true);
         let mut config = RustlsClientConfig::new();
-        config.alpn_protocols = vec![ALPN_PROTOCOL.to_vec()];
+        config.alpn_protocols = vec![ALPN_PROTOCOL.to_vec(), "http/1.1".as_bytes().to_vec()];
         config.root_store =
             rustls_native_certs::load_native_certs().expect("could not load platform certs");
         let config = TlsConnector::from(Arc::new(config));
@@ -83,7 +91,29 @@ pub async fn spawn(
 
         info!("connect to {}, addr={}", gw_hostname, gw_addr);
 
-        let mut stream = config.connect(dnsname, socket).await?;
+        let tls_stream = config.connect(dnsname, socket).await?;
+
+        let (mut send_request, http_connection) = conn::Builder::new()
+            .http2_only(false)
+            .handshake(tls_stream)
+            .await?;
+
+        tokio::spawn(http_connection);
+
+        let req = http::Request::builder()
+            .uri(format!("https://{}/exotun", gw_hostname))
+            .header("upgrade", "exotun")
+            .header("connection", "upgrade")
+            .body(hyper::Body::empty())
+            .unwrap();
+
+        let res = send_request.send_request(req).await?;
+
+        if res.status() != http::StatusCode::SWITCHING_PROTOCOLS {
+            return Err(Error::BadHttpStatus(res.status()));
+        }
+
+        let mut stream = res.into_body().on_upgrade().await?;
 
         let hello = TunnelHello {
             config_name: client_config.read().name.clone(),

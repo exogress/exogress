@@ -1,6 +1,7 @@
 use crate::path::MatchingPath;
-use crate::Catch;
+use crate::{Catch, StatusCode};
 use exogress_entities::{ExceptionName, StaticResponseName};
+use smol_str::SmolStr;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
@@ -41,7 +42,7 @@ pub enum Action {
     #[serde(rename = "next-handler")]
     NextHandler,
 
-    /// move on to the next rule. typically combined with rewrite
+    /// move on to the next rule. typically, combined with rewrite
     #[serde(rename = "none")]
     None,
 
@@ -50,7 +51,7 @@ pub enum Action {
     Throw {
         exception: ExceptionName,
         #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-        data: BTreeMap<String, String>,
+        data: BTreeMap<SmolStr, SmolStr>,
     },
 
     /// finish the whole processing chain with the desired response
@@ -58,6 +59,12 @@ pub enum Action {
     Respond {
         #[serde(rename = "static-response")]
         static_response_name: StaticResponseName,
+
+        #[serde(rename = "status-code", default)]
+        status_code: Option<StatusCode>,
+
+        #[serde(default)]
+        data: BTreeMap<SmolStr, SmolStr>,
     },
 }
 

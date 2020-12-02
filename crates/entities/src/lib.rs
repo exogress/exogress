@@ -6,6 +6,7 @@ pub use ulid::{self, Ulid, ULID_LEN};
 
 pub use config_id::ConfigId;
 pub use label_value::LabelValue;
+pub use smol_str::SmolStr;
 pub use string_macros::{
     StringIdentifierError, StringIdentifierParseError, MAX_STRING_IDENTIFIER_LENGTH,
     MIN_STRING_IDENTIFIER_LENGTH,
@@ -23,13 +24,15 @@ ulid_type!(AccessKeyId);
 ulid_type!(TunnelId);
 ulid_type!(AccountUniqueId);
 
-string_type!(RateLimiterName);
-string_type!(ProjectName);
-string_type!(AccountName);
-string_type!(MountPointName);
-string_type!(HandlerName);
-string_type!(ConfigName);
-string_type!(Upstream);
-string_type!(LabelName);
-string_type!(StaticResponseName);
-string_type!(ExceptionName);
+string_type!(ProjectName, crate::SmolStr);
+string_type!(AccountName, crate::SmolStr);
+
+string_type!(Upstream, crate::SmolStr); //Not sure SmolStr vs SmolStr
+
+string_type!(RateLimiterName, crate::SmolStr);
+string_type!(MountPointName, crate::SmolStr);
+string_type!(HandlerName, crate::SmolStr);
+string_type!(ConfigName, crate::SmolStr);
+string_type!(LabelName, crate::SmolStr);
+string_type!(StaticResponseName, crate::SmolStr);
+string_type!(ExceptionName, crate::SmolStr);
