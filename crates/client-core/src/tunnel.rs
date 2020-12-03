@@ -59,6 +59,7 @@ pub enum Error {
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Returns true if tunnel creation should be retried, false otherwise
 pub async fn spawn(
     client_config: Arc<RwLock<ClientConfig>>,
     account_name: AccountName,
