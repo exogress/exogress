@@ -5,7 +5,7 @@ extern crate tracing;
 #[macro_use]
 extern crate serde;
 
-pub use connector::{Compression, ConnectTarget, Connector, INT_SUFFIX};
+pub use connector::{Compression, ConnectTarget, Connector, ConnectorRequest, INT_SUFFIX};
 pub use error::Error;
 pub use framed::{client_framed, server_framed};
 pub use tunnel::{

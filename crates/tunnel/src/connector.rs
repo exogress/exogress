@@ -11,7 +11,9 @@ use url::Url;
 use crate::tunnel::Conn;
 use crate::TunneledConnection;
 use core::fmt;
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
+use ulid::Ulid;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Compression {
@@ -23,7 +25,22 @@ pub enum Compression {
 #[derive(Clone)]
 pub struct Connector {
     req_tx: mpsc::Sender<ConnectorRequest>,
+    ulid: Ulid,
 }
+
+impl Hash for Connector {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u128(self.ulid.0)
+    }
+}
+
+impl PartialEq for Connector {
+    fn eq(&self, other: &Self) -> bool {
+        self.ulid.eq(&other.ulid)
+    }
+}
+
+impl Eq for Connector {}
 
 impl fmt::Debug for Connector {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -107,7 +124,10 @@ pub struct ConnectorRequest {
 
 impl Connector {
     pub fn new(req_tx: mpsc::Sender<ConnectorRequest>) -> Self {
-        Connector { req_tx }
+        Connector {
+            req_tx,
+            ulid: Ulid::new(),
+        }
     }
 
     pub fn retrieve_connection(

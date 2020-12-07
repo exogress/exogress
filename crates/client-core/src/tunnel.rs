@@ -56,6 +56,9 @@ pub enum Error {
 
     #[error("bad http status code: `{_0}`")]
     BadHttpStatus(http::StatusCode),
+
+    #[error("HTTP task stopped")]
+    HttpStopped,
 }
 
 #[allow(clippy::too_many_arguments)]
