@@ -142,6 +142,12 @@ macro_rules! string_type {
             pub fn as_str(&self) -> &str {
                 &self
             }
+
+            pub const fn from_static(s: &str) -> Self {
+                Self {
+                    inner: <$string_ty>::new_inline(s),
+                }
+            }
         }
 
         impl std::convert::TryFrom<$crate::bytes::Bytes> for $x {
