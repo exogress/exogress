@@ -1,7 +1,9 @@
 use core::fmt;
+use http::status::InvalidStatusCode;
 use serde::de::{Unexpected, Visitor};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::TryInto;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub struct StatusCode(pub http::StatusCode);
@@ -89,84 +91,40 @@ pub enum StatusCodeRange {
     List(Vec<http::StatusCode>),
 }
 
-impl Serialize for StatusCodeRange {
-    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
-    where
-        S: Serializer,
-    {
+impl ToString for StatusCodeRange {
+    fn to_string(&self) -> String {
         match self {
-            StatusCodeRange::Single(code) => http_serde::status_code::serialize(code, serializer),
+            StatusCodeRange::Single(code) => code.as_u16().to_string(),
             StatusCodeRange::Range(from, to) => {
-                let s = format!("{}-{}", from, to);
-                serializer.serialize_str(&s)
+                format!("{}-{}", from.as_u16(), to.as_u16())
             }
             StatusCodeRange::List(codes) => {
-                let v = codes.iter().map(|c| c.to_string()).collect::<Vec<_>>();
-                let s = v.join(",");
-                serializer.serialize_str(&s)
+                let v = codes
+                    .iter()
+                    .map(|c| c.as_u16().to_string())
+                    .collect::<Vec<_>>();
+                v.join(",")
             }
         }
     }
 }
 
-struct StatusCodeRangeVisitor;
+#[derive(Debug, thiserror::Error)]
+pub enum StatusCodeRangeParseError {
+    #[error("bad wildcard format")]
+    BadWildcard,
 
-impl<'de> Visitor<'de> for StatusCodeRangeVisitor {
-    type Value = StatusCodeRange;
+    #[error("malformed")]
+    Malformed,
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "valid status code")
-    }
+    #[error("bad status-code")]
+    BadStatusCode(InvalidStatusCode),
+}
 
-    fn visit_i16<E: de::Error>(self, val: i16) -> Result<Self::Value, E> {
-        let v = val
-            .try_into()
-            .map_err(|_| de::Error::custom("bad status code"))?;
-        self.visit_u16(v)
-    }
+impl FromStr for StatusCodeRange {
+    type Err = StatusCodeRangeParseError;
 
-    fn visit_i32<E: de::Error>(self, val: i32) -> Result<Self::Value, E> {
-        let v = val
-            .try_into()
-            .map_err(|_| de::Error::custom("bad status code"))?;
-        self.visit_u16(v)
-    }
-
-    fn visit_i64<E: de::Error>(self, val: i64) -> Result<Self::Value, E> {
-        let v = val
-            .try_into()
-            .map_err(|_| de::Error::custom("bad status code"))?;
-        self.visit_u16(v)
-    }
-
-    fn visit_u8<E: de::Error>(self, val: u8) -> Result<Self::Value, E> {
-        let v = val
-            .try_into()
-            .map_err(|_| de::Error::custom("bad status code"))?;
-        self.visit_u16(v)
-    }
-
-    fn visit_u16<E: de::Error>(self, val: u16) -> Result<Self::Value, E> {
-        http::StatusCode::from_u16(val)
-            .map_err(|_| de::Error::invalid_value(Unexpected::Unsigned(val.into()), &self))
-            .map(StatusCodeRange::Single)
-    }
-
-    fn visit_u32<E: de::Error>(self, val: u32) -> Result<Self::Value, E> {
-        let v = val
-            .try_into()
-            .map_err(|_| de::Error::custom("bad status code"))?;
-        self.visit_u16(v)
-    }
-
-    fn visit_u64<E: de::Error>(self, val: u64) -> Result<Self::Value, E> {
-        let v = val
-            .try_into()
-            .map_err(|_| de::Error::custom("bad status code"))?;
-        self.visit_u16(v)
-    }
-
-    fn visit_str<E: de::Error>(self, val: &str) -> Result<Self::Value, E> {
+    fn from_str(val: &str) -> Result<Self, Self::Err> {
         if val.len() == 7 && val.chars().nth(3).unwrap() == '-' {
             let (from, to) = val.split_at(3);
             let from = from.parse().unwrap();
@@ -181,10 +139,10 @@ impl<'de> Visitor<'de> for StatusCodeRangeVisitor {
                 val.split(',')
                     .map(|s| {
                         s.parse()
-                            .map_err(|e| de::Error::custom(&format!("bad status code: {}", e,)))
+                            .map_err(|e| StatusCodeRangeParseError::Malformed)
                             .and_then(|code| {
                                 http::StatusCode::from_u16(code)
-                                    .map_err(|_| de::Error::custom("bad status code"))
+                                    .map_err(StatusCodeRangeParseError::BadStatusCode)
                             })
                     })
                     .collect::<Result<Vec<http::StatusCode>, _>>()?,
@@ -197,7 +155,7 @@ impl<'de> Visitor<'de> for StatusCodeRangeVisitor {
             ));
         }
         if val.len() != 3 {
-            return Err(de::Error::custom("bad status code"));
+            return Err(StatusCodeRangeParseError::Malformed);
         }
         if val.chars().nth(1).unwrap() == 'x' && val.chars().nth(2).unwrap() == 'x' {
             let first_char = val.chars().next().unwrap();
@@ -208,7 +166,7 @@ impl<'de> Visitor<'de> for StatusCodeRangeVisitor {
                 ));
             }
             if !('0'..='9').contains(&first_char) {
-                return Err(de::Error::custom("bad wildcard format"));
+                return Err(StatusCodeRangeParseError::BadWildcard);
             };
             let from = format!("{}00", first_char).parse().unwrap();
             let to = format!("{}99", first_char).parse().unwrap();
@@ -223,78 +181,67 @@ impl<'de> Visitor<'de> for StatusCodeRangeVisitor {
             ));
         }
 
-        Err(de::Error::custom("malformed"))
-    }
-}
-
-impl<'de> Deserialize<'de> for StatusCodeRange {
-    fn deserialize<D>(deserializer: D) -> Result<StatusCodeRange, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_any(StatusCodeRangeVisitor)
+        Err(StatusCodeRangeParseError::Malformed)
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::CatchMatcher;
 
     #[test]
     pub fn test_parsing() {
         const YAML: &str = r#"---
-- "200,201,203"
-- 500
-- "5xx"
-- "500-550"
-- "500"
-- xxx
-- "*"
+- "status-code:200,201,203"
+- "status-code:5xx"
+- "status-code:500-550"
+- "status-code:500"
+- "status-code:xxx"
+- "status-code:*"
 "#;
-        let parsed = serde_yaml::from_str::<Vec<StatusCodeRange>>(YAML).unwrap();
+        let parsed = serde_yaml::from_str::<Vec<CatchMatcher>>(YAML).unwrap();
         assert_eq!(
             parsed[0],
-            StatusCodeRange::List(vec![
+            CatchMatcher::StatusCode(StatusCodeRange::List(vec![
                 http::StatusCode::from_u16(200).unwrap(),
                 http::StatusCode::from_u16(201).unwrap(),
                 http::StatusCode::from_u16(203).unwrap(),
-            ])
+            ]))
         );
         assert_eq!(
             parsed[1],
-            StatusCodeRange::Single(http::StatusCode::from_u16(500).unwrap())
+            CatchMatcher::StatusCode(StatusCodeRange::Range(
+                http::StatusCode::from_u16(500).unwrap(),
+                http::StatusCode::from_u16(599).unwrap(),
+            ))
         );
         assert_eq!(
             parsed[2],
-            StatusCodeRange::Range(
+            CatchMatcher::StatusCode(StatusCodeRange::Range(
                 http::StatusCode::from_u16(500).unwrap(),
-                http::StatusCode::from_u16(599).unwrap(),
-            )
+                http::StatusCode::from_u16(550).unwrap(),
+            ))
         );
         assert_eq!(
             parsed[3],
-            StatusCodeRange::Range(
-                http::StatusCode::from_u16(500).unwrap(),
-                http::StatusCode::from_u16(550).unwrap(),
-            )
+            CatchMatcher::StatusCode(StatusCodeRange::Single(
+                http::StatusCode::from_u16(500).unwrap()
+            ))
         );
         assert_eq!(
             parsed[4],
-            StatusCodeRange::Single(http::StatusCode::from_u16(500).unwrap())
+            CatchMatcher::StatusCode(StatusCodeRange::Range(
+                http::StatusCode::from_u16(100).unwrap(),
+                http::StatusCode::from_u16(599).unwrap(),
+            ))
         );
         assert_eq!(
             parsed[5],
-            StatusCodeRange::Range(
+            CatchMatcher::StatusCode(StatusCodeRange::Range(
                 http::StatusCode::from_u16(100).unwrap(),
                 http::StatusCode::from_u16(599).unwrap(),
-            )
-        );
-        assert_eq!(
-            parsed[6],
-            StatusCodeRange::Range(
-                http::StatusCode::from_u16(100).unwrap(),
-                http::StatusCode::from_u16(599).unwrap(),
-            )
+            ))
         );
     }
 }

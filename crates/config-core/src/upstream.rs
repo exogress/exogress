@@ -1,4 +1,6 @@
+use exogress_entities::HealthCheckProbeName;
 use smol_str::SmolStr;
+use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
 use std::net::AddrParseError;
 use std::num::ParseIntError;
@@ -65,15 +67,19 @@ pub struct UpstreamDefinition {
     #[serde(flatten)]
     pub addr: UpstreamSocketAddr,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub health: Vec<Probe>,
+    #[serde(
+        rename = "health-checks",
+        default,
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
+    pub health_checks: BTreeMap<HealthCheckProbeName, Probe>,
 }
 
 impl UpstreamDefinition {
     pub fn on_default_host(port: u16) -> Self {
         UpstreamDefinition {
             addr: UpstreamSocketAddr { port, host: None },
-            health: vec![],
+            health_checks: BTreeMap::new(),
         }
     }
 

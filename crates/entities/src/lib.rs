@@ -24,15 +24,16 @@ ulid_type!(AccessKeyId);
 ulid_type!(TunnelId);
 ulid_type!(AccountUniqueId);
 
-string_type!(ProjectName, crate::SmolStr);
-string_type!(AccountName, crate::SmolStr);
+string_type!(ProjectName);
+string_type!(AccountName);
 
-string_type!(Upstream, crate::SmolStr); //Not sure SmolStr vs SmolStr
+string_type!(Upstream);
 
-string_type!(RateLimiterName, crate::SmolStr);
-string_type!(MountPointName, crate::SmolStr);
-string_type!(HandlerName, crate::SmolStr);
-string_type!(ConfigName, crate::SmolStr);
-string_type!(LabelName, crate::SmolStr);
-string_type!(StaticResponseName, crate::SmolStr);
-string_type!(ExceptionName, crate::SmolStr);
+string_type!(RateLimiterName);
+string_type!(MountPointName);
+string_type!(HandlerName);
+string_type!(ConfigName);
+string_type!(LabelName);
+string_type!(StaticResponseName);
+string_type!(ExceptionSegment);
+string_type!(HealthCheckProbeName);

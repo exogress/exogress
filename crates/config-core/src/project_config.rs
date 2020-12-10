@@ -1,13 +1,13 @@
 use hashbrown::HashSet;
 
 use crate::auth::{AclEntry, AuthDefinition};
-use crate::catch::Catch;
+use crate::catch::RescueItem;
 use crate::client_config::ClientMount;
 use crate::config::default_rules;
 use crate::path_segment::UrlPathSegmentOrQueryPart;
 use crate::{Auth, AuthProvider, Config, ConfigVersion, Rule};
 use crate::{ClientHandler, ClientHandlerVariant, StaticResponse, CURRENT_VERSION};
-use exogress_entities::{ExceptionName, HandlerName, MountPointName, StaticResponseName};
+use exogress_entities::{HandlerName, MountPointName, StaticResponseName};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
@@ -21,7 +21,7 @@ pub struct ProjectConfig {
     pub mount_points: BTreeMap<MountPointName, ProjectMount>,
 
     #[serde(default)]
-    pub catch: Catch,
+    pub rescue: Vec<RescueItem>,
 }
 
 impl ProjectConfig {
@@ -50,7 +50,7 @@ impl ProjectConfig {
                 replace_base_path: vec![],
                 rules: default_rules(),
                 priority: 10,
-                catch: Default::default(),
+                rescue: Default::default(),
             },
         );
 
@@ -67,7 +67,7 @@ impl ProjectConfig {
         let mount_points = btreemap! {
             mount_point_name => ProjectMount {
                 handlers,
-                catch: Default::default(),
+                rescue: Default::default(),
                 static_responses,
             },
         };
@@ -75,7 +75,7 @@ impl ProjectConfig {
         ProjectConfig {
             version: CURRENT_VERSION.clone(),
             mount_points,
-            catch: Default::default(),
+            rescue: Default::default(),
         }
     }
 }
@@ -85,7 +85,7 @@ impl Default for ProjectConfig {
         ProjectConfig {
             version: CURRENT_VERSION.clone(),
             mount_points: Default::default(),
-            catch: Default::default(),
+            rescue: Default::default(),
         }
     }
 }
@@ -142,7 +142,7 @@ pub struct ProjectMount {
     pub handlers: BTreeMap<HandlerName, ProjectHandler>,
 
     #[serde(default)]
-    pub catch: Catch,
+    pub rescue: Vec<RescueItem>,
 
     #[serde(
         default,
@@ -156,7 +156,7 @@ impl From<ProjectMount> for ClientMount {
     fn from(m: ProjectMount) -> Self {
         ClientMount {
             handlers: m.handlers.into_iter().map(|(k, v)| (k, v.into())).collect(),
-            catch: m.catch,
+            rescue: m.rescue,
             static_responses: m.static_responses,
         }
     }
@@ -190,7 +190,7 @@ pub struct ProjectHandler {
     pub priority: u16,
 
     #[serde(default)]
-    pub catch: Catch,
+    pub rescue: Vec<RescueItem>,
 }
 
 impl From<ProjectHandler> for ClientHandler {
@@ -204,7 +204,7 @@ impl From<ProjectHandler> for ClientHandler {
             replace_base_path: f.replace_base_path,
             rules: f.rules,
             priority: f.priority,
-            catch: f.catch,
+            rescue: f.rescue,
         }
     }
 }
@@ -233,14 +233,12 @@ mount-points:
         destination: "https://google.com/"
         headers: 
           x-redirected: "1"
-    catch:
-      actions:
-        status-codes:
-          - status-codes-range: 5xx
-            action: static-response
-            static-response-name: tmpl
-            data:
-              custom: info
+    rescue:
+      - catch: status-code:5xx
+        action: respond
+        static-response: tmpl
+        data:
+          custom: info
 "#;
         serde_yaml::from_str::<ProjectConfig>(YAML).unwrap();
     }

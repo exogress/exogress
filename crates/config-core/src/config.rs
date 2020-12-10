@@ -20,7 +20,7 @@ pub fn default_rules() -> Vec<Rule> {
             path: MatchingPath::Wildcard,
         },
         action: Action::Invoke {
-            catch: Default::default(),
+            rescue: Default::default(),
         },
     }]
 }

@@ -400,13 +400,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_minimal() {
-        let resolver = TokioAsyncResolver::new(
-            ResolverConfig::default(),
-            ResolverOpts::default(),
-            Handle::current(),
-        )
-        .await
-        .unwrap();
+        let resolver = TokioAsyncResolver::from_system_conf(Handle::current())
+            .await
+            .unwrap();
 
         let (stop_tx, stop_wait) = stop_handle();
 

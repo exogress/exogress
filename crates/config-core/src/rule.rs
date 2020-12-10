@@ -1,6 +1,7 @@
+use crate::catch::{CatchMatcher, Exception, RescueItem};
 use crate::path::MatchingPath;
-use crate::{Catch, StatusCode};
-use exogress_entities::{ExceptionName, StaticResponseName};
+use crate::StatusCode;
+use exogress_entities::StaticResponseName;
 use smol_str::SmolStr;
 use std::collections::BTreeMap;
 
@@ -35,7 +36,7 @@ pub enum Action {
     #[serde(rename = "invoke")]
     Invoke {
         #[serde(default)]
-        catch: Catch,
+        rescue: Vec<RescueItem>,
     },
 
     /// stop rules processing and move on to the next handler
@@ -49,7 +50,7 @@ pub enum Action {
     /// finish the whole handlers chain and move to finalizer
     #[serde(rename = "throw")]
     Throw {
-        exception: ExceptionName,
+        exception: Exception,
         #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
         data: BTreeMap<SmolStr, SmolStr>,
     },
@@ -58,13 +59,16 @@ pub enum Action {
     #[serde(rename = "respond")]
     Respond {
         #[serde(rename = "static-response")]
-        static_response_name: StaticResponseName,
+        name: StaticResponseName,
 
         #[serde(rename = "status-code", default)]
         status_code: Option<StatusCode>,
 
         #[serde(default)]
         data: BTreeMap<SmolStr, SmolStr>,
+
+        #[serde(default)]
+        rescue: Vec<RescueItem>,
     },
 }
 

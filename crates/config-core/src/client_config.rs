@@ -2,11 +2,9 @@ use hashbrown::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-use exogress_entities::{
-    ConfigName, ExceptionName, HandlerName, MountPointName, StaticResponseName, Upstream,
-};
+use exogress_entities::{ConfigName, HandlerName, MountPointName, StaticResponseName, Upstream};
 
-use crate::catch::Catch;
+use crate::catch::RescueItem;
 use crate::config::default_rules;
 use crate::config::Config;
 use crate::path_segment::UrlPathSegmentOrQueryPart;
@@ -62,7 +60,7 @@ impl ClientConfig {
                     port: 3000,
                     host: None,
                 },
-                health: vec![],
+                health_checks: Default::default(),
             },
         );
 
@@ -77,7 +75,7 @@ impl ClientConfig {
                 replace_base_path: vec![],
                 rules: default_rules(),
                 priority: 10,
-                catch: Default::default(),
+                rescue: Default::default(),
             },
         );
 
@@ -94,7 +92,7 @@ impl ClientConfig {
         let mount_points = btreemap! {
             mount_point_name => ClientMount {
                 handlers,
-                catch: Default::default(),
+                rescue: Default::default(),
                 static_responses,
             }
         };
@@ -205,7 +203,7 @@ impl Config for ClientConfig {
 pub struct ClientMount {
     pub handlers: BTreeMap<HandlerName, ClientHandler>,
     #[serde(default)]
-    pub catch: Catch,
+    pub rescue: Vec<RescueItem>,
     #[serde(
         default,
         skip_serializing_if = "BTreeMap::is_empty",
@@ -246,7 +244,7 @@ pub struct ClientHandler {
     pub priority: u16,
 
     #[serde(default)]
-    pub catch: Catch,
+    pub rescue: Vec<RescueItem>,
 }
 
 #[cfg(test)]
@@ -276,18 +274,15 @@ mount-points:
               path: ["a", "b"]
             action:
               kind: invoke
-              catch:
-                actions:
-                  status-codes:
-                    - status-codes-range: 5xx
-                      action: static-response
-                      static-response-name: tmpl
-                    - status-codes-range: 3xx
-                      action: throw
-                      exception: asd
-                    - status-codes-range: 200-220
-                      action: next-handler
-                      set-status-code: 200
+              rescue:
+                - catch: status-code:5xx
+                  action: respond
+                  static-response: tmpl
+                - catch: status-code:3xx
+                  action: throw-exception
+                  exception: asd
+                - catch: status-code:200-220
+                  action: next-handler
           - filter:
               path: ["*"]
             action:
