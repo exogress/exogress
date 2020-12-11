@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use futures::channel::{mpsc, oneshot};
-use futures::{pin_mut, select_biased, FutureExt, StreamExt};
+use futures::{pin_mut, select_biased, FutureExt, SinkExt, StreamExt};
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use rand::rngs::SmallRng;
 use rand::SeedableRng;
@@ -22,21 +22,24 @@ use exogress_entities::{
 
 use crate::{signal_client, tunnel};
 
-use exogress_signaling::TunnelRequest;
+use exogress_signaling::{TunnelRequest, WsInstanceToCloudMessage};
 use notify::event::{CreateKind, ModifyKind, RemoveKind};
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tracing_futures::Instrument;
 
+use crate::health::UpstreamsHealth;
 use crate::internal_server::internal_server;
 use dashmap::DashMap;
 use exogress_common_utils::backoff::Backoff;
 use exogress_common_utils::jwt::jwt_token;
 use exogress_config_core::DEFAULT_CONFIG_FILE;
+use futures::executor::block_on;
 use hashbrown::HashMap;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use tokio::time::delay_for;
+use tungstenite::Message;
 
 pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.exogress.com/";
 
@@ -94,6 +97,8 @@ impl Client {
         let account_name: AccountName = self.account.parse()?;
         let maybe_identity = self.maybe_identity.clone();
 
+        let (health_update_tx, mut health_update_rx) = mpsc::channel(16);
+
         let instance_id_storage = Arc::new(Mutex::new(None));
 
         let config_path = fs::canonicalize(PathBuf::from(
@@ -128,7 +133,7 @@ impl Client {
         info!("Will connect signalling channel to {}", url);
 
         let (send_tx, mut send_rx) = mpsc::channel(1);
-        let (_recv_tx, recv_rx) = mpsc::channel(1);
+        let (recv_tx, recv_rx) = mpsc::channel(1);
 
         let config_tx;
         let config_rx;
@@ -145,6 +150,31 @@ impl Client {
         let client_config =
             ClientConfig::parse_with_redefined_upstreams(&config, &refined_upstream_addrs).unwrap();
         client_config.validate()?;
+        let upstream_health_checkers = UpstreamsHealth::new(
+            &client_config,
+            health_update_tx,
+            tokio::runtime::Handle::current(),
+        )?;
+
+        tokio::spawn({
+            shadow_clone!(upstream_health_checkers);
+            shadow_clone!(mut recv_tx);
+
+            async move {
+                while let Some(status) = health_update_rx.next().await {
+                    let health = upstream_health_checkers.dump_health();
+                    info!("updated health status = {:?}", status);
+                    recv_tx
+                        .send(
+                            serde_json::to_string(&WsInstanceToCloudMessage::HealthState(health))
+                                .unwrap(),
+                        )
+                        .await?;
+                }
+
+                Ok::<_, anyhow::Error>(())
+            }
+        });
 
         let current_config = Arc::new(RwLock::new(client_config.clone()));
 
@@ -156,6 +186,8 @@ impl Client {
         let mut watcher: RecommendedWatcher;
 
         if self.watch_config {
+            shadow_clone!(upstream_health_checkers);
+
             info!("Watching for config changes");
 
             watcher = Watcher::new_immediate({
@@ -179,11 +211,11 @@ impl Client {
                                     if let Err(err) = client_config.validate() {
                                         error!("Error in config: {}. Changes are not applied", err);
                                     } else {
+                                        block_on(upstream_health_checkers.sync_probes(&client_config));
+                                        *current_config.write() = client_config.clone();
+                                        config_tx.broadcast(client_config).unwrap();
                                         info!("New config successfully loaded");
                                     }
-
-                                    *current_config.write() = client_config.clone();
-                                    config_tx.broadcast(client_config).unwrap();
                                 }
                                 Err(e) => {
                                     error!("error parsing config file: {}", e);
@@ -212,6 +244,7 @@ impl Client {
             shadow_clone!(resolver);
             shadow_clone!(current_config);
             shadow_clone!(instance_id_storage);
+            shadow_clone!(upstream_health_checkers);
 
             signal_client::spawn(
                 instance_id_storage,
@@ -221,6 +254,7 @@ impl Client {
                 url,
                 send_tx,
                 recv_rx,
+                upstream_health_checkers,
                 authorization,
                 Duration::from_millis(50),
                 Duration::from_secs(30),

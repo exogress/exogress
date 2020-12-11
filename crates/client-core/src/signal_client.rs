@@ -19,6 +19,7 @@ use exogress_signaling::{
     InstanceConfigMessage, SignalerHandshakeResponse, TunnelRequest, WsInstanceToCloudMessage,
 };
 
+use crate::health::UpstreamsHealth;
 use crate::TunnelsStorage;
 use exogress_common_utils::jwt::JwtError;
 use exogress_common_utils::ws_client;
@@ -50,7 +51,8 @@ pub async fn spawn(
     tunnels: TunnelsStorage,
     url: Url,
     mut tx: mpsc::Sender<TunnelRequest>,
-    mut rx: mpsc::Receiver<SmolStr>,
+    mut rx: mpsc::Receiver<String>,
+    upstream_healthcheck: UpstreamsHealth,
     authorization: SmolStr,
     backoff_min_duration: Duration,
     backoff_max_duration: Duration,
@@ -71,6 +73,7 @@ pub async fn spawn(
             &url,
             &mut tx,
             &mut rx,
+            &upstream_healthcheck,
             maybe_identity.clone(),
             &resolver,
             &mut small_rng,
@@ -151,7 +154,8 @@ async fn do_conection(
     backoff_handle: BackoffHandle,
     url: &Url,
     tx: &mut mpsc::Sender<TunnelRequest>,
-    rx: &mut mpsc::Receiver<SmolStr>,
+    rx: &mut mpsc::Receiver<String>,
+    upstream_healthcheck: &UpstreamsHealth,
     maybe_identity: Option<Vec<u8>>,
     resolver: &TokioAsyncResolver,
     _small_rng: &mut SmallRng,
@@ -188,6 +192,17 @@ async fn do_conection(
                         return Err(Error::BadStatus(resp.status()));
                     }
                 }
+
+                ws_stream
+                    .send(Message::Text(
+                        serde_json::to_string(&WsInstanceToCloudMessage::InstanceConfig(
+                            InstanceConfigMessage {
+                                config: current_config.clone(),
+                            },
+                        ))
+                        .unwrap(),
+                    ))
+                    .await?;
 
                 ws_stream
                     .send(Message::Text(

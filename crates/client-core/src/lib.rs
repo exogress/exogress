@@ -2,8 +2,11 @@
 extern crate derive_builder;
 #[macro_use]
 extern crate tracing;
+#[macro_use]
+extern crate shadow_clone;
 
 mod client;
+mod health;
 mod internal_server;
 mod signal_client;
 mod tunnel;
