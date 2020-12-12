@@ -2,8 +2,6 @@ use anyhow::anyhow;
 use futures::channel::{mpsc, oneshot};
 use futures::{pin_mut, select_biased, FutureExt, SinkExt, StreamExt};
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use rand::rngs::SmallRng;
-use rand::SeedableRng;
 use shadow_clone::shadow_clone;
 use std::io::Read;
 use std::path::PathBuf;
@@ -39,7 +37,6 @@ use hashbrown::HashMap;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 use tokio::time::delay_for;
-use tungstenite::Message;
 
 pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.exogress.com/";
 
@@ -254,7 +251,6 @@ impl Client {
                 url,
                 send_tx,
                 recv_rx,
-                upstream_health_checkers,
                 authorization,
                 Duration::from_millis(50),
                 Duration::from_secs(30),
@@ -264,8 +260,6 @@ impl Client {
             .instrument(tracing::info_span!("cloud connector"))
         })
         .fuse();
-
-        let small_rng = SmallRng::from_entropy();
 
         let (internal_server_connector, new_conn_rx) = mpsc::channel(1);
 
@@ -304,7 +298,6 @@ impl Client {
                                     shadow_clone!(tunnels);
                                     shadow_clone!(resolver);
                                     shadow_clone!(mut internal_server_connector);
-                                    shadow_clone!(mut small_rng);
 
                                     async move {
                                         let connector = async {
@@ -352,7 +345,6 @@ impl Client {
                                                             gw_tunnels_port.clone(),
                                                             internal_server_connector.clone(),
                                                             resolver.clone(),
-                                                            &mut small_rng,
                                                         )
                                                             .await;
                                                         match tunnel_spawn_result {

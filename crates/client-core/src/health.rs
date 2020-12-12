@@ -1,19 +1,17 @@
 //! Upstream healthchecks
 
 use core::mem;
-use dashmap::DashMap;
 use exogress_config_core::{ClientConfig, Probe, UpstreamDefinition};
 use exogress_entities::{HealthCheckProbeName, Upstream};
 use exogress_signaling::{ProbeHealthStatus, UnhealthyReason};
 use futures::channel::{mpsc, oneshot};
 use futures::SinkExt;
 use hashbrown::{HashMap, HashSet};
-use http::{Method, Request, Response, StatusCode};
+use http::{Method, Request};
 use hyper::client::HttpConnector;
-use hyper::{Body, Error};
+use hyper::Body;
 use parking_lot::Mutex;
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::runtime::Handle;
 use tracing::Level;
 use tracing_futures::Instrument;
@@ -55,7 +53,7 @@ pub async fn start_checker(
     let url = locked.probe_url.clone();
     mem::drop(locked);
 
-    let mut update_tx = update_tx.clone();
+    let update_tx = update_tx.clone();
 
     let probe_inner = probe_inner.clone();
 
@@ -72,10 +70,11 @@ pub async fn start_checker(
                     shadow_clone!(mut update_tx);
                     shadow_clone!(upstream);
 
+                    #[allow(unreachable_code)]
                     async move {
                         loop {
                             interval.tick().await;
-                            let mut health_request = Request::builder()
+                            let health_request = Request::builder()
                                 .uri(url.as_str())
                                 .method(Method::GET)
                                 .body(Body::empty())
@@ -165,7 +164,7 @@ impl HealthCheckProbe {
     ) -> Result<Self, url::ParseError> {
         let (stop_tx, stop_rx) = oneshot::channel();
 
-        let mut probe_url: Url = format!(
+        let probe_url: Url = format!(
             "http://{}:{}{}",
             upstream_definition.get_host(),
             upstream_definition.addr.port,
@@ -203,7 +202,7 @@ impl HealthCheckProbe {
     ) -> Result<(), url::ParseError> {
         let (stop_tx, stop_rx) = oneshot::channel();
 
-        let mut probe_url: Url = format!(
+        let probe_url: Url = format!(
             "http://{}:{}{}",
             upstream_definition.get_host(),
             upstream_definition.addr.port,
@@ -303,7 +302,7 @@ impl UpstreamsHealth {
 
         for to_delete_upstream in existing_upstreams.difference(&new_upstreams) {
             let removed_probes = locked.remove(to_delete_upstream).unwrap();
-            for (probe_name, probe) in removed_probes.into_iter() {
+            for (probe_name, _probe) in removed_probes.into_iter() {
                 let _ = update_tx
                     .send(ProbeStatusUpdate {
                         upstream: to_delete_upstream.clone(),

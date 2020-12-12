@@ -6,7 +6,6 @@ use futures::future::pending;
 use futures::future::FutureExt;
 use futures::{pin_mut, select_biased, stream::select, SinkExt, StreamExt};
 use http::StatusCode;
-use rand::prelude::*;
 use tokio::time::delay_for;
 use tokio::time::timeout;
 use trust_dns_resolver::TokioAsyncResolver;
@@ -19,7 +18,6 @@ use exogress_signaling::{
     InstanceConfigMessage, SignalerHandshakeResponse, TunnelRequest, WsInstanceToCloudMessage,
 };
 
-use crate::health::UpstreamsHealth;
 use crate::TunnelsStorage;
 use exogress_common_utils::jwt::JwtError;
 use exogress_common_utils::ws_client;
@@ -52,7 +50,6 @@ pub async fn spawn(
     url: Url,
     mut tx: mpsc::Sender<TunnelRequest>,
     mut rx: mpsc::Receiver<String>,
-    upstream_healthcheck: UpstreamsHealth,
     authorization: SmolStr,
     backoff_min_duration: Duration,
     backoff_max_duration: Duration,
@@ -60,7 +57,6 @@ pub async fn spawn(
     resolver: TokioAsyncResolver,
 ) -> Result<(), CloudConnectError> {
     let mut backoff = Backoff::new(backoff_min_duration, backoff_max_duration);
-    let mut small_rng = SmallRng::from_entropy();
 
     while let Some(backoff_handle) = backoff.next().await {
         info!("trying to establish connection to a signaler server");
@@ -73,10 +69,8 @@ pub async fn spawn(
             &url,
             &mut tx,
             &mut rx,
-            &upstream_healthcheck,
             maybe_identity.clone(),
             &resolver,
-            &mut small_rng,
         )
         .await
         {
@@ -155,10 +149,8 @@ async fn do_conection(
     url: &Url,
     tx: &mut mpsc::Sender<TunnelRequest>,
     rx: &mut mpsc::Receiver<String>,
-    upstream_healthcheck: &UpstreamsHealth,
     maybe_identity: Option<Vec<u8>>,
     resolver: &TokioAsyncResolver,
-    _small_rng: &mut SmallRng,
 ) -> Result<(), Error> {
     let current_config = current_config_storage.read().clone();
 

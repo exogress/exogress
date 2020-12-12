@@ -6,7 +6,6 @@ use serde::de::Visitor;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 use std::collections::BTreeMap;
-use std::fmt::Write;
 use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]

@@ -1,4 +1,4 @@
-use crate::catch::{CatchMatcher, Exception, RescueItem};
+use crate::catch::{Exception, RescueItem};
 use crate::path::MatchingPath;
 use crate::StatusCode;
 use exogress_entities::StaticResponseName;

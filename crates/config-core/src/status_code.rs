@@ -139,7 +139,7 @@ impl FromStr for StatusCodeRange {
                 val.split(',')
                     .map(|s| {
                         s.parse()
-                            .map_err(|e| StatusCodeRangeParseError::Malformed)
+                            .map_err(|_e| StatusCodeRangeParseError::Malformed)
                             .and_then(|code| {
                                 http::StatusCode::from_u16(code)
                                     .map_err(StatusCodeRangeParseError::BadStatusCode)

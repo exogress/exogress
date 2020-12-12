@@ -10,8 +10,8 @@ use exogress_tunnel::{
 };
 use futures::channel::mpsc;
 use parking_lot::RwLock;
-use rand::rngs::SmallRng;
 use rand::seq::IteratorRandom;
+use rand::thread_rng;
 use rustls::ClientConfig as RustlsClientConfig;
 use rw_stream_sink::RwStreamSink;
 use std::convert::TryInto;
@@ -56,9 +56,6 @@ pub enum Error {
 
     #[error("bad http status code: `{_0}`")]
     BadHttpStatus(http::StatusCode),
-
-    #[error("HTTP task stopped")]
-    HttpStopped,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -74,14 +71,13 @@ pub async fn spawn(
     gw_port: u16,
     internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
     resolver: TokioAsyncResolver,
-    small_rng: &mut SmallRng,
 ) -> Result<bool, Error> {
     let (tunnel_id, stream) = tokio::time::timeout(Duration::from_secs(5), async {
         info!("connecting tunnel to server");
         let gw_addrs = resolver.lookup_ip(gw_hostname.to_string()).await?;
         let gw_addr = gw_addrs
             .iter()
-            .choose(small_rng)
+            .choose(&mut thread_rng())
             .ok_or_else(|| Error::NothingResolved)?;
 
         let socket = TcpStream::connect(SocketAddr::new(gw_addr, gw_port)).await?;
