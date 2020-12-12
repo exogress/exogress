@@ -39,8 +39,6 @@ pub enum WsInstanceToCloudMessage {
 pub enum UnhealthyReason {
     #[serde(rename = "timeout")]
     Timeout,
-    #[serde(rename = "unreachable")]
-    Unreachable,
     #[serde(rename = "bad-status")]
     BadStatus {
         #[serde(with = "http_serde::status_code")]

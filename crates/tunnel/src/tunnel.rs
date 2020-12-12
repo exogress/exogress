@@ -482,7 +482,7 @@ pub async fn client_listener(
                                                                                 res = forward_to_connection => res,
                                                                             };
 
-                                                                            info!("connection on slot {} closed {:?}", slot, res);
+                                                                            debug!("connection on slot {} closed {:?}", slot, res);
 
                                                                             if storage.lock().remove(&slot).is_some() {
                                                                                 let _ = outgoing_messages_tx.send((
@@ -646,7 +646,7 @@ pub async fn client_listener(
                                                                     res = forward_to_internal_server => res,
                                                                 };
 
-                                                                info!("connection on slot {} closed {:?}", slot, res);
+                                                                debug!("connection on slot {} closed {:?}", slot, res);
 
                                                                 if storage.lock().remove(&slot).is_some() {
                                                                     let _ = outgoing_messages_tx.send((
@@ -990,7 +990,7 @@ pub fn server_connection(
                                                                         res = forward_to_connection => res,
                                                                     };
 
-                                                                    info!("connection on slot {} closed {:?}", slot, res);
+                                                                    debug!("connection on slot {} closed {:?}", slot, res);
 
                                                                     if storage.lock().remove(&slot).is_some() {
                                                                         outgoing_messages_tx.send((

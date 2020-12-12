@@ -89,29 +89,32 @@ pub async fn start_checker(
                             )
                             .await;
 
-                            match res {
-                                Ok(Ok(res)) => {
-                                    if !res.status().is_success() {
-                                        probe_inner.lock().status = ProbeHealthStatus::Unhealthy {
-                                            reason: UnhealthyReason::BadStatus {
-                                                status: res.status(),
+                            {
+                                let mut probe_locked = probe_inner.lock();
+                                match res {
+                                    Ok(Ok(res)) => {
+                                        if !res.status().is_success() {
+                                            probe_locked.status = ProbeHealthStatus::Unhealthy {
+                                                reason: UnhealthyReason::BadStatus {
+                                                    status: res.status(),
+                                                },
+                                            };
+                                        } else {
+                                            probe_locked.status = ProbeHealthStatus::Healthy;
+                                        }
+                                    }
+                                    Ok(Err(e)) => {
+                                        probe_locked.status = ProbeHealthStatus::Unhealthy {
+                                            reason: UnhealthyReason::RequestError {
+                                                err: e.to_string(),
                                             },
                                         };
-                                    } else {
-                                        probe_inner.lock().status = ProbeHealthStatus::Healthy;
                                     }
-                                }
-                                Ok(Err(e)) => {
-                                    probe_inner.lock().status = ProbeHealthStatus::Unhealthy {
-                                        reason: UnhealthyReason::RequestError {
-                                            err: e.to_string(),
-                                        },
-                                    };
-                                }
-                                Err(_) => {
-                                    probe_inner.lock().status = ProbeHealthStatus::Unhealthy {
-                                        reason: UnhealthyReason::Timeout,
-                                    };
+                                    Err(_) => {
+                                        probe_locked.status = ProbeHealthStatus::Unhealthy {
+                                            reason: UnhealthyReason::Timeout,
+                                        };
+                                    }
                                 }
                             }
 

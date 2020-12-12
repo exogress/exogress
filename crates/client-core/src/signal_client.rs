@@ -206,10 +206,8 @@ async fn do_conection(
 
                 ws_stream
                     .send(Message::Text(
-                        serde_json::to_string(&WsInstanceToCloudMessage::InstanceConfig(
-                            InstanceConfigMessage {
-                                config: current_config.clone(),
-                            },
+                        serde_json::to_string(&WsInstanceToCloudMessage::HealthState(
+                            upstream_healthcheck.dump_health(),
                         ))
                         .unwrap(),
                     ))
