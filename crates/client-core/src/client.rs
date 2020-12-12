@@ -423,7 +423,6 @@ mod tests {
     use stop_handle::stop_handle;
     use tokio::runtime::Handle;
     use tokio::time::delay_for;
-    use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 
     #[tokio::test]
     async fn test_minimal() {
