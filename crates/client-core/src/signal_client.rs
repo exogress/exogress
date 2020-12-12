@@ -18,6 +18,7 @@ use exogress_signaling::{
     InstanceConfigMessage, SignalerHandshakeResponse, TunnelRequest, WsInstanceToCloudMessage,
 };
 
+use crate::health::UpstreamsHealth;
 use crate::TunnelsStorage;
 use exogress_common_utils::jwt::JwtError;
 use exogress_common_utils::ws_client;
@@ -50,6 +51,7 @@ pub async fn spawn(
     url: Url,
     mut tx: mpsc::Sender<TunnelRequest>,
     mut rx: mpsc::Receiver<String>,
+    upstream_healthcheck: UpstreamsHealth,
     authorization: SmolStr,
     backoff_min_duration: Duration,
     backoff_max_duration: Duration,
@@ -69,6 +71,7 @@ pub async fn spawn(
             &url,
             &mut tx,
             &mut rx,
+            &upstream_healthcheck,
             maybe_identity.clone(),
             &resolver,
         )
@@ -149,6 +152,7 @@ async fn do_conection(
     url: &Url,
     tx: &mut mpsc::Sender<TunnelRequest>,
     rx: &mut mpsc::Receiver<String>,
+    upstream_healthcheck: &UpstreamsHealth,
     maybe_identity: Option<Vec<u8>>,
     resolver: &TokioAsyncResolver,
 ) -> Result<(), Error> {

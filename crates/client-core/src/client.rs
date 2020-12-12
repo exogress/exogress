@@ -251,6 +251,7 @@ impl Client {
                 url,
                 send_tx,
                 recv_rx,
+                upstream_health_checkers,
                 authorization,
                 Duration::from_millis(50),
                 Duration::from_secs(30),
