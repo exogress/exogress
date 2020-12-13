@@ -7,7 +7,7 @@ use exogress_signaling::{ProbeHealthStatus, UnhealthyReason};
 use futures::channel::{mpsc, oneshot};
 use futures::SinkExt;
 use hashbrown::{HashMap, HashSet};
-use http::{Method, Request};
+use http::Request;
 use hyper::client::HttpConnector;
 use hyper::Body;
 use parking_lot::Mutex;
@@ -48,8 +48,8 @@ pub async fn start_checker(
 ) {
     let locked = probe_inner.lock();
 
-    let mut interval = tokio::time::interval(locked.probe.target.period);
-    let target = locked.probe.target.clone();
+    let mut interval = tokio::time::interval(locked.probe.period);
+    let probe = locked.probe.clone();
     let url = locked.probe_url.clone();
     mem::drop(locked);
 
@@ -74,16 +74,18 @@ pub async fn start_checker(
                     async move {
                         loop {
                             interval.tick().await;
-                            let health_request = Request::builder()
+                            let mut health_request = Request::builder()
                                 .uri(url.as_str())
-                                .method(Method::GET)
+                                .method(&probe.method)
                                 .body(Body::empty())
                                 .unwrap();
+
+                            *health_request.headers_mut() = probe.headers.headers.clone();
 
                             let was_status = probe_inner.lock().status.clone();
 
                             let res = tokio::time::timeout(
-                                target.timeout,
+                                probe.timeout,
                                 hyper_client.request(health_request),
                             )
                             .await;
@@ -92,7 +94,8 @@ pub async fn start_checker(
                                 let mut probe_locked = probe_inner.lock();
                                 match res {
                                     Ok(Ok(res)) => {
-                                        if !res.status().is_success() {
+                                        let status_code = res.status();
+                                        if !probe.expected_status_code.is_belongs(&status_code) {
                                             probe_locked.status = ProbeHealthStatus::Unhealthy {
                                                 reason: UnhealthyReason::BadStatus {
                                                     status: res.status(),
@@ -168,7 +171,7 @@ impl HealthCheckProbe {
             "http://{}:{}{}",
             upstream_definition.get_host(),
             upstream_definition.addr.port,
-            probe.target.path
+            probe.path
         )
         .parse()?;
 
@@ -206,7 +209,7 @@ impl HealthCheckProbe {
             "http://{}:{}{}",
             upstream_definition.get_host(),
             upstream_definition.addr.port,
-            probe.target.path
+            probe.path
         )
         .parse()?;
         {

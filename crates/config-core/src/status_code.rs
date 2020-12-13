@@ -121,6 +121,16 @@ pub enum StatusCodeRangeParseError {
     BadStatusCode(InvalidStatusCode),
 }
 
+impl StatusCodeRange {
+    pub fn is_belongs(&self, code: &http::StatusCode) -> bool {
+        match self {
+            StatusCodeRange::Single(single_code) => code == single_code,
+            StatusCodeRange::Range(from, to) => code >= from && code <= to,
+            StatusCodeRange::List(codes) => codes.iter().find(|&c| c == code).is_some(),
+        }
+    }
+}
+
 impl FromStr for StatusCodeRange {
     type Err = StatusCodeRangeParseError;
 

@@ -1,6 +1,6 @@
 use crate::{HttpHeaders, StatusCodeRange};
 use exogress_entities::HealthCheckProbeName;
-use http::Method;
+use http::{Method, StatusCode};
 use smol_str::SmolStr;
 use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
@@ -100,30 +100,30 @@ pub enum ProbeDetails {
     Liveness,
 }
 
+fn default_method() -> Method {
+    Method::GET
+}
+
+fn default_status_code_range() -> StatusCodeRange {
+    StatusCodeRange::Single(StatusCode::OK)
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Probe {
     #[serde(flatten)]
     pub details: ProbeDetails,
-    pub target: ProbeTarget,
-
-    #[serde(flatten)]
-    pub headers: HttpHeaders,
-
-    #[serde(with = "http_serde::method")]
-    pub method: Method,
-
-    #[serde(rename = "expected-status-code")]
-    pub expected_status_code: StatusCodeRange,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct ProbeTarget {
     pub path: SmolStr,
-
     #[serde(with = "humantime_serde")]
     pub timeout: Duration,
-
     #[serde(with = "humantime_serde")]
     pub period: Duration,
+
+    #[serde(default)]
+    pub headers: HttpHeaders,
+
+    #[serde(with = "http_serde::method", default = "default_method")]
+    pub method: Method,
+
+    #[serde(rename = "expected-status-code", default = "default_status_code_range")]
+    pub expected_status_code: StatusCodeRange,
 }
