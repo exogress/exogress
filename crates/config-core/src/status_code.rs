@@ -185,6 +185,43 @@ impl FromStr for StatusCodeRange {
     }
 }
 
+impl Serialize for StatusCodeRange {
+    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_str())
+    }
+}
+
+struct StatusCodeRangeVisitor;
+
+impl<'de> Visitor<'de> for StatusCodeRangeVisitor {
+    type Value = StatusCodeRange;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("status-codes range")
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        value
+            .parse()
+            .map_err(|e| de::Error::custom(format!("bad format: {} on {}", e, value)))
+    }
+}
+
+impl<'de> Deserialize<'de> for StatusCodeRange {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(StatusCodeRangeVisitor)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

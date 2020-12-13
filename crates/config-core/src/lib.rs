@@ -15,7 +15,7 @@ pub use path_segment::UrlPathSegmentOrQueryPart;
 pub use project_config::{ProjectConfig, ProjectHandler, ProjectHandlerVariant};
 pub use proxy::Proxy;
 pub use response::{
-    CommonResponse, RawResponse, RedirectResponse, ResponseBody, StaticResponse, TemplateEngine,
+    HttpHeaders, RawResponse, RedirectResponse, ResponseBody, StaticResponse, TemplateEngine,
 };
 pub use rule::{Action, Filter, Rule};
 use semver::Version;

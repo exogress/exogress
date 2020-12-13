@@ -50,12 +50,12 @@ impl RedirectType {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CommonResponse {
+pub struct HttpHeaders {
     #[serde(with = "http_serde::header_map", default)]
     pub headers: HeaderMap,
 }
 
-impl Hash for CommonResponse {
+impl Hash for HttpHeaders {
     fn hash<H: Hasher>(&self, state: &mut H) {
         for (k, v) in &self.headers {
             k.hash(state);
@@ -64,6 +64,16 @@ impl Hash for CommonResponse {
     }
 }
 
+impl PartialEq for HttpHeaders {
+    fn eq(&self, other: &Self) -> bool {
+        let existing: Vec<_> = self.headers.iter().collect();
+        let other: Vec<_> = other.headers.iter().collect();
+        existing.eq(&other)
+    }
+}
+
+impl Eq for HttpHeaders {}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct RedirectResponse {
@@ -71,7 +81,7 @@ pub struct RedirectResponse {
     pub redirect_type: RedirectType,
     pub destination: Url,
     #[serde(flatten)]
-    pub common: CommonResponse,
+    pub common: HttpHeaders,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
@@ -97,7 +107,7 @@ pub struct RawResponse {
     pub body: Vec<ResponseBody>,
 
     #[serde(flatten)]
-    pub common: CommonResponse,
+    pub common: HttpHeaders,
 }
 
 fn default_status_code() -> StatusCode {

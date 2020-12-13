@@ -1,4 +1,6 @@
+use crate::{HttpHeaders, StatusCodeRange};
 use exogress_entities::HealthCheckProbeName;
+use http::Method;
 use smol_str::SmolStr;
 use std::collections::BTreeMap;
 use std::hash::{Hash, Hasher};
@@ -92,17 +94,26 @@ impl UpstreamDefinition {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub enum ProbeKind {
+#[serde(deny_unknown_fields, tag = "kind")]
+pub enum ProbeDetails {
     #[serde(rename = "liveness")]
     Liveness,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-#[serde(deny_unknown_fields)]
 pub struct Probe {
-    pub kind: ProbeKind,
+    #[serde(flatten)]
+    pub details: ProbeDetails,
     pub target: ProbeTarget,
+
+    #[serde(flatten)]
+    pub headers: HttpHeaders,
+
+    #[serde(with = "http_serde::method")]
+    pub method: Method,
+
+    #[serde(rename = "expected-status-code")]
+    pub expected_status_code: StatusCodeRange,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
