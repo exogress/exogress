@@ -1346,6 +1346,7 @@ mod test {
                 name: "my-config".parse().unwrap(),
                 mount_points: Default::default(),
                 upstreams,
+                static_responses: Default::default(),
             }
             .into(),
         ));

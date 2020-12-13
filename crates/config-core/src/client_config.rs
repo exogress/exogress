@@ -37,6 +37,12 @@ pub struct ClientConfig {
     pub mount_points: BTreeMap<MountPointName, ClientMount>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub upstreams: BTreeMap<Upstream, UpstreamDefinition>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        rename = "static-responses"
+    )]
+    pub static_responses: BTreeMap<StaticResponseName, StaticResponse>,
 }
 
 impl ClientConfig {
@@ -103,6 +109,7 @@ impl ClientConfig {
             name: config_name,
             mount_points,
             upstreams,
+            static_responses: Default::default(),
         }
     }
 
@@ -201,9 +208,12 @@ impl Config for ClientConfig {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct ClientMount {
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub handlers: BTreeMap<HandlerName, ClientHandler>,
-    #[serde(default)]
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rescue: Vec<RescueItem>,
+
     #[serde(
         default,
         skip_serializing_if = "BTreeMap::is_empty",

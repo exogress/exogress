@@ -17,11 +17,22 @@ use std::hash::{Hash, Hasher};
 pub struct ProjectConfig {
     pub version: ConfigVersion,
 
-    #[serde(rename = "mount-points")]
+    #[serde(
+        rename = "mount-points",
+        default,
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
     pub mount_points: BTreeMap<MountPointName, ProjectMount>,
 
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rescue: Vec<RescueItem>,
+
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        rename = "static-responses"
+    )]
+    pub static_responses: BTreeMap<StaticResponseName, StaticResponse>,
 }
 
 impl ProjectConfig {
@@ -76,6 +87,7 @@ impl ProjectConfig {
             version: CURRENT_VERSION.clone(),
             mount_points,
             rescue: Default::default(),
+            static_responses: Default::default(),
         }
     }
 }
@@ -86,6 +98,7 @@ impl Default for ProjectConfig {
             version: CURRENT_VERSION.clone(),
             mount_points: Default::default(),
             rescue: Default::default(),
+            static_responses: Default::default(),
         }
     }
 }
@@ -139,9 +152,10 @@ impl Config for ProjectConfig {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 #[serde(deny_unknown_fields)]
 pub struct ProjectMount {
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub handlers: BTreeMap<HandlerName, ProjectHandler>,
 
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rescue: Vec<RescueItem>,
 
     #[serde(
