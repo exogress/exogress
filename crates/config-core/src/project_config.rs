@@ -230,7 +230,7 @@ mod test {
     #[test]
     pub fn test_parsing() {
         const YAML: &str = r#"---
-version: 1.0.0
+version: 1.0.0-pre.1
 mount-points:
   mount_point:
     handlers:

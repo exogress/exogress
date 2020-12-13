@@ -18,7 +18,6 @@ pub use response::{
     HttpHeaders, RawResponse, RedirectResponse, ResponseBody, StaticResponse, TemplateEngine,
 };
 pub use rule::{Action, Filter, Rule};
-use semver::Version;
 pub use static_dir::StaticDir;
 pub use status_code::{StatusCode, StatusCodeRange};
 pub use upstream::{Probe, UpstreamDefinition, UpstreamSocketAddr};
@@ -44,5 +43,5 @@ mod version;
 pub const DEFAULT_CONFIG_FILE: &str = "Exofile";
 
 lazy_static! {
-    pub static ref CURRENT_VERSION: ConfigVersion = ConfigVersion(Version::new(1, 0, 0));
+    pub static ref CURRENT_VERSION: ConfigVersion = ConfigVersion("1.0.0-pre.1".parse().unwrap());
 }
