@@ -8,7 +8,6 @@ license = "Apache 2.0"
 [dependencies]
 tokio = { version = "0.2", features = ["rt-core", "tcp", "sync", "io-util", "time", "macros"] }
 tokio-util = { version = "0.3.1", features = ["codec", "compat"] }
-tokio-rustls = "0.14"
 futures = "0.3"
 bytes = "0.5"
 thiserror = "1.0.19"
@@ -29,7 +28,6 @@ tracing = "0.1"
 trust-dns-resolver = "0.19.5"
 url = "2.1.1"
 lru_time_cache = "0.11.0"
-tracing-subscriber = "0.2"
 zstd = "0.5.3"
 lazy_static = "1.4.0"
 
