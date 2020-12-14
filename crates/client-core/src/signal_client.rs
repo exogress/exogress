@@ -93,7 +93,7 @@ pub async fn spawn(
                 return Err(CloudConnectError::Conflict);
             }
             Err(e) => {
-                warn!("Error on signal server connection: {}", e);
+                warn!("Presence error: {}", e);
             }
         }
 
@@ -138,8 +138,8 @@ pub enum Error {
     #[error("JWT generation error: `{0}`")]
     Jwt(#[from] JwtError),
 
-    #[error("handshake error")]
-    HandshakeError,
+    #[error("handshake error: `{0}`")]
+    HandshakeError(String),
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -214,15 +214,21 @@ async fn do_conection(
                         match serde_json::from_str::<SignalerHandshakeResponse>(response.as_str())?
                         {
                             SignalerHandshakeResponse::Ok { instance_id } => instance_id,
-                            SignalerHandshakeResponse::Err { msg } => {
-                                error!("Error during signaler handshake: {}", msg);
-                                return Err(Error::HandshakeError);
-                            }
                         }
                     }
                     r => {
-                        error!("Error receiving signaler handshake response: {:?}", r);
-                        return Err(Error::HandshakeError);
+                        let msg = r
+                            .and_then(|i| i.ok())
+                            .and_then(|msg| match msg {
+                                Message::Close(Some(s)) => {
+                                    serde_json::from_str::<serde_json::Value>(&s.reason).ok()
+                                }
+                                _ => None,
+                            })
+                            .and_then(|v| v.get("error").cloned())
+                            .and_then(|e| e.as_str().map(|s| s.to_string()))
+                            .unwrap_or_else(|| "no error provided".to_string());
+                        return Err(Error::HandshakeError(msg));
                     }
                 };
 

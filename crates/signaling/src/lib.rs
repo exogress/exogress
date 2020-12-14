@@ -20,7 +20,6 @@ pub struct TunnelRequestResponse {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum SignalerHandshakeResponse {
     Ok { instance_id: InstanceId },
-    Err { msg: String },
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
