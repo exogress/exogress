@@ -203,8 +203,7 @@ impl Config for ClientConfig {
             .flatten()
             .collect::<HashSet<Upstream>>();
 
-        let probes_result = self
-            .upstreams
+        self.upstreams
             .values()
             .map(|upstream| {
                 upstream
@@ -220,7 +219,7 @@ impl Config for ClientConfig {
                     })
                     .collect::<Result<Vec<_>, _>>()
             })
-            .next();
+            .collect::<Result<Vec<_>, _>>()?;
 
         let mut not_defined = used_upstreams.difference(&defined_upstreams).peekable();
         if not_defined.peek().is_some() {
