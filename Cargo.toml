@@ -126,7 +126,8 @@ client-core = [
     "url",
     "urlencoding",
     "warp",
-    "webpki" ]
+    "webpki",
+    "ws-client"]
 client-lib = [
     "anyhow",
     "client-core",

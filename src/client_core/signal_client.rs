@@ -22,9 +22,9 @@ use crate::signaling::{
 use crate::client_core::health::UpstreamsHealth;
 use crate::client_core::TunnelsStorage;
 use crate::common_utils::jwt::JwtError;
-use crate::common_utils::ws_client;
-use crate::common_utils::ws_client::connect_ws;
 use crate::entities::{InstanceId, SmolStr};
+use crate::ws_client;
+use crate::ws_client::connect_ws;
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tokio::sync::watch::Receiver;
