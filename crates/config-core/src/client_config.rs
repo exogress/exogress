@@ -2,7 +2,9 @@ use hashbrown::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-use exogress_entities::{ConfigName, HandlerName, MountPointName, StaticResponseName, Upstream};
+use exogress_entities::{
+    ConfigName, HandlerName, HealthCheckProbeName, MountPointName, StaticResponseName, Upstream,
+};
 
 use crate::catch::RescueItem;
 use crate::config::default_rules;
@@ -10,7 +12,7 @@ use crate::config::Config;
 use crate::path_segment::UrlPathSegmentOrQueryPart;
 use crate::proxy::Proxy;
 use crate::static_dir::StaticDir;
-use crate::upstream::{UpstreamDefinition, UpstreamSocketAddr};
+use crate::upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr};
 use crate::{Auth, ConfigVersion, Rule};
 use crate::{StaticResponse, CURRENT_VERSION};
 use std::collections::BTreeMap;
@@ -144,6 +146,12 @@ pub enum ClientConfigError {
 
     #[error("unsupported config version {}", _0)]
     UnsupportedVersion(ConfigVersion),
+
+    #[error("bad health check values on probe {probe_name}: {probe_error}")]
+    BadHealthCheckValues {
+        probe_name: HealthCheckProbeName,
+        probe_error: ProbeError,
+    },
 }
 
 impl Config for ClientConfig {
@@ -194,6 +202,26 @@ impl Config for ClientConfig {
             })
             .flatten()
             .collect::<HashSet<Upstream>>();
+
+        let probes_result = self
+            .upstreams
+            .values()
+            .map(|upstream| {
+                upstream
+                    .health_checks
+                    .iter()
+                    .map(|(probe_name, probe)| {
+                        probe.validate().or_else(|probe_validation_error| {
+                            Err(ClientConfigError::BadHealthCheckValues {
+                                probe_name: probe_name.clone(),
+                                probe_error: probe_validation_error,
+                            })
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .next();
+
         let mut not_defined = used_upstreams.difference(&defined_upstreams).peekable();
         if not_defined.peek().is_some() {
             return Err(ClientConfigError::UpstreamNotDefined(
