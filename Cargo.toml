@@ -1,5 +1,5 @@
 [package]
-name = "exogress"
+name = "exogress-common"
 description = "Exogress common code"
 version = "0.0.1-beta.1"
 authors = ["Exogress Team <team@exogress.com>"]
