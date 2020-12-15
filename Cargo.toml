@@ -1,14 +1,273 @@
-[workspace]
-members = [
-    "crates/common-utils",
-    "crates/entities",
-    "crates/client-core",
-    "crates/client-lib",
-    "crates/signaling",
-    "crates/config-core",
-    "crates/tunnel",
+[package]
+name = "exogress"
+description = "Exogress common code"
+version = "0.1.0"
+authors = ["Exogress Team <team@exogress.com>"]
+edition = "2018"
+license = "Apache 2.0"
+
+[dependencies]
+anyhow = { optional = true, version = "1.0.32" }
+bincode = { optional = true, version = "1.3.1" }
+bs58 = { optional = true, version = "0.3.1" }
+byteorder = { optional = true, version = "1.3.4" }
+bytes = { optional = true, version = "0.5" }
+clap = { optional = true, version = "2.33.3" }
+dashmap = { optional = true, version = "3.11.10", features = ["hashbrown"] }
+derive_builder = { optional = true, version = "0.9.0" }
+futures = { optional = true, version = "0.3" }
+hashbrown = { optional = true, version = "0.9" }
+headers = { optional = true, version = "0.3.2" }
+hostname = { optional = true, version = "0.3.1" }
+http = { optional = true, version = "0.2.1" }
+http-serde = { optional = true, version = "1.0.1" }
+humantime = { optional = true, version = "2.0.1" }
+humantime-serde = { optional = true, version = "1.0.0" }
+hyper = { optional = true, version = "0.13.9" }
+jsonwebtoken = { optional = true, version = "7.2.0" }
+lazy_static = { optional = true, version = "1.4.0" }
+lru_time_cache = { optional = true, version = "0.11.0" }
+maplit = { optional = true, version = "1.0.2" }
+mime_guess = { optional = true, version = "2.0.3" }
+notify = { optional = true, version = "5.0.0-pre.4" }
+num_cpus = { optional = true, version = "1.0" }
+parking_lot = { optional = true, version = "0.11" }
+paste = { optional = true, version = "1.0" }
+percent-encoding = { optional = true, version = "2.1.0" }
+pin-project = { optional = true, version = "0.4" }
+rand = { optional = true, version = "0.7" }
+regex = { optional = true, version = "1.3.7" }
+rustls = { optional = true, version = "0.18.1" }
+rustls-native-certs = { optional = true, version = "0.4.0" }
+rw-stream-sink = { optional = true, version = "0.2.1" }
+seahash = { optional = true, git = "https://gitlab.redox-os.org/redox-os/seahash.git" }
+semver = { optional = true, version = "0.10.0" }
+serde = { optional = true, version = "1.0.105" }
+serde_json = { optional = true, version = "1.0.48" }
+serde_yaml = { optional = true, version = "0.8.12" }
+shadow-clone = { optional = true, version = "1.2.1" }
+shellexpand = { optional = true, version = "2.0.0" }
+smallvec = { optional = true, version = "1.4.1" }
+smol_str = { optional = true, version = "0.1.17" }
+stop-handle = { optional = true, version = "0.1.0" }
+thiserror = { optional = true, version = "1.0.19" }
+tokio = { optional = true, version = "0.2" }
+tokio-either = { optional = true, version = "0.1.4" }
+tokio-rustls = { optional = true, version = "0.14.0" }
+tokio-tungstenite = { optional = true, version = "0.11.0" }
+tokio-util = { optional = true, version = "0.3.1" }
+tower = { optional = true, version = "0.3.1" }
+tracing = { optional = true, version = "0.1" }
+tracing-futures = { optional = true, version = "0.2.4" }
+tracing-subscriber = { optional = true, version = "0.2" }
+trust-dns-resolver = { optional = true, version = "0.19.5" }
+tungstenite = { optional = true, version = "0.11" }
+ulid = { optional = true, version = "0.4.0" }
+url = { optional = true, version = "2.1.1" }
+urlencoding = { optional = true, version = "1.1.1" }
+warp = { optional = true, version = "0.2.4" }
+webpki = { optional = true, version = "0.21.3" }
+zstd = { optional = true, version = "0.5.3" }
+
+[dev-dependencies]
+tokio = { version = "0.2", features = ["full"] }
+stop-handle = "0.1.0"
+tracing-subscriber = "0.2.11"
+
+[features]
+client-core = [
+    "anyhow",
+    "bincode",
+    "byteorder",
+    "bytes",
+    "common-utils",
+    "config-core",
+    "dashmap",
+    "derive_builder",
+    "entities",
+    "futures",
+    "hashbrown",
+    "headers",
+    "hostname",
+    "http",
+    "hyper",
+    "lazy_static",
+    "mime_guess",
+    "notify",
+    "parking_lot",
+    "percent-encoding",
+    "pin-project",
+    "rand",
+    "rustls-native-certs",
+    "rw-stream-sink",
+    "serde",
+    "serde/derive",
+    "serde_json",
+    "serde_yaml",
+    "shadow-clone",
+    "shellexpand",
+    "signaling",
+    "smallvec",
+    "smol_str",
+    "thiserror",
+    "tokio",
+    "tokio-rustls",
+    "tokio-tungstenite",
+    "tokio-util",
+    "tokio-util/compat",
+    "tokio/fs",
+    "tokio/tcp",
+    "tokio/time",
+    "tracing",
+    "tracing-futures",
+    "trust-dns-resolver",
+    "tungstenite",
+    "tunnel",
+    "url",
+    "urlencoding",
+    "warp",
+    "webpki" ]
+client-lib = [
+    "anyhow",
+    "client-core",
+    "entities",
+    "futures",
+    "shadow-clone",
+    "tokio",
+    "tokio/macros",
+    "tokio/process",
+    "tokio/rt-threaded",
+    "tracing-subscriber",
+    "trust-dns-resolver",
+    "tunnel",
 ]
-exclude = []
+common-utils = [
+    "bs58",
+    "clap",
+    "entities",
+    "futures",
+    "hostname",
+    "jsonwebtoken",
+    "lazy_static",
+    "num_cpus",
+    "pin-project",
+    "rand",
+    "rustls",
+    "rustls-native-certs",
+    "serde",
+    "serde/derive",
+    "stop-handle",
+    "thiserror",
+    "tokio",
+    "tokio-either",
+    "tokio-rustls",
+    "tokio-tungstenite",
+    "tokio/net",
+    "tokio/signal",
+    "tokio/time",
+    "tracing",
+    "tracing-subscriber",
+    "trust-dns-resolver",
+    "tungstenite",
+    "url",
+    "webpki",
+]
+config-core = [
+    "bytes",
+    "hashbrown",
+    "hashbrown/serde",
+    "http",
+    "http-serde",
+    "humantime",
+    "humantime-serde",
+    "lazy_static",
+    "maplit",
+    "percent-encoding",
+    "regex",
+    "seahash",
+    "semver",
+    "semver/serde",
+    "serde",
+    "serde/derive",
+    "serde_yaml",
+    "smol_str",
+    "smol_str/serde",
+    "thiserror",
+    "tracing",
+    "url",
+    "url/serde",
+]
+entities = [
+    "bytes",
+    "paste",
+    "rand",
+    "serde",
+    "serde/derive",
+    "shadow-clone",
+    "smol_str",
+    "smol_str/serde",
+    "thiserror",
+    "tracing",
+    "ulid",
+    "ulid/serde",
+]
+signaling = [
+    "config-core",
+    "entities",
+    "hashbrown",
+    "http",
+    "http-serde",
+    "serde",
+    "serde/derive",
+]
+tunnel = [
+    "bincode",
+    "bytes",
+    "config-core",
+    "entities",
+    "futures",
+    "hashbrown",
+    "hyper",
+    "lazy_static",
+    "lru_time_cache",
+    "parking_lot",
+    "rand",
+    "rw-stream-sink",
+    "serde",
+    "serde/derive",
+    "shadow-clone",
+    "stop-handle",
+    "thiserror",
+    "tokio",
+    "tokio-util",
+    "tokio-util/codec",
+    "tokio-util/compat",
+    "tokio/io-util",
+    "tokio/macros",
+    "tokio/rt-core",
+    "tokio/sync",
+    "tokio/tcp",
+    "tokio/time",
+    "tower",
+    "tracing",
+    "trust-dns-resolver",
+    "ulid",
+    "ulid/serde",
+    "url",
+    "zstd",
+]
+ws-client = [
+    "rustls",
+    "rustls-native-certs",
+    "tokio-either",
+    "tokio-rustls",
+    "tokio-tungstenite",
+    "trust-dns-resolver",
+    "tungstenite",
+    "url",
+    "webpki",
+]
+
 
 [profile.release]
 lto = true

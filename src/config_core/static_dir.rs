@@ -1,0 +1,74 @@
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
+#[serde(deny_unknown_fields)]
+pub enum Wildcard {
+    #[serde(rename = "_")]
+    Any,
+    #[serde(rename = "5xx")]
+    ServerErrors,
+    #[serde(rename = "4xx")]
+    ClientErrors,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
+#[serde(deny_unknown_fields, untagged)]
+pub enum Error {
+    StatusCode(#[serde(with = "http_serde::status_code")] http::StatusCode),
+    Placeholder(Wildcard),
+}
+
+impl From<http::StatusCode> for Error {
+    fn from(s: http::StatusCode) -> Self {
+        Error::StatusCode(s)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
+#[serde(deny_unknown_fields)]
+pub struct StaticDir {
+    pub dir: PathBuf,
+    // cache_policy: Option<String>,
+    //
+    // errors: Vec<(Error, PathBuf)>,
+}
+
+#[cfg(test)]
+mod test {
+
+    //     #[test]
+    //     pub fn test_deserialize() {
+    //         assert_eq!(
+    //             StaticDir {
+    //                 path: "./web".parse().unwrap(),
+    //                 cache_policy: Some("immutable".parse().unwrap()),
+    //                 errors: vec![
+    //                     (
+    //                         http::StatusCode::NOT_FOUND.into(),
+    //                         "errors/404.html".parse().unwrap()
+    //                     ),
+    //                     (
+    //                         Error::Placeholder(Wildcard::ServerErrors),
+    //                         "errors/500.html".parse().unwrap()
+    //                     ),
+    //                     (
+    //                         Error::Placeholder(Wildcard::Any),
+    //                         "errors/_.html".parse().unwrap()
+    //                     ),
+    //                 ],
+    //             },
+    //             serde_yaml::from_str(
+    //                 r#"---
+    // path: "./web"
+    // cache_policy: immutable
+    // errors:
+    //   - [404, "errors/404.html"]
+    //   - [5xx, "errors/500.html"]
+    //   - [_, "errors/_.html"]
+    // "#
+    //             )
+    //             .unwrap()
+    //         );
+    //     }
+}
