@@ -46,6 +46,8 @@ pub struct ClientConfig {
         rename = "static-responses"
     )]
     pub static_responses: BTreeMap<StaticResponseName, StaticResponse>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rescue: Vec<RescueItem>,
 }
 
 impl ClientConfig {
@@ -113,6 +115,7 @@ impl ClientConfig {
             mount_points,
             upstreams,
             static_responses: Default::default(),
+            rescue: vec![],
         }
     }
 
