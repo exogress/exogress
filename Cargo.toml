@@ -61,7 +61,7 @@ tracing = { optional = true, version = "0.1" }
 tracing-futures = { optional = true, version = "0.2.4" }
 tracing-subscriber = { optional = true, version = "0.2" }
 trust-dns-resolver = { optional = true, version = "0.19.5" }
-tungstenite = { optional = true, version = "0.11" }
+tungstenite = { optional = true, version = "0.11", default-features = false }
 ulid = { optional = true, version = "0.4.0" }
 url = { optional = true, version = "2.1.1" }
 urlencoding = { optional = true, version = "1.1.1" }
