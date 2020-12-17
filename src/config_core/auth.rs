@@ -69,7 +69,7 @@ mod tests {
         serde_yaml::from_str::<ClientHandler>(
             r#"
 ---
-type: auth
+kind: auth
 priority: 1
 providers:
   - name: google

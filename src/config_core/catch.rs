@@ -101,7 +101,10 @@ impl<'de> Visitor<'de> for CatchMatcherVisitor {
     type Value = CatchMatcher;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("string separated with ':' starting with `status-codes` or `exception`")
+        write!(
+            formatter,
+            "string separated with ':' starting with `status-codes` or `exception`"
+        )
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -137,7 +140,7 @@ impl<'de> Visitor<'de> for ExceptionVisitor {
     type Value = Exception;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("string separated with ':'")
+        write!(formatter, "string separated with ':'")
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>

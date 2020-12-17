@@ -288,6 +288,7 @@ mod test {
                         mount_points: Default::default(),
                         upstreams,
                         static_responses: Default::default(),
+                        rescue: vec![],
                     }
                     .into(),
                 ));

@@ -1,17 +1,22 @@
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::config::REF_STR;
-use crate::path_segment::UrlPathSegmentOrQueryPart;
+use crate::config_core::UrlPathSegmentOrQueryPart;
 use serde::de::Visitor;
 use std::fmt;
-use std::fmt::Write;
 
-pub type RefNumber = u8;
+// pub type RefNumber = u8;
 
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub enum PathSegmentRewrite {
-    Reference(RefNumber),
+    // Reference(RefNumber),
     Single(UrlPathSegmentOrQueryPart),
+}
+
+impl AsRef<str> for PathSegmentRewrite {
+    fn as_ref(&self) -> &str {
+        let Self::Single(s) = self;
+        s.as_ref()
+    }
 }
 
 impl Serialize for PathSegmentRewrite {
@@ -20,9 +25,9 @@ impl Serialize for PathSegmentRewrite {
         S: Serializer,
     {
         match self {
-            PathSegmentRewrite::Reference(num) => {
-                serializer.serialize_str(format!("{}{}", REF_STR, num).as_str())
-            }
+            // PathSegmentRewrite::Reference(num) => {
+            //     serializer.serialize_str(format!("{}{}", REF_STR, num).as_str())
+            // }
             PathSegmentRewrite::Single(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -40,24 +45,24 @@ impl<'de> Visitor<'de> for PathSegmentRewriteVisitor {
     type Value = PathSegmentRewrite;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("single path segment \"s\", numeric reference \"$1\" or \"*\"")
+        write!(formatter, "single path segment \"s\" or \"*\"")
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: de::Error,
     {
-        if value.starts_with(REF_STR) {
-            let num: RefNumber = value[REF_STR.len()..]
-                .parse()
-                .map_err(|e| de::Error::custom(format!("bad reference number: {}", e)))?;
-            Ok(PathSegmentRewrite::Reference(num))
-        } else {
-            match value.parse() {
-                Ok(r) => Ok(PathSegmentRewrite::Single(r)),
-                Err(e) => Err(de::Error::custom(e)),
-            }
+        // if value.starts_with(REF_STR) {
+        //     let num: RefNumber = value[REF_STR.len()..]
+        //         .parse()
+        //         .map_err(|e| de::Error::custom(format!("bad reference number: {}", e)))?;
+        //     Ok(PathSegmentRewrite::Reference(num))
+        // } else {
+        match value.parse() {
+            Ok(r) => Ok(PathSegmentRewrite::Single(r)),
+            Err(e) => Err(de::Error::custom(e)),
         }
+        // }
     }
 }
 

@@ -226,7 +226,8 @@ impl<'de> Visitor<'de> for MatchPathSegmentVisitor {
     type Value = MatchPathSegment;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str(
+        write!(
+            formatter,
             "single path segment \"s\", multiple segments [\"s1\", \"s1\"], \"?\" or \"*\"",
         )
     }
@@ -288,7 +289,7 @@ impl<'de> Visitor<'de> for PathVisitor {
     type Value = MatchingPath;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("valid path FIXME")
+        write!(formatter, "valid path FIXME")
     }
 
     #[allow(clippy::unnecessary_unwrap)]

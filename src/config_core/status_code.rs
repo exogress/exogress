@@ -210,7 +210,7 @@ impl<'de> Visitor<'de> for StatusCodeRangeVisitor {
     type Value = StatusCodeRange;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("status-codes range")
+        write!(formatter, "status-codes range")
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>

@@ -75,7 +75,7 @@ impl<'de> Visitor<'de> for UrlPathSegmentOrQueryPartVisitor {
     type Value = UrlPathSegmentOrQueryPart;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("Path segment")
+        write!(formatter, "Path segment")
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>

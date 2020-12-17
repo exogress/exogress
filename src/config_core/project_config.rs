@@ -178,7 +178,7 @@ impl From<ProjectMount> for ClientMount {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields, tag = "type")]
+#[serde(deny_unknown_fields, tag = "kind")]
 pub enum ProjectHandlerVariant {
     // #[serde(rename = "static_app")]
     // StaticApp(StaticApp),
@@ -236,7 +236,7 @@ mount-points:
   mount_point:
     handlers:
       main:
-        type: auth
+        kind: auth
         priority: 30
         providers:
           - name: github

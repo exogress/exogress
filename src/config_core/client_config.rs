@@ -254,7 +254,7 @@ pub struct ClientMount {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields, tag = "type")]
+#[serde(deny_unknown_fields, tag = "kind")]
 pub enum ClientHandlerVariant {
     #[serde(rename = "proxy")]
     Proxy(Proxy),
@@ -305,7 +305,7 @@ mount-points:
   mount_point:
     handlers:
       main:
-        type: proxy
+        kind: proxy
         priority: 30
         upstream: backend
         base-path: ["my"]
@@ -359,7 +359,7 @@ mount-points:
   mount_point:
     handlers:
       main:
-        type: proxy
+        kind: proxy
         priority: 30
         upstream: backend
 "#;
@@ -387,11 +387,11 @@ mount-points:
   mount_point:
     handlers:
       main:
-        type: proxy
+        kind: proxy
         priority: 30
         upstream: backend
       main2:
-        type: proxy
+        kind: proxy
         priority: 40
         upstream: backend2
 "#;
@@ -403,11 +403,11 @@ mount-points:
   mount_point:
     handlers:
       main2:
-        type: proxy
+        kind: proxy
         priority: 40
         upstream: backend2
       main:
-        type: proxy
+        kind: proxy
         priority: 30
         upstream: backend
 upstreams:

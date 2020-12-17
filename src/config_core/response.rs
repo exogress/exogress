@@ -1,8 +1,8 @@
+use crate::config_core::redirect::RedirectTo;
 use http::{HeaderMap, StatusCode};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use std::hash::{Hash, Hasher};
-use url::Url;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy)]
 #[serde(deny_unknown_fields)]
@@ -80,7 +80,7 @@ impl Eq for HttpHeaders {}
 pub struct RedirectResponse {
     #[serde(rename = "redirect-type")]
     pub redirect_type: RedirectType,
-    pub destination: Url,
+    pub destination: RedirectTo,
     #[serde(flatten)]
     pub common: HttpHeaders,
 }
@@ -123,4 +123,29 @@ pub enum StaticResponse {
 
     #[serde(rename = "raw")]
     Raw(RawResponse),
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_redirect_url_parsing() {
+        serde_yaml::from_str::<RedirectResponse>(
+            r#"
+---
+redirect-type: moved-permanently
+destination: ["ru.html"]
+"#,
+        )
+        .unwrap();
+        serde_yaml::from_str::<RedirectResponse>(
+            r#"
+---
+redirect-type: moved-permanently
+destination: ["https://google.com", "a", "b"]
+"#,
+        )
+        .unwrap();
+    }
 }
