@@ -6,6 +6,7 @@ use serde::de::Visitor;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 use std::collections::BTreeMap;
+use std::convert::TryFrom;
 use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
@@ -131,6 +132,22 @@ impl fmt::Display for Exception {
         }
 
         Ok(())
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Exception {
+    type Error = ExceptionParseError;
+
+    fn try_from(value: &'a str) -> Result<Self, Self::Error> {
+        value.parse()
+    }
+}
+
+impl TryFrom<String> for Exception {
+    type Error = ExceptionParseError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        value.parse()
     }
 }
 
