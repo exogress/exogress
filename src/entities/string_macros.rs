@@ -11,10 +11,10 @@ pub enum StringIdentifierError {
     )]
     InsufficientIdentifierLength,
 
-    #[error("bad character `{0}`. Should be lowercase alphanumeric, _ or -")]
+    #[error("bad character `{0}`. Should be alphanumeric, _ or -")]
     BadCharacter(std::primitive::char),
 
-    #[error("bad starting character `{0}`. Should be lowercase alphanumeric")]
+    #[error("bad starting character `{0}`. Should be alphanumeric")]
     BadStartingCharacter(std::primitive::char),
 }
 
@@ -42,13 +42,12 @@ macro_rules! string_type {
 
                 let first_char = *s.chars().peekable().peek().unwrap();
 
-                if !first_char.is_alphanumeric() || !first_char.is_lowercase() {
+                if !first_char.is_alphanumeric() {
                     return Err($crate::entities::StringIdentifierError::BadStartingCharacter(first_char));
                 }
 
                 for c in s.chars() {
                     if !c.is_alphanumeric() &&
-                        !c.is_lowercase() &&
                         c != '-' &&
                         c != '_'
                     {
