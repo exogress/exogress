@@ -3,7 +3,6 @@ use futures::channel::{mpsc, oneshot};
 use futures::{pin_mut, select_biased, FutureExt, SinkExt, StreamExt};
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use shadow_clone::shadow_clone;
-use std::io::Read;
 use std::path::PathBuf;
 use std::time::Duration;
 use std::{fs, io, mem};
@@ -34,7 +33,6 @@ use crate::common_utils::jwt::jwt_token;
 use crate::config_core::DEFAULT_CONFIG_FILE;
 use dashmap::DashMap;
 use derive_builder::Builder;
-use futures::executor::block_on;
 use hashbrown::HashMap;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
@@ -91,7 +89,12 @@ pub enum Error {
 }
 
 impl Client {
-    pub async fn spawn(self, resolver: TokioAsyncResolver) -> Result<(), anyhow::Error> {
+    pub async fn spawn(
+        self,
+        reload_config_tx: mpsc::UnboundedSender<()>,
+        mut reload_config_rx: mpsc::UnboundedReceiver<()>,
+        resolver: TokioAsyncResolver,
+    ) -> Result<(), anyhow::Error> {
         let project_name: ProjectName = self.project.parse()?;
         let account_name: AccountName = self.account.parse()?;
         let maybe_identity = self.maybe_identity.clone();
@@ -161,7 +164,7 @@ impl Client {
 
             async move {
                 while let Some(status) = health_update_rx.next().await {
-                    let health = upstream_health_checkers.dump_health();
+                    let health = upstream_health_checkers.dump_health().await;
                     info!("updated health status = {:?}", status);
                     recv_tx
                         .send(
@@ -185,15 +188,12 @@ impl Client {
         let mut watcher: RecommendedWatcher;
 
         if self.watch_config {
-            shadow_clone!(upstream_health_checkers);
+            shadow_clone!(reload_config_tx);
+            shadow_clone!(config_path);
 
             info!("Watching for config changes");
 
             watcher = Watcher::new_immediate({
-                shadow_clone!(config_path);
-                shadow_clone!(current_config);
-                shadow_clone!(refined_upstream_addrs);
-
                 move |event: Result<Event, notify::Error>| {
                     debug!("received fs event: {:?}", event);
 
@@ -203,31 +203,7 @@ impl Client {
                             warn!("Config file removed. Keep using the latest version until the new one created");
                         }
                         _ => {
-                            let mut config = Vec::new();
-                            match std::fs::File::open(&config_path)
-                                .unwrap()
-                                .read_to_end(&mut config) {
-                                Ok(_) => {
-                                    match ClientConfig::parse_with_redefined_upstreams(config, &refined_upstream_addrs) {
-                                        Ok(client_config) => {
-                                            if let Err(err) = client_config.validate() {
-                                                error!("Error in config: {}. Changes are not applied", err);
-                                            } else {
-                                                block_on(upstream_health_checkers.sync_probes(&client_config));
-                                                *current_config.write() = client_config.clone();
-                                                config_tx.broadcast(client_config).unwrap();
-                                                info!("New config successfully loaded");
-                                            }
-                                        }
-                                        Err(e) => {
-                                            error!("error parsing config file: {}", e);
-                                        }
-                                    }
-                                }
-                                Err(e) => {
-                                    error!("Error reading config file: `{}`", e);
-                                }
-                            }
+                            reload_config_tx.unbounded_send(()).unwrap();
                         }
                     }
                 }
@@ -237,6 +213,49 @@ impl Client {
                 .watch(config_path, RecursiveMode::NonRecursive)
                 .unwrap();
         }
+
+        tokio::spawn({
+            shadow_clone!(config_path);
+            shadow_clone!(current_config);
+            shadow_clone!(refined_upstream_addrs);
+            shadow_clone!(upstream_health_checkers);
+
+            async move {
+                while let Some(_) = reload_config_rx.next().await {
+                    let mut config = Vec::new();
+                    match tokio::fs::File::open(&config_path)
+                        .await
+                        .unwrap()
+                        .read_to_end(&mut config)
+                        .await
+                    {
+                        Ok(_) => {
+                            match ClientConfig::parse_with_redefined_upstreams(
+                                config,
+                                &refined_upstream_addrs,
+                            ) {
+                                Ok(client_config) => {
+                                    if let Err(err) = client_config.validate() {
+                                        error!("Error in config: {}. Changes are not applied", err);
+                                    } else {
+                                        upstream_health_checkers.sync_probes(&client_config).await;
+                                        *current_config.write() = client_config.clone();
+                                        config_tx.broadcast(client_config).unwrap();
+                                        info!("New config successfully loaded");
+                                    }
+                                }
+                                Err(e) => {
+                                    error!("error parsing config file: {}", e);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            error!("Error reading config file: `{}`", e);
+                        }
+                    }
+                }
+            }
+        });
 
         let tunnels = Arc::new(DashMap::new());
 
@@ -304,7 +323,7 @@ impl Client {
                                     shadow_clone!(current_config);
                                     shadow_clone!(tunnels);
                                     shadow_clone!(resolver);
-                                    shadow_clone!(mut internal_server_connector);
+                                    shadow_clone!( mut internal_server_connector);
 
                                     async move {
                                         let connector = async {
@@ -375,9 +394,9 @@ impl Client {
                                         };
 
                                         tokio::select! {
-                                            _ = connector => {},
-                                            _ = stop_tunnel_rx => {},
-                                        }
+    _ = connector => {},
+    _ = stop_tunnel_rx => {},
+    }
 
                                         if let dashmap::mapref::entry::Entry::Occupied(mut tunnel_entry) = tunnels.entry(hostname.clone())
                                         {

@@ -240,17 +240,19 @@ impl HealthCheckProbe {
 
 #[derive(Clone)]
 pub struct UpstreamsHealth {
-    inner: Arc<Mutex<HashMap<Upstream, HashMap<HealthCheckProbeName, HealthCheckProbe>>>>,
+    inner:
+        Arc<tokio::sync::Mutex<HashMap<Upstream, HashMap<HealthCheckProbeName, HealthCheckProbe>>>>,
     update_tx: mpsc::Sender<ProbeStatusUpdate>,
     handle: Handle,
 }
 
 impl UpstreamsHealth {
-    pub fn dump_health(
+    pub async fn dump_health(
         &self,
     ) -> HashMap<Upstream, HashMap<HealthCheckProbeName, ProbeHealthStatus>> {
         self.inner
             .lock()
+            .await
             .iter()
             .map(|(upstream, probes)| {
                 (
@@ -290,7 +292,7 @@ impl UpstreamsHealth {
         }
 
         Ok(UpstreamsHealth {
-            inner: Arc::new(Mutex::new(storage)),
+            inner: Arc::new(tokio::sync::Mutex::new(storage)),
             update_tx,
             handle,
         })
@@ -299,7 +301,7 @@ impl UpstreamsHealth {
     pub async fn sync_probes(&self, config: &ClientConfig) {
         let mut update_tx = self.update_tx.clone();
 
-        let locked = &mut *self.inner.lock();
+        let locked = &mut *self.inner.lock().await;
         let new_upstreams: HashSet<_> = config.upstreams.keys().cloned().collect();
         let existing_upstreams: HashSet<_> = locked.keys().cloned().collect();
 

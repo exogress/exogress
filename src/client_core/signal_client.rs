@@ -204,7 +204,7 @@ async fn do_conection(
                 ws_stream
                     .send(Message::Text(
                         serde_json::to_string(&WsInstanceToCloudMessage::HealthState(
-                            upstream_healthcheck.dump_health(),
+                            upstream_healthcheck.dump_health().await,
                         ))
                         .unwrap(),
                     ))
