@@ -219,15 +219,18 @@ async fn do_conection(
                     }
                     r => {
                         let msg = r
-                            .and_then(|i| i.ok())
-                            .and_then(|msg| match msg {
-                                Message::Close(Some(s)) => {
-                                    serde_json::from_str::<serde_json::Value>(&s.reason).ok()
-                                }
-                                _ => None,
+                            .and_then(|r| match r {
+                                Ok(msg) => match msg {
+                                    Message::Close(Some(s)) => {
+                                        serde_json::from_str::<serde_json::Value>(&s.reason)
+                                            .ok()
+                                            .and_then(|v| v.get("error").cloned())
+                                            .and_then(|e| e.as_str().map(|s| s.to_string()))
+                                    }
+                                    _ => None,
+                                },
+                                Err(e) => Some(e.to_string()),
                             })
-                            .and_then(|v| v.get("error").cloned())
-                            .and_then(|e| e.as_str().map(|s| s.to_string()))
                             .unwrap_or_else(|| "no error provided".to_string());
                         return Err(Error::HandshakeError(msg));
                     }
