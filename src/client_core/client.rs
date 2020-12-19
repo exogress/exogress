@@ -22,7 +22,7 @@ use crate::entities::{
 use crate::client_core::{signal_client, tunnel};
 
 use crate::signaling::{TunnelRequest, WsInstanceToCloudMessage};
-use notify::event::{CreateKind, ModifyKind, RemoveKind};
+use notify::event::RemoveKind;
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tracing_futures::Instrument;
@@ -199,32 +199,36 @@ impl Client {
 
                     let kind = event.expect("Error watching for file change").kind;
                     match kind {
-                        EventKind::Modify(ModifyKind::Data(_)) | EventKind::Create(CreateKind::File) => {
-                            let mut config = Vec::new();
-                            std::fs::File::open(&config_path)
-                                .unwrap()
-                                .read_to_end(&mut config)
-                                .unwrap();
-                            match ClientConfig::parse_with_redefined_upstreams(config, &refined_upstream_addrs) {
-                                Ok(client_config) => {
-                                    if let Err(err) = client_config.validate() {
-                                        error!("Error in config: {}. Changes are not applied", err);
-                                    } else {
-                                        block_on(upstream_health_checkers.sync_probes(&client_config));
-                                        *current_config.write() = client_config.clone();
-                                        config_tx.broadcast(client_config).unwrap();
-                                        info!("New config successfully loaded");
-                                    }
-                                }
-                                Err(e) => {
-                                    error!("error parsing config file: {}", e);
-                                }
-                            }
-                        }
                         EventKind::Remove(RemoveKind::File) => {
                             warn!("Config file removed. Keep using the latest version until the new one created");
                         }
-                        _ => {}
+                        _ => {
+                            let mut config = Vec::new();
+                            match std::fs::File::open(&config_path)
+                                .unwrap()
+                                .read_to_end(&mut config) {
+                                Ok(_) => {
+                                    match ClientConfig::parse_with_redefined_upstreams(config, &refined_upstream_addrs) {
+                                        Ok(client_config) => {
+                                            if let Err(err) = client_config.validate() {
+                                                error!("Error in config: {}. Changes are not applied", err);
+                                            } else {
+                                                block_on(upstream_health_checkers.sync_probes(&client_config));
+                                                *current_config.write() = client_config.clone();
+                                                config_tx.broadcast(client_config).unwrap();
+                                                info!("New config successfully loaded");
+                                            }
+                                        }
+                                        Err(e) => {
+                                            error!("error parsing config file: {}", e);
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    error!("Error reading config file: `{}`", e);
+                                }
+                            }
+                        }
                     }
                 }
             }).unwrap();
