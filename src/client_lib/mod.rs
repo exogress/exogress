@@ -5,6 +5,7 @@ use trust_dns_resolver::TokioAsyncResolver;
 
 use crate::client_core::Client;
 use crate::entities::AccessKeyId;
+use futures::channel::mpsc;
 use tracing::Level;
 
 pub fn spawn(
@@ -22,6 +23,7 @@ pub fn spawn(
             .expect("no global subscriber has been set");
 
         let mut rt = Runtime::new().unwrap();
+        let (reload_config_tx, reload_config_rx) = mpsc::unbounded();
 
         rt.block_on(async move {
             let resolver = TokioAsyncResolver::from_system_conf(Handle::current()).await?;
@@ -38,7 +40,7 @@ pub fn spawn(
                     .project(project)
                     .build()
                     .map_err(anyhow::Error::msg)?
-                    .spawn(resolver)
+                    .spawn(reload_config_tx, reload_config_rx, resolver)
                     .await?,
             )
         })

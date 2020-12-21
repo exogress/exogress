@@ -457,6 +457,8 @@ mod tests {
 
         let (stop_tx, stop_wait) = stop_handle();
 
+        let (reload_config_tx, reload_config_rx) = mpsc::unbounded();
+
         let bg = tokio::spawn(async move {
             let f = Client::builder()
                 .access_key_id(AccessKeyId::new())
@@ -473,7 +475,7 @@ mod tests {
                 )
                 .build()
                 .unwrap()
-                .spawn(resolver.clone())
+                .spawn(reload_config_tx, reload_config_rx, resolver.clone())
                 .fuse();
 
             tokio::select! {

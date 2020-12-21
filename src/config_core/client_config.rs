@@ -11,6 +11,7 @@ use crate::config_core::config::default_rules;
 use crate::config_core::config::Config;
 use crate::config_core::path_segment::UrlPathSegmentOrQueryPart;
 use crate::config_core::proxy::Proxy;
+use crate::config_core::s3::S3Bucket;
 use crate::config_core::static_dir::StaticDir;
 use crate::config_core::upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr};
 use crate::config_core::{Auth, ConfigVersion, Rule};
@@ -264,6 +265,9 @@ pub enum ClientHandlerVariant {
 
     #[serde(rename = "auth")]
     Auth(Auth),
+
+    #[serde(rename = "s3-bucket")]
+    S3Bucket(S3Bucket),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]

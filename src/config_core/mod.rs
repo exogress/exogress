@@ -31,6 +31,7 @@ mod redirect;
 mod response;
 mod rewrite;
 mod rule;
+mod s3;
 mod serde_as;
 mod static_dir;
 mod status_code;
