@@ -223,12 +223,14 @@ impl Client {
             async move {
                 while let Some(_) = reload_config_rx.next().await {
                     let mut config = Vec::new();
-                    match tokio::fs::File::open(&config_path)
-                        .await
-                        .unwrap()
-                        .read_to_end(&mut config)
-                        .await
-                    {
+                    let read_file = async {
+                        tokio::fs::File::open(&config_path)
+                            .await?
+                            .read_to_end(&mut config)
+                            .await
+                    };
+
+                    match read_file.await {
                         Ok(_) => {
                             match ClientConfig::parse_with_redefined_upstreams(
                                 config,
