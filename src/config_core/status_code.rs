@@ -126,7 +126,7 @@ impl StatusCodeRange {
         match self {
             StatusCodeRange::Single(single_code) => code == single_code,
             StatusCodeRange::Range(from, to) => code >= from && code <= to,
-            StatusCodeRange::List(codes) => codes.iter().find(|&c| c == code).is_some(),
+            StatusCodeRange::List(codes) => codes.iter().any(|c| c == code),
         }
     }
 }

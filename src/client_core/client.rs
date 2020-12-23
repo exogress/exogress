@@ -221,7 +221,7 @@ impl Client {
             shadow_clone!(upstream_health_checkers);
 
             async move {
-                while let Some(_) = reload_config_rx.next().await {
+                while reload_config_rx.next().await.is_some() {
                     let mut config = Vec::new();
                     let read_file = async {
                         tokio::fs::File::open(&config_path)
@@ -370,7 +370,7 @@ impl Client {
                                                             access_key_id,
                                                             secret_access_key.clone(),
                                                             hostname.clone(),
-                                                            gw_tunnels_port.clone(),
+                                                            gw_tunnels_port,
                                                             internal_server_connector.clone(),
                                                             resolver.clone(),
                                                         )

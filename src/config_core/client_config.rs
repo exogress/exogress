@@ -216,11 +216,11 @@ impl Config for ClientConfig {
                     .health_checks
                     .iter()
                     .map(|(probe_name, probe)| {
-                        probe.validate().or_else(|probe_validation_error| {
-                            Err(ClientConfigError::BadHealthCheckValues {
+                        probe.validate().map_err(|probe_validation_error| {
+                            ClientConfigError::BadHealthCheckValues {
                                 probe_name: probe_name.clone(),
                                 probe_error: probe_validation_error,
-                            })
+                            }
                         })
                     })
                     .collect::<Result<Vec<_>, _>>()

@@ -200,7 +200,7 @@ impl FromStr for Exception {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let segments = s
             .split(':')
-            .map(|seg| seg.parse().map_err(|e| Self::Err::from(e)))
+            .map(|seg| seg.parse().map_err(Self::Err::from))
             .collect::<Result<Vec<_>, Self::Err>>()?;
         Ok(Exception(segments))
     }

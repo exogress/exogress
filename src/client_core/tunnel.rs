@@ -79,12 +79,12 @@ pub async fn spawn(
         let gw_addr = gw_addrs
             .iter()
             .choose(&mut thread_rng())
-            .ok_or_else(|| Error::NothingResolved)?;
+            .ok_or(Error::NothingResolved)?;
 
         let socket = TcpStream::connect(SocketAddr::new(gw_addr, gw_port)).await?;
         let _ = socket.set_nodelay(true);
         let mut config = RustlsClientConfig::new();
-        config.alpn_protocols = vec![ALPN_PROTOCOL.to_vec(), "http/1.1".as_bytes().to_vec()];
+        config.alpn_protocols = vec![ALPN_PROTOCOL.to_vec(), b"http/1.1".to_vec()];
         config.root_store =
             rustls_native_certs::load_native_certs().expect("could not load platform certs");
         let config = TlsConnector::from(Arc::new(config));

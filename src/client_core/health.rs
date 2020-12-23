@@ -56,8 +56,6 @@ pub async fn start_checker(
     let url = locked.probe_url.clone();
     mem::drop(locked);
 
-    let update_tx = update_tx.clone();
-
     let probe_inner = probe_inner.clone();
 
     let upstream = probe_inner.lock().upstream.clone();

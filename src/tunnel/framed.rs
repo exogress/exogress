@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 use std::mem;
 
-use crate::tunnel::tunnel::*;
+use crate::tunnel::proto::*;
 use crate::tunnel::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use futures::sink::SinkExt;
@@ -54,8 +54,8 @@ fn parse_server_header(value: u64) -> Result<ServerPacket, Error> {
 }
 
 fn encode_server_header(slot: Slot, header: ServerHeader) -> Result<u64, Error> {
-    use crate::tunnel::tunnel::CommonHeader::*;
-    use crate::tunnel::tunnel::ServerHeader::*;
+    use crate::tunnel::proto::CommonHeader::*;
+    use crate::tunnel::proto::ServerHeader::*;
 
     let slot_val: u64 = slot.into_inner().into();
     assert!(slot_val <= MAX_SLOT_NUM);
@@ -76,8 +76,8 @@ fn encode_server_header(slot: Slot, header: ServerHeader) -> Result<u64, Error> 
 }
 
 fn encode_client_header(slot: Slot, header: ClientHeader) -> Result<u64, Error> {
-    use crate::tunnel::tunnel::ClientHeader::*;
-    use crate::tunnel::tunnel::CommonHeader::*;
+    use crate::tunnel::proto::ClientHeader::*;
+    use crate::tunnel::proto::CommonHeader::*;
 
     let slot_val: u64 = slot.into_inner().into();
     assert!(slot_val <= MAX_HEADER_CODE);
@@ -162,7 +162,7 @@ pub fn client_framed(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::tunnel::tunnel::CommonHeader;
+    use crate::tunnel::proto::CommonHeader;
 
     #[test]
     fn test_server_headers() {

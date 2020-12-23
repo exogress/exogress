@@ -274,10 +274,7 @@ async fn do_conection(
         // forward incoming messages, pings and poings to websocket
         let forward_sent_messages = {
             async {
-                while let Some(msg) = select(&mut send_rx, rx.map(|s| Message::Text(s.to_string())))
-                    .next()
-                    .await
-                {
+                while let Some(msg) = select(&mut send_rx, rx.map(Message::Text)).next().await {
                     debug!("Send to WS: {:?}", msg);
                     if ws_tx.send(msg).await.is_err() {
                         break;

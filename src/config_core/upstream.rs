@@ -42,13 +42,13 @@ impl FromStr for UpstreamSocketAddr {
     type Err = UpstreamSocketAddrParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(if s.starts_with(":") {
+        Ok(if let Some(stripped) = s.strip_prefix(':') {
             UpstreamSocketAddr {
-                port: s[1..].parse()?,
+                port: stripped.parse()?,
                 host: None,
             }
         } else if s.contains(':') {
-            let mut parts: Vec<_> = s.split(":").collect();
+            let mut parts: Vec<_> = s.split(':').collect();
             if parts.len() != 2 {
                 return Err(UpstreamSocketAddrParseError::Malformed);
             }

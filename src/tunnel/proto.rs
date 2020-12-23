@@ -153,10 +153,10 @@ pub const COMMON_CODE_CLOSED: u8 = 2;
 pub const COMMON_CODE_PING: u8 = 3;
 pub const COMMON_CODE_PONG: u8 = 4;
 
-pub const CLIENT_CODE_ACCEPTED: u8 = (MAX_CODE_VALUE - 0) as u8;
+pub const CLIENT_CODE_ACCEPTED: u8 = MAX_CODE_VALUE as u8;
 pub const CLIENT_CODE_REJECTED: u8 = (MAX_CODE_VALUE - 1) as u8;
 
-pub const SERVER_CODE_CONNECT_REQUEST: u8 = (MAX_CODE_VALUE - 0) as u8;
+pub const SERVER_CODE_CONNECT_REQUEST: u8 = MAX_CODE_VALUE as u8;
 pub const SERVER_CODE_TUNNEL_CLOSE: u8 = (MAX_CODE_VALUE - 1) as u8;
 
 pub const HEADER_BYTES: usize = 3;
@@ -1181,9 +1181,9 @@ pub fn server_connection(
                 r = read_future => r,
                 r = write_future => r,
                 r = periodic_pinger => r,
-                r = pongs_timeout => {
+                () = pongs_timeout => {
                     warn!("timeout waiting for pong on tunnel. closing");
-                    Ok(r)
+                    Ok(())
                 }
             }
         }

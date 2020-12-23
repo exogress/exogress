@@ -213,7 +213,7 @@ impl<'de> Visitor<'de> for S3RegionVisitor {
     {
         value
             .parse()
-            .map_err(|_e| de::Error::custom(format!("unknown S3 region")))
+            .map_err(|_e| de::Error::custom("unknown S3 region"))
     }
 }
 
@@ -233,23 +233,4 @@ pub struct S3Bucket {
     pub region: S3Region,
     pub secret_key: Option<SmolStr>,
     pub access_key: Option<SmolStr>,
-}
-
-#[cfg(test)]
-mod test {
-    use crate::config_core::s3::Region;
-
-    #[test]
-    fn yandex_object_storage() {
-        let yandex = Region::Custom {
-            endpoint: "storage.yandexcloud.net".to_string(),
-            region: "ru-central1".to_string(),
-        };
-
-        let yandex_region = "ru-central1".parse::<Region>().unwrap();
-
-        assert_eq!(yandex.endpoint(), yandex_region.endpoint());
-
-        assert_eq!(yandex.to_string(), yandex_region.to_string());
-    }
 }

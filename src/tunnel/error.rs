@@ -5,7 +5,7 @@ use futures::channel::mpsc;
 
 use crate::entities::{StringIdentifierParseError, Upstream};
 use crate::tunnel::connector::ConnectTargetParseError;
-use crate::tunnel::tunnel::Slot;
+use crate::tunnel::proto::Slot;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
