@@ -23,6 +23,7 @@ mod cache;
 mod catch;
 mod client_config;
 mod config;
+mod gcs;
 mod path;
 mod path_segment;
 mod project_config;

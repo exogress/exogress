@@ -9,6 +9,7 @@ use crate::entities::{
 use crate::config_core::catch::RescueItem;
 use crate::config_core::config::default_rules;
 use crate::config_core::config::Config;
+use crate::config_core::gcs::GcsBucket;
 use crate::config_core::path_segment::UrlPathSegmentOrQueryPart;
 use crate::config_core::proxy::Proxy;
 use crate::config_core::s3::S3Bucket;
@@ -268,6 +269,9 @@ pub enum ClientHandlerVariant {
 
     #[serde(rename = "s3-bucket")]
     S3Bucket(S3Bucket),
+
+    #[serde(rename = "gcs-bucket")]
+    GcsBucket(GcsBucket),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]

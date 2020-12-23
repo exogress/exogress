@@ -4,6 +4,7 @@ use crate::config_core::auth::{AclEntry, AuthDefinition};
 use crate::config_core::catch::RescueItem;
 use crate::config_core::client_config::ClientMount;
 use crate::config_core::config::default_rules;
+use crate::config_core::gcs::GcsBucket;
 use crate::config_core::path_segment::UrlPathSegmentOrQueryPart;
 use crate::config_core::s3::S3Bucket;
 use crate::config_core::{Auth, AuthProvider, Config, ConfigVersion, Rule};
@@ -188,6 +189,9 @@ pub enum ProjectHandlerVariant {
 
     #[serde(rename = "s3-bucket")]
     S3Bucket(S3Bucket),
+
+    #[serde(rename = "gcs-bucket")]
+    GcsBucket(GcsBucket),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
@@ -217,6 +221,9 @@ impl From<ProjectHandler> for ClientHandler {
         let v = match f.variant {
             ProjectHandlerVariant::Auth(auth) => ClientHandlerVariant::Auth(auth),
             ProjectHandlerVariant::S3Bucket(s3_bucket) => ClientHandlerVariant::S3Bucket(s3_bucket),
+            ProjectHandlerVariant::GcsBucket(gcs_bucket) => {
+                ClientHandlerVariant::GcsBucket(gcs_bucket)
+            }
         };
         ClientHandler {
             variant: v,
