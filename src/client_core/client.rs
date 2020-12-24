@@ -102,14 +102,15 @@ impl Client {
 
         let instance_id_storage = Arc::new(Mutex::new(None));
 
-        let config_path = fs::canonicalize(PathBuf::from(
-            shellexpand::full(self.config_path.as_str())?.into_owned(),
-        ))?;
+        let config_path = PathBuf::from(shellexpand::full(self.config_path.as_str())?.into_owned());
         info!("Use config at {}", config_path.as_path().display());
-        let config_dir = config_path
+        let mut config_dir = config_path
             .parent()
             .expect("Could not config directory path")
             .to_owned();
+        if config_dir.as_os_str() == "" {
+            config_dir.push(".");
+        }
 
         let mut url = Url::parse(self.cloud_endpoint.as_str()).unwrap();
         if url.scheme() == "https" {
