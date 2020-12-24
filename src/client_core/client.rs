@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use futures::channel::{mpsc, oneshot};
 use futures::{pin_mut, select_biased, FutureExt, SinkExt, StreamExt};
-use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use shadow_clone::shadow_clone;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -21,7 +21,6 @@ use crate::entities::{
 use crate::client_core::{signal_client, tunnel};
 
 use crate::signaling::{TunnelRequest, WsInstanceToCloudMessage};
-use notify::event::RemoveKind;
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tracing_futures::Instrument;
@@ -92,7 +91,7 @@ impl Client {
     pub async fn spawn(
         self,
         reload_config_tx: mpsc::UnboundedSender<()>,
-        mut reload_config_rx: mpsc::UnboundedReceiver<()>,
+        reload_config_rx: mpsc::UnboundedReceiver<()>,
         resolver: TokioAsyncResolver,
     ) -> Result<(), anyhow::Error> {
         let project_name: ProjectName = self.project.parse()?;
@@ -107,6 +106,10 @@ impl Client {
             shellexpand::full(self.config_path.as_str())?.into_owned(),
         ))?;
         info!("Use config at {}", config_path.as_path().display());
+        let config_dir = config_path
+            .parent()
+            .expect("Could not config directory path")
+            .to_owned();
 
         let mut url = Url::parse(self.cloud_endpoint.as_str()).unwrap();
         if url.scheme() == "https" {
@@ -190,28 +193,47 @@ impl Client {
         if self.watch_config {
             shadow_clone!(reload_config_tx);
             shadow_clone!(config_path);
+            shadow_clone!(config_dir);
 
             info!("Watching for config changes");
 
+            let (re_add_tx, mut re_add_rx) = mpsc::unbounded();
+
             watcher = Watcher::new_immediate({
+                shadow_clone!(config_path);
+                shadow_clone!(config_dir);
+
                 move |event: Result<Event, notify::Error>| {
+                    let event = event.expect("Error watching for file change");
+
                     debug!("received fs event: {:?}", event);
 
-                    let kind = event.expect("Error watching for file change").kind;
-                    match kind {
-                        EventKind::Remove(RemoveKind::File) => {
-                            warn!("Config file removed. Keep using the latest version until the new one created");
-                        }
-                        _ => {
-                            reload_config_tx.unbounded_send(()).unwrap();
-                        }
+                    if !event.paths.iter().any(|path| path == &config_path) {
+                        return;
+                    }
+
+                    re_add_tx.unbounded_send(()).unwrap();
+                }
+            })
+            .unwrap();
+
+            let _ = watcher.watch(config_dir.clone(), RecursiveMode::NonRecursive);
+            let _ = watcher.watch(config_path.clone(), RecursiveMode::NonRecursive);
+
+            tokio::spawn({
+                shadow_clone!(config_path);
+
+                async move {
+                    loop {
+                        let _ = re_add_rx.next().await;
+                        let _ = watcher.unwatch(config_dir.clone());
+                        let _ = watcher.unwatch(config_path.clone());
+                        let _ = watcher.watch(config_dir.clone(), RecursiveMode::NonRecursive);
+                        let _ = watcher.watch(config_path.clone(), RecursiveMode::NonRecursive);
+                        reload_config_tx.unbounded_send(()).unwrap();
                     }
                 }
-            }).unwrap();
-
-            watcher
-                .watch(config_path, RecursiveMode::NonRecursive)
-                .unwrap();
+            });
         }
 
         tokio::spawn({
@@ -221,7 +243,13 @@ impl Client {
             shadow_clone!(upstream_health_checkers);
 
             async move {
-                while reload_config_rx.next().await.is_some() {
+                let mut last_checksum = None;
+
+                let mut joined_events = reload_config_rx.ready_chunks(30);
+                while let Some(event) = joined_events.next().await {
+                    if event.is_empty() {
+                        continue;
+                    }
                     let mut config = Vec::new();
                     let read_file = async {
                         tokio::fs::File::open(&config_path)
@@ -240,10 +268,16 @@ impl Client {
                                     if let Err(err) = client_config.validate() {
                                         error!("Error in config: {}. Changes are not applied", err);
                                     } else {
-                                        upstream_health_checkers.sync_probes(&client_config).await;
-                                        *current_config.write() = client_config.clone();
-                                        config_tx.broadcast(client_config).unwrap();
-                                        info!("New config successfully loaded");
+                                        let current_checksum = client_config.checksum();
+                                        if last_checksum != Some(current_checksum) {
+                                            upstream_health_checkers
+                                                .sync_probes(&client_config)
+                                                .await;
+                                            *current_config.write() = client_config.clone();
+                                            config_tx.broadcast(client_config).unwrap();
+                                            info!("New config successfully loaded");
+                                            last_checksum = Some(current_checksum);
+                                        }
                                     }
                                 }
                                 Err(e) => {
