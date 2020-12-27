@@ -436,6 +436,7 @@ mod test {
 - ["a", "b", "*"]
 - ["a", "b", "*", "/.+(jpg|gif|png)/"]
 - ["*", "c"]
+- ["?", "*"]
 "#;
         let mut parsed = serde_yaml::from_str::<Vec<MatchingPath>>(YAML)
             .unwrap()
@@ -478,6 +479,11 @@ mod test {
 
         assert_eq!(
             MatchingPath::WildcardRight(vec![MatchPathSegment::Exact("c".parse().unwrap())]),
+            parsed.next().unwrap()
+        );
+
+        assert_eq!(
+            MatchingPath::LeftWildcard(vec![MatchPathSegment::Any]),
             parsed.next().unwrap()
         );
     }
