@@ -5,7 +5,7 @@ use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use shadow_clone::shadow_clone;
 use std::path::PathBuf;
 use std::time::Duration;
-use std::{io, mem};
+use std::{env, io, mem};
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 use tokio::sync::watch;
@@ -102,14 +102,16 @@ impl Client {
 
         let instance_id_storage = Arc::new(Mutex::new(None));
 
-        let config_path = PathBuf::from(shellexpand::full(self.config_path.as_str())?.into_owned());
+        let mut config_path =
+            PathBuf::from(shellexpand::full(self.config_path.as_str())?.into_owned());
         info!("Use config at {}", config_path.as_path().display());
         let mut config_dir = config_path
             .parent()
             .expect("Could not config directory path")
             .to_owned();
-        if config_dir.as_os_str() == "" {
-            config_dir.push(".");
+        if config_dir.is_relative() || !config_dir.has_root() {
+            config_dir = env::current_dir().unwrap().join(config_dir);
+            config_path = env::current_dir().unwrap().join(config_path);
         }
 
         let mut url = Url::parse(self.cloud_endpoint.as_str()).unwrap();
