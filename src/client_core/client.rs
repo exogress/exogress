@@ -5,7 +5,7 @@ use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use shadow_clone::shadow_clone;
 use std::path::PathBuf;
 use std::time::Duration;
-use std::{fs, io, mem};
+use std::{io, mem};
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 use tokio::sync::watch;
@@ -431,9 +431,9 @@ impl Client {
                                         };
 
                                         tokio::select! {
-    _ = connector => {},
-    _ = stop_tunnel_rx => {},
-    }
+                                        _ = connector => {},
+                                        _ = stop_tunnel_rx => {},
+                                        }
 
                                         if let dashmap::mapref::entry::Entry::Occupied(mut tunnel_entry) = tunnels.entry(hostname.clone())
                                         {
@@ -477,54 +477,56 @@ impl Client {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use futures::FutureExt;
-    use std::str::FromStr;
-    use stop_handle::stop_handle;
-    use tokio::runtime::Handle;
-    use tokio::time::delay_for;
-
-    #[tokio::test]
-    async fn test_minimal() {
-        let resolver = TokioAsyncResolver::from_system_conf(Handle::current())
-            .await
-            .unwrap();
-
-        let (stop_tx, stop_wait) = stop_handle();
-
-        let (reload_config_tx, reload_config_rx) = mpsc::unbounded();
-
-        let bg = tokio::spawn(async move {
-            let f = Client::builder()
-                .access_key_id(AccessKeyId::new())
-                .secret_access_key("secret_access_key".to_string())
-                .account("account".to_string())
-                .project("project".to_string())
-                .labels(
-                    vec![(
-                        LabelName::from_str("test").unwrap(),
-                        LabelValue::from_str("true").unwrap(),
-                    )]
-                    .into_iter()
-                    .collect::<HashMap<_, _>>(),
-                )
-                .build()
-                .unwrap()
-                .spawn(reload_config_tx, reload_config_rx, resolver.clone())
-                .fuse();
-
-            tokio::select! {
-                _ = f => {},
-                _ = stop_wait => {},
-            }
-        });
-
-        delay_for(Duration::from_secs(1)).await;
-
-        stop_tx.stop(());
-
-        bg.await.unwrap();
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     use futures::FutureExt;
+//     use std::str::FromStr;
+//     use stop_handle::stop_handle;
+//     use tokio::runtime::Handle;
+//     use tokio::time::delay_for;
+//
+//     #[tokio::test]
+//     async fn test_minimal() {
+//         let resolver = TokioAsyncResolver::from_system_conf(Handle::current())
+//             .await
+//             .unwrap();
+//
+//         let (stop_tx, stop_wait) = stop_handle();
+//
+//         let (reload_config_tx, reload_config_rx) = mpsc::unbounded();
+//
+//         File::crea
+//
+//         let bg = tokio::spawn(async move {
+//             let f = Client::builder()
+//                 .access_key_id(AccessKeyId::new())
+//                 .secret_access_key("secret_access_key".to_string())
+//                 .account("account".to_string())
+//                 .project("project".to_string())
+//                 .labels(
+//                     vec![(
+//                         LabelName::from_str("test").unwrap(),
+//                         LabelValue::from_str("true").unwrap(),
+//                     )]
+//                     .into_iter()
+//                     .collect::<HashMap<_, _>>(),
+//                 )
+//                 .build()
+//                 .unwrap()
+//                 .spawn(reload_config_tx, reload_config_rx, resolver.clone())
+//                 .fuse();
+//
+//             tokio::select! {
+//                 _ = f => {},
+//                 _ = stop_wait => {},
+//             }
+//         });
+//
+//         delay_for(Duration::from_secs(1)).await;
+//
+//         stop_tx.stop(());
+//
+//         bg.await.unwrap();
+//     }
+// }
