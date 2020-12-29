@@ -108,13 +108,13 @@ pub async fn spawn(
             .body(hyper::Body::empty())
             .unwrap();
 
-        let res = send_request.send_request(req).await?;
+        let mut res = send_request.send_request(req).await?;
 
         if res.status() != http::StatusCode::SWITCHING_PROTOCOLS {
             return Err(Error::BadHttpStatus(res.status()));
         }
 
-        let mut stream = res.into_body().on_upgrade().await?;
+        let mut stream = hyper::upgrade::on(&mut res).await?;
 
         let hello = TunnelHello {
             config_name: client_config.read().name.clone(),

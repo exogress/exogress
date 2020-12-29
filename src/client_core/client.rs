@@ -35,7 +35,7 @@ use derive_builder::Builder;
 use hashbrown::HashMap;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
-use tokio::time::delay_for;
+use tokio::time::sleep;
 
 pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.exogress.com/";
 
@@ -277,7 +277,7 @@ impl Client {
                                                 .sync_probes(&client_config)
                                                 .await;
                                             *current_config.write() = client_config.clone();
-                                            config_tx.broadcast(client_config).unwrap();
+                                            config_tx.send(client_config).unwrap();
                                             info!("New config successfully loaded");
                                             last_checksum = Some(current_checksum);
                                         }
@@ -366,10 +366,12 @@ impl Client {
 
                                     async move {
                                         let connector = async {
-                                            let mut backoff = Backoff::new(
+                                            let backoff = Backoff::new(
                                                 Duration::from_millis(100),
                                                 Duration::from_secs(20),
                                             );
+
+                                            pin_mut!(backoff);
 
                                             let retry = Arc::new(AtomicUsize::new(0));
 
@@ -387,7 +389,7 @@ impl Client {
                                                     let retry = retry.clone();
 
                                                     async move {
-                                                        delay_for(Duration::from_secs(10)).await;
+                                                        sleep(Duration::from_secs(10)).await;
                                                         if weak.upgrade().is_some() {
                                                             debug!("Tunnel is ok. Reset backoff");
                                                             backoff_handle.reset();
@@ -486,7 +488,7 @@ impl Client {
 //     use std::str::FromStr;
 //     use stop_handle::stop_handle;
 //     use tokio::runtime::Handle;
-//     use tokio::time::delay_for;
+//     use tokio::time::sleep;
 //
 //     #[tokio::test]
 //     async fn test_minimal() {
@@ -525,7 +527,7 @@ impl Client {
 //             }
 //         });
 //
-//         delay_for(Duration::from_secs(1)).await;
+//         sleep(Duration::from_secs(1)).await;
 //
 //         stop_tx.stop(());
 //

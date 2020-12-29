@@ -11,6 +11,7 @@ use url::Url;
 use crate::tunnel::Conn;
 use crate::tunnel::TunneledConnection;
 use core::fmt;
+use hyper::service::Service;
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
@@ -176,7 +177,7 @@ fn extract_connect_target(uri: Uri) -> Result<ConnectTarget, crate::tunnel::Erro
         .parse::<ConnectTarget>()?)
 }
 
-impl tower::Service<Uri> for Connector {
+impl Service<Uri> for Connector {
     type Response = TunneledConnection;
     type Error = crate::tunnel::Error;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;

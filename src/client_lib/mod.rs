@@ -1,7 +1,7 @@
 use std::thread;
 
-use tokio::runtime::{Handle, Runtime};
-use trust_dns_resolver::TokioAsyncResolver;
+use tokio::runtime::Runtime;
+use trust_dns_resolver::{TokioAsyncResolver, TokioHandle};
 
 use crate::client_core::Client;
 use crate::entities::AccessKeyId;
@@ -22,11 +22,11 @@ pub fn spawn(
         tracing::subscriber::set_global_default(subscriber)
             .expect("no global subscriber has been set");
 
-        let mut rt = Runtime::new().unwrap();
+        let rt = Runtime::new().unwrap();
         let (reload_config_tx, reload_config_rx) = mpsc::unbounded();
 
         rt.block_on(async move {
-            let resolver = TokioAsyncResolver::from_system_conf(Handle::current()).await?;
+            let resolver = TokioAsyncResolver::from_system_conf(TokioHandle)?;
 
             Ok::<_, anyhow::Error>(
                 Client::builder()

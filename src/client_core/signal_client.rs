@@ -6,7 +6,7 @@ use futures::future::pending;
 use futures::future::FutureExt;
 use futures::{pin_mut, select_biased, stream::select, SinkExt, StreamExt};
 use http::StatusCode;
-use tokio::time::delay_for;
+use tokio::time::sleep;
 use tokio::time::timeout;
 use tracing::{debug, error, info, trace, warn};
 use trust_dns_resolver::TokioAsyncResolver;
@@ -59,7 +59,9 @@ pub async fn spawn(
     maybe_identity: Option<Vec<u8>>,
     resolver: TokioAsyncResolver,
 ) -> Result<(), CloudConnectError> {
-    let mut backoff = Backoff::new(backoff_min_duration, backoff_max_duration);
+    let backoff = Backoff::new(backoff_min_duration, backoff_max_duration);
+
+    pin_mut!(backoff);
 
     while let Some(backoff_handle) = backoff.next().await {
         info!("trying to establish connection to a signaler server");
@@ -131,7 +133,7 @@ pub enum Error {
     Websocket(#[from] tungstenite::error::Error),
 
     #[error("timeout waiting for pong")]
-    Timeout(#[from] tokio::time::Elapsed),
+    Timeout(#[from] tokio::time::error::Elapsed),
 
     #[error("JSON error: `{0}`")]
     Json(#[from] serde_json::Error),
@@ -255,7 +257,8 @@ async fn do_conection(
         let mut send_tx2 = send_tx.clone();
 
         let send_updated_config = async {
-            while let Some(config) = config_rx.recv().await {
+            while let Ok(()) = config_rx.changed().await {
+                let config = config_rx.borrow().clone();
                 info!("The new config uploaded");
                 send_tx2
                     .send(Message::Text(
@@ -313,7 +316,7 @@ async fn do_conection(
         // after some time, reset backoff delay
         let accept_connection_with_delay = {
             async move {
-                delay_for(Duration::from_secs(5)).await;
+                sleep(Duration::from_secs(5)).await;
                 info!("mark connection as successful. reset backoff");
                 backoff_handle.reset();
                 pending::<()>().await
@@ -386,7 +389,7 @@ async fn do_conection(
 
             async move {
                 loop {
-                    delay_for(Duration::from_secs(15)).await;
+                    sleep(Duration::from_secs(15)).await;
 
                     // info!("Send ping");
 

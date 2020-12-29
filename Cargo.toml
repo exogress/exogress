@@ -11,7 +11,7 @@ anyhow = { optional = true, version = "1.0.32" }
 bincode = { optional = true, version = "1.3.1" }
 bs58 = { optional = true, version = "0.3.1" }
 byteorder = { optional = true, version = "1.3.4" }
-bytes = { optional = true, version = "0.5" }
+bytes = { optional = true, version = "1.0" }
 clap = { optional = true, version = "2.33.3" }
 dashmap = { optional = true, version = "3.11.10", features = ["hashbrown"] }
 derive_builder = { optional = true, version = "0.9.0" }
@@ -23,7 +23,7 @@ http = { optional = true, version = "0.2.1" }
 http-serde = { optional = true, version = "1.0.1" }
 humantime = { optional = true, version = "2.0.1" }
 humantime-serde = { optional = true, version = "1.0.0" }
-hyper = { optional = true, version = "0.13.9" }
+hyper = { optional = true, version = "0.14" }
 jsonwebtoken = { optional = true, version = "7.2.0" }
 lazy_static = { optional = true, version = "1.4.0" }
 lru_time_cache = { optional = true, version = "0.11.0" }
@@ -34,14 +34,13 @@ num_cpus = { optional = true, version = "1.0" }
 parking_lot = { optional = true, version = "0.11" }
 paste = { optional = true, version = "1.0" }
 percent-encoding = { optional = true, version = "2.1.0" }
-pin-project = { optional = true, version = "0.4" }
-rand = { optional = true, version = "0.7" }
+pin-project = { optional = true, version = "1.0" }
+rand = { optional = true, version = "0.8" }
 regex = { optional = true, version = "1.3.7" }
-rustls = { optional = true, version = "0.18.1" }
-rustls-native-certs = { optional = true, version = "0.4.0" }
+rustls = { optional = true, version = "0.19" }
+rustls-native-certs = { optional = true, version = "0.5.0" }
 rusty-s3 = { optional = true, version = "0.1.0" }
 rw-stream-sink = { optional = true, version = "0.2.1" }
-seahash = { optional = true, git = "https://gitlab.redox-os.org/redox-os/seahash.git" }
 semver = { optional = true, version = "0.10.0" }
 serde = { optional = true, version = "1.0.105" }
 serde_json = { optional = true, version = "1.0.48" }
@@ -52,31 +51,42 @@ smallvec = { optional = true, version = "1.4.1" }
 smol_str = { optional = true, version = "0.1.17" }
 stop-handle = { optional = true, version = "0.1.0" }
 thiserror = { optional = true, version = "1.0.19" }
-tokio = { optional = true, version = "0.2" }
-tokio-either = { optional = true, version = "0.1.4" }
-tokio-rustls = { optional = true, version = "0.14.0" }
-tokio-tungstenite = { optional = true, version = "0.11.0" }
-tokio-util = { optional = true, version = "0.3.1" }
-tower = { optional = true, version = "0.3.1" }
+tokio = { optional = true, version = "1.0" }
+tokio-rustls = { optional = true, version = "0.22" }
+tokio-util = { optional = true, version = "0.6" }
 tracing = { optional = true, version = "0.1" }
 tracing-futures = { optional = true, version = "0.2.4" }
 tracing-subscriber = { optional = true, version = "0.2" }
-trust-dns-resolver = { optional = true, version = "0.19.5" }
-tungstenite = { optional = true, version = "0.11", default-features = false }
 ulid = { optional = true, version = "0.4.0" }
 url = { optional = true, version = "2.1.1" }
 urlencoding = { optional = true, version = "1.1.1" }
-warp = { optional = true, version = "0.2.4" }
 webpki = { optional = true, version = "0.21.3" }
 zstd = { optional = true, version = "0.5.3" }
+tokio-stream = { optional = true, version = "0.1.0" }
+
+seahash = { optional = true, git = "https://gitlab.redox-os.org/redox-os/seahash.git" }
+tokio-tungstenite = { optional = true, git = "https://github.com/dnaka91/tokio-tungstenite.git", branch = "tokio-1.0" }
+trust-dns-resolver = { optional = true, git = "https://github.com/bluejekyll/trust-dns.git", branch = "main" }
+tungstenite = { optional = true, git = "https://github.com/nickelc/tungstenite-rs.git", branch = "bytes", default-features = false }
+warp = { optional = true, git = "https://github.com/aknuds1/warp.git", branch = "chore/upgrade-tokio" }
+
 
 [dev-dependencies]
-tokio = { version = "0.2", features = ["full"] }
+tokio = { version = "1.0", features = ["full"] }
 stop-handle = "0.1.0"
 tracing-subscriber = "0.2.11"
 serde_json = "1.0.60"
 
 [features]
+default = [
+    "ws-client",
+    "tunnel",
+    "signaling",
+    "entities",
+    "config-core",
+    "common-utils",
+    "client-lib",
+    "client-core"]
 client-core = [
     "anyhow",
     "bincode",
@@ -118,7 +128,7 @@ client-core = [
     "tokio-util",
     "tokio-util/compat",
     "tokio/fs",
-    "tokio/tcp",
+    "tokio/net",
     "tokio/time",
     "tracing",
     "tracing-futures",
@@ -139,7 +149,7 @@ client-lib = [
     "tokio",
     "tokio/macros",
     "tokio/process",
-    "tokio/rt-threaded",
+    "tokio/rt-multi-thread",
     "tracing-subscriber",
     "trust-dns-resolver",
     "tunnel",
@@ -162,7 +172,7 @@ common-utils = [
     "stop-handle",
     "thiserror",
     "tokio",
-    "tokio-either",
+    "tokio-util",
     "tokio-rustls",
     "tokio-tungstenite",
     "tokio/net",
@@ -248,11 +258,10 @@ tunnel = [
     "tokio-util/compat",
     "tokio/io-util",
     "tokio/macros",
-    "tokio/rt-core",
     "tokio/sync",
-    "tokio/tcp",
+    "tokio/net",
+    "tokio-stream",
     "tokio/time",
-    "tower",
     "tracing",
     "trust-dns-resolver",
     "ulid",
@@ -263,7 +272,7 @@ tunnel = [
 ws-client = [
     "rustls",
     "rustls-native-certs",
-    "tokio-either",
+    "tokio-util",
     "tokio-rustls",
     "tokio-tungstenite",
     "trust-dns-resolver",

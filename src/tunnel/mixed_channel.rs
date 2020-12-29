@@ -136,7 +136,7 @@ pub fn to_async_rw(
 mod test {
     use std::net::{IpAddr, SocketAddr};
 
-    use futures::{SinkExt, StreamExt};
+    use futures::{SinkExt, StreamExt, TryStreamExt};
     use tokio::net::{TcpListener, TcpStream};
 
     use hyper::Uri;
@@ -155,8 +155,7 @@ mod test {
     use std::mem;
     use std::sync::Arc;
     use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
-    use tokio::runtime::Handle;
-    use trust_dns_resolver::TokioAsyncResolver;
+    use trust_dns_resolver::{TokioAsyncResolver, TokioHandle};
 
     #[tokio::test]
     async fn test_mixed_channel_close_stream_sink() {
@@ -254,13 +253,9 @@ mod test {
 
     #[tokio::test]
     async fn test_service_fn() {
-        use bytes::buf::Buf;
+        let resolver = TokioAsyncResolver::from_system_conf(TokioHandle).unwrap();
 
-        let resolver = TokioAsyncResolver::from_system_conf(Handle::current())
-            .await
-            .unwrap();
-
-        let mut server_side_listener =
+        let server_side_listener =
             TcpListener::bind(&SocketAddr::new(IpAddr::from([127u8, 0, 0, 1]), 0))
                 .await
                 .unwrap();
@@ -269,7 +264,7 @@ mod test {
 
         tokio::spawn({
             async move {
-                let mut http_server =
+                let http_server =
                     TcpListener::bind(&SocketAddr::new(IpAddr::from([127u8, 0, 0, 1]), 0))
                         .await
                         .unwrap();
@@ -326,11 +321,18 @@ mod test {
             .get(Uri::from_static("http://backend.upstream.exg/test"))
             .await
             .unwrap();
-        let mut body = hyper::body::aggregate(res).await.unwrap();
+        let body = res
+            .into_body()
+            .try_fold(Vec::new(), |mut data, chunk| async move {
+                data.extend_from_slice(&chunk);
+                Ok(data)
+            })
+            .await
+            .unwrap();
 
         assert_eq!(
             "Response body\r\n",
-            String::from_utf8(body.to_bytes().to_vec()).unwrap()
+            std::str::from_utf8(body.as_ref()).unwrap()
         );
     }
 }

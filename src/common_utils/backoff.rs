@@ -1,16 +1,14 @@
+use futures::{ready, Stream};
+use pin_project::pin_project;
+use rand::{self, Rng};
 use std::cmp;
 use std::convert::TryInto;
+use std::future::Future;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 use std::time::Duration;
-
-use futures::{ready, Stream};
-use rand::{self, Rng};
-use std::future::Future;
-use tokio::time::{delay_for, Delay};
-
-use pin_project::pin_project;
+use tokio::time::{sleep, Sleep};
 
 struct BackoffHandleInner {
     retry: u64,
@@ -42,8 +40,9 @@ pub struct Backoff {
     base: Duration,
     max: Duration,
     data: BackoffHandle,
+
     #[pin]
-    delay: Option<Delay>,
+    delay: Option<Sleep>,
     need_next: bool,
 }
 
@@ -82,7 +81,7 @@ impl BackoffProj<'_> {
                 let r = if to <= from {
                     from
                 } else {
-                    rand::thread_rng().gen_range(from, to)
+                    rand::thread_rng().gen_range(from..to)
                 };
 
                 let sleep: Duration = cmp::min(
@@ -101,23 +100,23 @@ impl Stream for Backoff {
     type Item = BackoffHandle;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let mut project: BackoffProj<'_> = self.project();
+        let mut project = self.project();
 
         if project.data.inner.lock().unwrap().done {
             return Poll::Ready(None);
         }
         if *project.need_next {
-            *project.delay = project.next_sleep_duration().map(delay_for);
+            project.delay.set(project.next_sleep_duration().map(sleep));
             *project.need_next = false;
         };
 
         if let Some(delay) = project.delay.as_mut().as_pin_mut() {
             project.data.inner.lock().unwrap().wake = Some(cx.waker().clone());
-            ready!(Delay::poll(delay, cx));
+            ready!(Sleep::poll(delay, cx));
         };
 
         project.data.inner.lock().unwrap().wake = None;
-        *project.delay = None;
+        project.delay.set(None);
         *project.need_next = true;
 
         Poll::Ready(Some(project.data.clone()))
@@ -127,6 +126,7 @@ impl Stream for Backoff {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use futures::pin_mut;
     use futures::stream::StreamExt;
     use tokio::time::Instant;
 
@@ -135,7 +135,10 @@ mod tests {
         let min = Duration::from_millis(50);
         let max = Duration::from_secs(1);
 
-        let mut backoff = Backoff::new(min, max);
+        let backoff = Backoff::new(min, max);
+
+        pin_mut!(backoff);
+
         let started_at = Instant::now();
         let _first = backoff.next().await;
         let first_at = Instant::now();

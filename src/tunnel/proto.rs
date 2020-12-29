@@ -23,10 +23,10 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::{io, mem};
 use stop_handle::{stop_handle, StopHandle};
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, ReadBuf};
 use tokio::macros::support::Pin;
 use tokio::net::TcpStream;
-use tokio::time::{delay_for, timeout};
+use tokio::time::{sleep, timeout};
 use tracing::{debug, info, warn};
 use trust_dns_resolver::TokioAsyncResolver;
 
@@ -280,7 +280,7 @@ pub async fn client_listener(
         #[allow(unreachable_code)]
         async move {
             loop {
-                delay_for(ping_period).await;
+                sleep(ping_period).await;
                 let payload = vec![];
                 outgoing_messages_tx
                     .send((
@@ -299,7 +299,10 @@ pub async fn client_listener(
     .fuse();
 
     let pongs_timeout = async move {
-        let mut pongs = tokio::stream::StreamExt::timeout(received_pongs_rx, wait_pong_timeout);
+        let pongs = tokio_stream::StreamExt::timeout(received_pongs_rx, wait_pong_timeout);
+
+        pin_mut!(pongs);
+
         while pongs.next().await.is_some() {}
     };
 
@@ -1140,8 +1143,10 @@ pub fn server_connection(
 
             let write_future = outgoing_messages_rx.map(Ok).forward(tx).fuse();
             let pongs_timeout = async move {
-                let mut pongs =
-                    tokio::stream::StreamExt::timeout(received_pongs_rx, wait_pong_timeout);
+                let pongs = tokio_stream::StreamExt::timeout(received_pongs_rx, wait_pong_timeout);
+
+                pin_mut!(pongs);
+
                 while pongs.next().await.is_some() {}
             }
             .fuse();
@@ -1152,7 +1157,7 @@ pub fn server_connection(
 
                 async move {
                     loop {
-                        delay_for(ping_period).await;
+                        sleep(ping_period).await;
                         let payload = vec![];
                         outgoing_messages_tx
                             .send((
@@ -1212,8 +1217,8 @@ impl AsyncRead for TunneledConnection {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
         Pin::new(&mut self.inner).poll_read(cx, buf)
     }
 }
@@ -1252,7 +1257,7 @@ mod test {
     use crate::config_core::UpstreamDefinition;
     use crate::config_core::{ClientConfig, ClientConfigRevision};
     use std::collections::BTreeMap;
-    use tokio::runtime::Handle;
+    use trust_dns_resolver::TokioHandle;
 
     #[tokio::test]
     async fn test_simple() {
@@ -1261,11 +1266,9 @@ mod test {
         let buf4 = vec![10; MAX_PAYLOAD_LEN * 2];
         let buf1_3 = vec![65, 66, 67];
 
-        let resolver = TokioAsyncResolver::from_system_conf(Handle::current())
-            .await
-            .unwrap();
+        let resolver = TokioAsyncResolver::from_system_conf(TokioHandle).unwrap();
 
-        let mut server_side_listener =
+        let server_side_listener =
             TcpListener::bind(&SocketAddr::new(IpAddr::from([127, 0, 0, 1]), 0))
                 .await
                 .unwrap();
@@ -1331,7 +1334,7 @@ mod test {
             }
         });
 
-        let mut tcp_tunneled = TcpListener::bind(&SocketAddr::new(IpAddr::from([127, 0, 0, 1]), 0))
+        let tcp_tunneled = TcpListener::bind(&SocketAddr::new(IpAddr::from([127, 0, 0, 1]), 0))
             .await
             .unwrap();
         let connect_to_addr = tcp_tunneled.local_addr().unwrap();
