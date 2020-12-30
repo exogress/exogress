@@ -246,7 +246,7 @@ impl Client {
             shadow_clone!(upstream_health_checkers);
 
             async move {
-                let mut last_checksum = None;
+                let mut last_config = None;
 
                 let mut joined_events = reload_config_rx.ready_chunks(30);
                 while let Some(event) = joined_events.next().await {
@@ -271,15 +271,18 @@ impl Client {
                                     if let Err(err) = client_config.validate() {
                                         error!("Error in config: {}. Changes are not applied", err);
                                     } else {
-                                        let current_checksum = client_config.checksum();
-                                        if last_checksum != Some(current_checksum) {
+                                        if last_config
+                                            .as_ref()
+                                            .map(|c| serde_yaml::to_string(c).unwrap())
+                                            != Some(serde_yaml::to_string(&client_config).unwrap())
+                                        {
                                             upstream_health_checkers
                                                 .sync_probes(&client_config)
                                                 .await;
                                             *current_config.write() = client_config.clone();
-                                            config_tx.send(client_config).unwrap();
+                                            config_tx.send(client_config.clone()).unwrap();
                                             info!("New config successfully loaded");
-                                            last_checksum = Some(current_checksum);
+                                            last_config = Some(client_config);
                                         }
                                     }
                                 }
