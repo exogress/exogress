@@ -66,7 +66,7 @@ tokio-stream = { optional = true, version = "0.1.0" }
 
 seahash = { optional = true, git = "https://gitlab.redox-os.org/redox-os/seahash.git" }
 tokio-tungstenite = { optional = true, git = "https://github.com/dnaka91/tokio-tungstenite.git", branch = "tokio-1.0" }
-trust-dns-resolver = { optional = true, git = "https://github.com/bluejekyll/trust-dns.git", branch = "main" }
+trust-dns-resolver = { optional = true, version = "0.20" }
 tungstenite = { optional = true, git = "https://github.com/nickelc/tungstenite-rs.git", branch = "bytes", default-features = false }
 warp = { optional = true, git = "https://github.com/aknuds1/warp.git", branch = "chore/upgrade-tokio" }
 
