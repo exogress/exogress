@@ -8,9 +8,9 @@ use futures::{pin_mut, select_biased, stream::select, SinkExt, StreamExt};
 use http::StatusCode;
 use tokio::time::sleep;
 use tokio::time::timeout;
+use tokio_tungstenite::tungstenite::Message;
 use tracing::{debug, error, info, trace, warn};
 use trust_dns_resolver::TokioAsyncResolver;
-use tungstenite::Message;
 use url::Url;
 
 use crate::common_utils::backoff::{Backoff, BackoffHandle};
@@ -130,7 +130,7 @@ pub enum Error {
     ConnectError(#[from] ws_client::Error),
 
     #[error("ws error: `{0}`")]
-    Websocket(#[from] tungstenite::error::Error),
+    Websocket(#[from] tokio_tungstenite::tungstenite::error::Error),
 
     #[error("timeout waiting for pong")]
     Timeout(#[from] tokio::time::error::Elapsed),
