@@ -10,10 +10,10 @@ use tokio::net::TcpStream;
 use tokio_rustls::rustls::ClientConfig;
 use tokio_rustls::webpki::DNSNameRef;
 use tokio_rustls::{client::TlsStream, TlsConnector};
+use tokio_tungstenite::tungstenite::http::{Request, Response};
 use tokio_tungstenite::{client_async, WebSocketStream};
 use tokio_util::either::Either;
 use trust_dns_resolver::TokioAsyncResolver;
-use tungstenite::http::{Request, Response};
 use url::Url;
 
 #[derive(Debug, thiserror::Error)]
@@ -37,7 +37,7 @@ pub enum Error {
     IoError(#[from] io::Error),
 
     #[error("websocket (tungstenite) error: {}", _0)]
-    WebsocketError(#[from] tungstenite::Error),
+    WebsocketError(#[from] tokio_tungstenite::tungstenite::Error),
 
     #[error("TLS error: {}", _0)]
     TlsError(#[from] rustls::TLSError),
