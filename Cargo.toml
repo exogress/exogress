@@ -211,7 +211,6 @@ config-core = [
 entities = [
     "bytes",
     "paste",
-    "rand",
     "serde",
     "serde/derive",
     "shadow-clone",

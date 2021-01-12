@@ -1,5 +1,4 @@
 pub use bytes;
-pub use rand;
 pub use serde;
 pub use tracing;
 pub use ulid::{self, Ulid, ULID_LEN};
