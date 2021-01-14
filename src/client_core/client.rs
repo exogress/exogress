@@ -211,7 +211,15 @@ impl Client {
 
                     debug!("received fs event: {:?}", event);
 
-                    if !event.paths.iter().any(|path| path == &config_path) {
+                    if !event.paths.iter().any(|path| {
+                        let config_path_str = config_path.to_str().unwrap();
+                        let path_str = path.to_str().unwrap().to_string();
+                        if let Some(stripped_symlink_suffix) = path_str.strip_suffix("~") {
+                            stripped_symlink_suffix == config_path_str
+                        } else {
+                            path_str.as_str() == config_path_str
+                        }
+                    }) {
                         return;
                     }
 
