@@ -1,6 +1,6 @@
+use crate::entities::VariableName;
 use core::fmt;
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
 use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
@@ -13,20 +13,7 @@ pub struct Auth {
 #[serde(deny_unknown_fields)]
 pub struct AuthDefinition {
     pub name: AuthProvider,
-    pub acl: Vec<AclEntry>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(untagged)]
-pub enum AclEntry {
-    Allow {
-        #[serde(rename = "allow")]
-        identity: SmolStr,
-    },
-    Deny {
-        #[serde(rename = "deny")]
-        identity: SmolStr,
-    },
+    pub acl: VariableName,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
@@ -57,29 +44,5 @@ impl fmt::Display for AuthProvider {
             AuthProvider::Google => write!(f, "google"),
             AuthProvider::Github => write!(f, "github"),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::config_core::ClientHandler;
-
-    #[test]
-    fn test_acl_entry() {
-        serde_yaml::from_str::<ClientHandler>(
-            r#"
----
-kind: auth
-priority: 1
-providers:
-  - name: google
-    acl:
-      - deny: "*@domain.tld"
-      - allow: "*"
-  - name: github
-    acl: []
-"#,
-        )
-        .unwrap();
     }
 }

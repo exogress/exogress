@@ -1,4 +1,4 @@
-pub use auth::{AclEntry, Auth, AuthDefinition, AuthProvider};
+pub use auth::{Auth, AuthDefinition, AuthProvider};
 pub use catch::{
     CatchAction, CatchMatcher, CatchMatcherParseError, Exception, ExceptionParseError, RescueItem,
 };
@@ -19,7 +19,7 @@ pub use upstream::{Probe, UpstreamDefinition, UpstreamSocketAddr};
 pub use version::ConfigVersion;
 mod app;
 mod auth;
-mod cache;
+// mod cache;
 mod catch;
 mod client_config;
 mod config;

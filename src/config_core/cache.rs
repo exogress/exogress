@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
-#[serde(deny_unknown_fields, tag = "strategy")]
 pub enum CacheStrategy {
     // never cache
     #[serde(rename = "no-cache")]

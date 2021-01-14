@@ -85,7 +85,8 @@ default = [
     "config-core",
     "common-utils",
     "client-lib",
-    "client-core"]
+    "client-core",
+    "variables"]
 client-core = [
     "anyhow",
     "bincode",
@@ -181,6 +182,17 @@ common-utils = [
     "trust-dns-resolver",
     "url",
     "webpki",
+]
+variables = [
+    "entities",
+    "hashbrown",
+    "hashbrown/serde",
+    "serde",
+    "serde/derive",
+    "smol_str",
+    "smol_str/serde",
+    "rusty-s3",
+#    "thiserror",
 ]
 config-core = [
     "bytes",

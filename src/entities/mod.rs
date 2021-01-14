@@ -38,3 +38,4 @@ string_type!(LabelName);
 string_type!(StaticResponseName);
 string_type!(ExceptionSegment);
 string_type!(HealthCheckProbeName);
+string_type!(VariableName);

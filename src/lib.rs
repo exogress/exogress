@@ -12,5 +12,7 @@ pub mod entities;
 pub mod signaling;
 #[cfg(feature = "tunnel")]
 pub mod tunnel;
+#[cfg(feature = "variables")]
+pub mod variables;
 #[cfg(feature = "ws-client")]
 pub mod ws_client;

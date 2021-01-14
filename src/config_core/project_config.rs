@@ -1,6 +1,6 @@
 use hashbrown::HashSet;
 
-use crate::config_core::auth::{AclEntry, AuthDefinition};
+use crate::config_core::auth::AuthDefinition;
 use crate::config_core::catch::RescueItem;
 use crate::config_core::client_config::ClientMount;
 use crate::config_core::config::default_rules;
@@ -55,9 +55,7 @@ impl ProjectConfig {
                 variant: ProjectHandlerVariant::Auth(Auth {
                     providers: vec![AuthDefinition {
                         name: AuthProvider::Google,
-                        acl: vec![AclEntry::Allow {
-                            identity: "*".into(),
-                        }],
+                        acl: "acl-var".parse().unwrap(),
                     }],
                 }),
                 base_path: vec![],
@@ -252,7 +250,7 @@ mount-points:
         priority: 30
         providers:
           - name: github
-            acl: []
+            acl: my-acl
     static-responses:
       redirect:
         kind: redirect
