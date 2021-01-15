@@ -85,8 +85,7 @@ default = [
     "config-core",
     "common-utils",
     "client-lib",
-    "client-core",
-    "variables"]
+    "client-core"]
 client-core = [
     "anyhow",
     "bincode",
@@ -183,21 +182,10 @@ common-utils = [
     "url",
     "webpki",
 ]
-variables = [
-    "entities",
-    "hashbrown",
-    "hashbrown/serde",
-    "serde",
-    "serde/derive",
-    "smol_str",
-    "smol_str/serde",
-    "rusty-s3",
-    "anyhow",
-    "serde_yaml",
-    "serde_json",
-]
 config-core = [
+    "anyhow",
     "bytes",
+    "entities",
     "hashbrown",
     "hashbrown/serde",
     "http",
@@ -208,11 +196,13 @@ config-core = [
     "maplit",
     "percent-encoding",
     "regex",
+    "rusty-s3",
     "seahash",
     "semver",
     "semver/serde",
     "serde",
     "serde/derive",
+    "serde_json",
     "serde_yaml",
     "smol_str",
     "smol_str/serde",
@@ -220,7 +210,6 @@ config-core = [
     "tracing",
     "url",
     "url/serde",
-    "rusty-s3",
 ]
 entities = [
     "bytes",

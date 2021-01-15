@@ -8,8 +8,6 @@ pub mod common_utils;
 pub mod config_core;
 #[cfg(feature = "entities")]
 pub mod entities;
-#[cfg(feature = "variables")]
-pub mod params;
 #[cfg(feature = "signaling")]
 pub mod signaling;
 #[cfg(feature = "tunnel")]

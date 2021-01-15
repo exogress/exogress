@@ -17,13 +17,14 @@ pub use static_dir::StaticDir;
 pub use status_code::{StatusCode, StatusCodeRange};
 pub use upstream::{Probe, UpstreamDefinition, UpstreamSocketAddr};
 pub use version::ConfigVersion;
+
 mod app;
 mod auth;
-// mod cache;
 mod catch;
 mod client_config;
 mod config;
 mod gcs;
+mod parametrized;
 mod path;
 mod path_segment;
 mod project_config;
