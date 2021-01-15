@@ -3,7 +3,7 @@ use smol_str::SmolStr;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(transparent)]
-pub struct Acl(Vec<AclEntry>);
+pub struct Acl(pub Vec<AclEntry>);
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(untagged)]
