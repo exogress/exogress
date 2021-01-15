@@ -55,9 +55,44 @@ impl Parameter {
         }
     }
 
+    pub fn aws_credentials(&self) -> Option<&AwsCredentials> {
+        match self {
+            Parameter::AwsCredentials(creds) => Some(creds),
+            _ => None,
+        }
+    }
+
+    pub fn s3_bucket(&self) -> Option<&S3Bucket> {
+        match self {
+            Parameter::S3Bucket(s3) => Some(s3),
+            _ => None,
+        }
+    }
+
+    pub fn google_credentials(&self) -> Option<&GoogleCredentials> {
+        match self {
+            Parameter::GoogleCredentials(creds) => Some(creds),
+            _ => None,
+        }
+    }
+
+    pub fn gcs_bucket(&self) -> Option<&GcsBucket> {
+        match self {
+            Parameter::GcsBucket(gcs) => Some(gcs),
+            _ => None,
+        }
+    }
+
     pub fn acl(&self) -> Option<&Acl> {
         match self {
             Parameter::Acl(acl) => Some(acl),
+            _ => None,
+        }
+    }
+
+    pub fn string(&self) -> Option<&SmolStr> {
+        match self {
+            Parameter::String(s) => Some(s),
             _ => None,
         }
     }

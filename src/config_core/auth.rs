@@ -1,4 +1,4 @@
-use crate::entities::VariableName;
+use crate::entities::ParameterName;
 use core::fmt;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -13,7 +13,7 @@ pub struct Auth {
 #[serde(deny_unknown_fields)]
 pub struct AuthDefinition {
     pub name: AuthProvider,
-    pub acl: VariableName,
+    pub acl: ParameterName,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
