@@ -192,7 +192,9 @@ variables = [
     "smol_str",
     "smol_str/serde",
     "rusty-s3",
-#    "thiserror",
+    "anyhow",
+    "serde_yaml",
+    "serde_json",
 ]
 config-core = [
     "bytes",
