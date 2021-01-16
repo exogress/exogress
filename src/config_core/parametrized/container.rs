@@ -33,7 +33,7 @@ where
     }
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
     #[error("parameter {_0} is not defined")]
     ParamNotDefined(ParameterName),

@@ -64,7 +64,7 @@ webpki = { optional = true, version = "0.21.3" }
 zstd = { optional = true, version = "0.5.3" }
 tokio-stream = { optional = true, version = "0.1.2" }
 
-seahash = { optional = true, git = "https://gitlab.redox-os.org/redox-os/seahash.git" }
+seahash = { optional = true, version = "4.1.0" }
 tokio-tungstenite = { optional = true, version = "0.13" }
 trust-dns-resolver = { optional = true, version = "0.20" }
 warp = { optional = true, git = "https://github.com/seanmonstar/warp.git", branch = "master" }

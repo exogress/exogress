@@ -17,6 +17,8 @@ pub mod google;
 
 mod container;
 
+pub use container::Error;
+
 pub trait ParameterOrConfigValue:
     DeserializeOwned
     + Serialize
