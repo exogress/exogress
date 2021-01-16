@@ -85,6 +85,16 @@ impl Parameter {
     }
 }
 
+pub const ALL_PARAMETER_SCHEMAS: [ParameterSchema; 5] = [
+    ParameterSchema::AwsCredentials,
+    ParameterSchema::S3Bucket,
+
+    ParameterSchema::GoogleCredentials,
+    ParameterSchema::GcsBucket,
+
+    ParameterSchema::Acl,
+];
+
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, Copy)]
 #[serde(deny_unknown_fields, tag = "kind")]
 pub enum ParameterSchema {
@@ -100,6 +110,48 @@ pub enum ParameterSchema {
 
     #[serde(rename = "acl")]
     Acl,
+}
+
+impl ParameterSchema {
+    pub fn help(&self) -> String {
+        match self {
+            Self::AwsCredentials => {
+                let sample = AwsCredentials {
+                    access_key_id: "AKIA2Q9SUGVTPX21NLLN".into(),
+                    secret_access_key: "<SECRET_ACCESS_KEY>".into()
+                };
+                serde_yaml::to_string(&sample).unwrap()
+            }
+            Self::S3Bucket => {
+                let sample = S3Bucket {
+                    name: "my-s3-bucket".into(),
+                    region: aws::bucket::S3Region::UsEast1
+                };
+                serde_yaml::to_string(&sample).unwrap()
+            },
+            Self::GoogleCredentials => {
+                let sample = GoogleCredentials {
+                    json: "<GCS_JSON>".into(),
+                };
+                serde_yaml::to_string(&sample).unwrap()
+            },
+            Self::GcsBucket => {
+                let sample = GcsBucket {
+                    name: "my-gcs-bucket".into(),
+                };
+                serde_yaml::to_string(&sample).unwrap()
+            },
+            Self::Acl => {
+                let sample = Acl(vec![
+                    acl::AclEntry::Allow { identity: "user@example.com".into() },
+                    acl::AclEntry::Deny { identity: "*@example.com".into() },
+                    acl::AclEntry::Allow { identity: "*".into() },
+                ]);
+                serde_yaml::to_string(&sample).unwrap()
+            },
+        }
+    }
+
 }
 
 impl fmt::Display for ParameterSchema {

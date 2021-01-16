@@ -4,7 +4,7 @@ use smol_str::SmolStr;
 use std::convert::TryFrom;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields, transparent)]
+#[serde(deny_unknown_fields)]
 pub struct GoogleCredentials {
     pub json: SmolStr,
 }

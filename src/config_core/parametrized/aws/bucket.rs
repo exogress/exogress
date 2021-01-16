@@ -239,6 +239,7 @@ impl ParameterOrConfigValue for S3Bucket {
     fn schema() -> ParameterSchema {
         ParameterSchema::S3Bucket
     }
+
 }
 
 impl TryFrom<Parameter> for S3Bucket {
