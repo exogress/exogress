@@ -7,5 +7,5 @@ use serde::{Deserialize, Serialize};
 #[serde(deny_unknown_fields)]
 pub struct S3BucketAccess {
     pub bucket: Container<S3Bucket>,
-    pub credentials: Container<AwsCredentials>,
+    pub credentials: Option<Container<AwsCredentials>>,
 }
