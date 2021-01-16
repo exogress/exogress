@@ -1,7 +1,9 @@
+use crate::config_core::parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema};
 use core::fmt::{self, Formatter};
 use serde::de::Visitor;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
+use std::convert::TryFrom;
 use std::hash::Hash;
 use std::str::FromStr;
 use url::Url;
@@ -231,4 +233,21 @@ impl<'de> Deserialize<'de> for S3Region {
 pub struct S3Bucket {
     pub bucket: SmolStr,
     pub region: S3Region,
+}
+
+impl ParameterOrConfigValue for S3Bucket {
+    fn schema() -> ParameterSchema {
+        ParameterSchema::S3Bucket
+    }
+}
+
+impl TryFrom<Parameter> for S3Bucket {
+    type Error = ();
+
+    fn try_from(value: Parameter) -> Result<Self, Self::Error> {
+        match value {
+            Parameter::S3Bucket(bucket) => Ok(bucket),
+            _ => Err(()),
+        }
+    }
 }

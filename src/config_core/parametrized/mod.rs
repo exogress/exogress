@@ -3,14 +3,32 @@ use crate::config_core::parametrized::aws::bucket::S3Bucket;
 use crate::config_core::parametrized::aws::credentials::AwsCredentials;
 use crate::config_core::parametrized::google::bucket::GcsBucket;
 use crate::config_core::parametrized::google::credentials::GoogleCredentials;
+pub use container::Container;
 use core::convert::TryFrom;
+use core::fmt;
+use core::fmt::Formatter;
 use core::str::FromStr;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
 
 pub mod acl;
 pub mod aws;
 pub mod google;
+
+mod container;
+
+pub trait ParameterOrConfigValue:
+    DeserializeOwned
+    + Serialize
+    + core::fmt::Debug
+    + Clone
+    + Eq
+    + PartialEq
+    + std::hash::Hash
+    + TryFrom<Parameter>
+{
+    fn schema() -> ParameterSchema;
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(deny_unknown_fields, tag = "schema", content = "body")]
@@ -27,12 +45,21 @@ pub enum Parameter {
 
     #[serde(rename = "acl")]
     Acl(Acl),
-
-    #[serde(rename = "string")]
-    String(SmolStr),
+    // #[serde(rename = "string")]
+    // String(SmolStr),
 }
 
 impl Parameter {
+    pub fn schema(&self) -> ParameterSchema {
+        match self {
+            Parameter::AwsCredentials(_) => ParameterSchema::AwsCredentials,
+            Parameter::S3Bucket(_) => ParameterSchema::S3Bucket,
+            Parameter::GoogleCredentials(_) => ParameterSchema::GoogleCredentials,
+            Parameter::GcsBucket(_) => ParameterSchema::GcsBucket,
+            Parameter::Acl(_) => ParameterSchema::Acl,
+            // Parameter::String(_) => ParameterSchema::S
+        }
+    }
     pub fn to_inner_yaml(&self) -> String {
         match self {
             Parameter::AwsCredentials(inner) => serde_yaml::to_string(&inner).unwrap(),
@@ -40,7 +67,7 @@ impl Parameter {
             Parameter::GoogleCredentials(inner) => serde_yaml::to_string(&inner).unwrap(),
             Parameter::GcsBucket(inner) => serde_yaml::to_string(&inner).unwrap(),
             Parameter::Acl(inner) => serde_yaml::to_string(&inner).unwrap(),
-            Parameter::String(inner) => serde_yaml::to_string(&inner).unwrap(),
+            // Parameter::String(inner) => serde_yaml::to_string(&inner).unwrap(),
         }
     }
 
@@ -51,54 +78,12 @@ impl Parameter {
             Parameter::GoogleCredentials(inner) => serde_json::to_string_pretty(&inner).unwrap(),
             Parameter::GcsBucket(inner) => serde_json::to_string_pretty(&inner).unwrap(),
             Parameter::Acl(inner) => serde_json::to_string_pretty(&inner).unwrap(),
-            Parameter::String(inner) => serde_json::to_string_pretty(&inner).unwrap(),
-        }
-    }
-
-    pub fn aws_credentials(&self) -> Option<&AwsCredentials> {
-        match self {
-            Parameter::AwsCredentials(creds) => Some(creds),
-            _ => None,
-        }
-    }
-
-    pub fn s3_bucket(&self) -> Option<&S3Bucket> {
-        match self {
-            Parameter::S3Bucket(s3) => Some(s3),
-            _ => None,
-        }
-    }
-
-    pub fn google_credentials(&self) -> Option<&GoogleCredentials> {
-        match self {
-            Parameter::GoogleCredentials(creds) => Some(creds),
-            _ => None,
-        }
-    }
-
-    pub fn gcs_bucket(&self) -> Option<&GcsBucket> {
-        match self {
-            Parameter::GcsBucket(gcs) => Some(gcs),
-            _ => None,
-        }
-    }
-
-    pub fn acl(&self) -> Option<&Acl> {
-        match self {
-            Parameter::Acl(acl) => Some(acl),
-            _ => None,
-        }
-    }
-
-    pub fn string(&self) -> Option<&SmolStr> {
-        match self {
-            Parameter::String(s) => Some(s),
-            _ => None,
+            // Parameter::String(inner) => serde_json::to_string_pretty(&inner).unwrap(),
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, Copy)]
 #[serde(deny_unknown_fields, tag = "kind")]
 pub enum ParameterSchema {
     #[serde(rename = "aws-credentials")]
@@ -113,9 +98,20 @@ pub enum ParameterSchema {
 
     #[serde(rename = "acl")]
     Acl,
+}
 
-    #[serde(rename = "string")]
-    String,
+impl fmt::Display for ParameterSchema {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            ParameterSchema::AwsCredentials => "aws-credentials",
+            ParameterSchema::S3Bucket => "s3-bucket",
+            ParameterSchema::GoogleCredentials => "google-credentials",
+            ParameterSchema::GcsBucket => "gcs-bucket",
+            ParameterSchema::Acl => "acl",
+        };
+
+        write!(f, "{}", s)
+    }
 }
 
 impl FromStr for ParameterSchema {
@@ -128,7 +124,6 @@ impl FromStr for ParameterSchema {
             "google-credentials" => Ok(ParameterSchema::GoogleCredentials),
             "gcs-bucket" => Ok(ParameterSchema::GcsBucket),
             "acl" => Ok(ParameterSchema::Acl),
-            "string" => Ok(ParameterSchema::String),
             _ => Err(()),
         }
     }
@@ -152,9 +147,6 @@ impl TryFrom<(ParameterSchema, String)> for Parameter {
                 Ok(Parameter::GcsBucket(serde_yaml::from_str(s.as_str())?))
             }
             (ParameterSchema::Acl, s) => Ok(Parameter::Acl(serde_yaml::from_str(s.as_str())?)),
-            (ParameterSchema::String, s) => {
-                Ok(Parameter::String(serde_yaml::from_str(s.as_str())?))
-            }
         }
     }
 }

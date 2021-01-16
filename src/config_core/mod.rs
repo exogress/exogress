@@ -24,7 +24,7 @@ mod catch;
 mod client_config;
 mod config;
 mod gcs;
-mod parametrized;
+pub mod parametrized;
 mod path;
 mod path_segment;
 mod project_config;

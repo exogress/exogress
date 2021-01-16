@@ -9,10 +9,10 @@ use crate::entities::{
 use crate::config_core::catch::RescueItem;
 use crate::config_core::config::default_rules;
 use crate::config_core::config::Config;
-use crate::config_core::gcs::GcsBucket;
+use crate::config_core::gcs::GcsBucketAccess;
 use crate::config_core::path_segment::UrlPathSegmentOrQueryPart;
 use crate::config_core::proxy::Proxy;
-use crate::config_core::s3::S3Bucket;
+use crate::config_core::s3::S3BucketAccess;
 use crate::config_core::static_dir::StaticDir;
 use crate::config_core::upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr};
 use crate::config_core::{Auth, ConfigVersion, Rule};
@@ -268,10 +268,10 @@ pub enum ClientHandlerVariant {
     Auth(Auth),
 
     #[serde(rename = "s3-bucket")]
-    S3Bucket(S3Bucket),
+    S3Bucket(S3BucketAccess),
 
     #[serde(rename = "gcs-bucket")]
-    GcsBucket(GcsBucket),
+    GcsBucket(GcsBucketAccess),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]

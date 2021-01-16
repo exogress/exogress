@@ -4,9 +4,10 @@ use crate::config_core::auth::AuthDefinition;
 use crate::config_core::catch::RescueItem;
 use crate::config_core::client_config::ClientMount;
 use crate::config_core::config::default_rules;
-use crate::config_core::gcs::GcsBucket;
+use crate::config_core::gcs::GcsBucketAccess;
+use crate::config_core::parametrized::Container;
 use crate::config_core::path_segment::UrlPathSegmentOrQueryPart;
-use crate::config_core::s3::S3Bucket;
+use crate::config_core::s3::S3BucketAccess;
 use crate::config_core::{Auth, AuthProvider, Config, ConfigVersion, Rule};
 use crate::config_core::{ClientHandler, ClientHandlerVariant, StaticResponse, CURRENT_VERSION};
 use crate::entities::{HandlerName, MountPointName, StaticResponseName};
@@ -55,7 +56,7 @@ impl ProjectConfig {
                 variant: ProjectHandlerVariant::Auth(Auth {
                     providers: vec![AuthDefinition {
                         name: AuthProvider::Google,
-                        acl: "acl-var".parse().unwrap(),
+                        acl: Container::Parameter("acl-var".parse().unwrap()),
                     }],
                 }),
                 base_path: vec![],
@@ -186,10 +187,10 @@ pub enum ProjectHandlerVariant {
     Auth(Auth),
 
     #[serde(rename = "s3-bucket")]
-    S3Bucket(S3Bucket),
+    S3Bucket(S3BucketAccess),
 
     #[serde(rename = "gcs-bucket")]
-    GcsBucket(GcsBucket),
+    GcsBucket(GcsBucketAccess),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
@@ -250,7 +251,7 @@ mount-points:
         priority: 30
         providers:
           - name: github
-            acl: my-acl
+            acl: "@my-acl"
     static-responses:
       redirect:
         kind: redirect
