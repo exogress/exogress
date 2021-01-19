@@ -63,6 +63,7 @@ urlencoding = { optional = true, version = "1.1.1" }
 webpki = { optional = true, version = "0.21.3" }
 zstd = { optional = true, version = "0.5.3" }
 tokio-stream = { optional = true, version = "0.1.2" }
+serde_with = { optional = true, version = "1.6.0" }
 
 seahash = { optional = true, version = "4.1.0" }
 tokio-tungstenite = { optional = true, version = "0.13" }
@@ -204,6 +205,7 @@ config-core = [
     "serde/derive",
     "serde_json",
     "serde_yaml",
+    "serde_with",
     "smol_str",
     "smol_str/serde",
     "thiserror",
