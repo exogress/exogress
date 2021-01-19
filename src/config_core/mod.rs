@@ -12,7 +12,7 @@ pub use proxy::Proxy;
 pub use response::{
     HttpHeaders, RawResponse, RedirectResponse, ResponseBody, StaticResponse, TemplateEngine,
 };
-pub use rule::{Action, Filter, Rule};
+pub use rule::{Action, Filter, Rule, TrailingSlashFilterRule};
 pub use static_dir::StaticDir;
 pub use status_code::{StatusCode, StatusCodeRange};
 pub use upstream::{Probe, UpstreamDefinition, UpstreamSocketAddr};

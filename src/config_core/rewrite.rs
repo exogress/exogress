@@ -45,7 +45,7 @@ impl<'de> Visitor<'de> for PathSegmentRewriteVisitor {
     type Value = PathSegmentRewrite;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "single path segment \"s\" or \"*\"")
+        write!(formatter, "single path segment \"?\" or \"*\"")
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>

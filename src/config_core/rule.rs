@@ -20,10 +20,41 @@ fn default_action() -> Action {
     Action::None
 }
 
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, Copy)]
+pub enum TrailingSlashFilterRule {
+    #[serde(rename = "require")]
+    Require,
+
+    #[serde(rename = "allow")]
+    Allow,
+
+    #[serde(rename = "deny")]
+    Deny,
+}
+
+impl Default for TrailingSlashFilterRule {
+    fn default() -> Self {
+        TrailingSlashFilterRule::Allow
+    }
+}
+
+impl TrailingSlashFilterRule {
+    fn is_default(&self) -> bool {
+        self == &Default::default()
+    }
+}
+
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Filter {
     pub path: MatchingPath,
+
+    #[serde(
+        rename = "trailing-slash",
+        default,
+        skip_serializing_if = "TrailingSlashFilterRule::is_default"
+    )]
+    pub trailing_slash: TrailingSlashFilterRule,
 }
 
 // #[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone)]
