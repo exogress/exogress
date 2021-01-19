@@ -68,7 +68,7 @@ serde_with = { optional = true, version = "1.6.0" }
 seahash = { optional = true, version = "4.1.0" }
 tokio-tungstenite = { optional = true, version = "0.13" }
 trust-dns-resolver = { optional = true, version = "0.20" }
-warp = { optional = true, git = "https://github.com/seanmonstar/warp.git", branch = "master" }
+warp = { optional = true, version = "0.3" }
 
 
 [dev-dependencies]
