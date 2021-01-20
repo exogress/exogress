@@ -434,7 +434,7 @@ mod test {
 - ["a"]
 - ["a", "b"]
 - ["a", "b", "*"]
-- ["a", "b", "*", "/.+(jpg|gif|png)/"]
+- ["a", "b", "*", "/.+\\.(jpg|gif|png)/"]
 - ["*", "c"]
 - ["?", "*"]
 "#;
@@ -471,7 +471,7 @@ mod test {
                     MatchPathSegment::Exact("b".parse().unwrap())
                 ],
                 vec![MatchPathSegment::Regex(
-                    r#".+(jpg|gif|png)"#.parse().unwrap()
+                    r#".+\.(jpg|gif|png)"#.parse().unwrap()
                 )],
             ),
             parsed.next().unwrap()
