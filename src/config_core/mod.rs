@@ -5,14 +5,19 @@ pub use catch::{
 pub use client_config::{ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant};
 pub use config::Config;
 use lazy_static::lazy_static;
+pub use methods::MethodMatcher;
 pub use path::{MatchPathSegment, MatchingPath};
 pub use path_segment::UrlPathSegmentOrQueryPart;
 pub use project_config::{ProjectConfig, ProjectHandler, ProjectHandlerVariant};
 pub use proxy::Proxy;
+pub use rebase::Rebase;
 pub use response::{
     HttpHeaders, RawResponse, RedirectResponse, ResponseBody, StaticResponse, TemplateEngine,
 };
-pub use rule::{Action, Filter, Rule, TrailingSlashFilterRule};
+pub use rule::{
+    Action, Filter, MatchedResponseModification, ModifyHeaders, RequestModifications,
+    ResponseModifications, Rule, TrailingSlashFilterRule,
+};
 pub use static_dir::StaticDir;
 pub use status_code::{StatusCode, StatusCodeRange};
 pub use upstream::{Probe, UpstreamDefinition, UpstreamSocketAddr};
@@ -30,6 +35,7 @@ mod path;
 mod path_segment;
 mod project_config;
 mod proxy;
+mod rebase;
 mod redirect;
 mod response;
 mod rewrite;

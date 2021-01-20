@@ -95,9 +95,9 @@ pub struct ModifyHeaders {
     pub remove: Vec<HeaderName>,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[derive(Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct RequestModification {
+pub struct RequestModifications {
     #[serde(default)]
     pub headers: ModifyHeaders,
     // rewrite url
@@ -105,17 +105,17 @@ pub struct RequestModification {
 
 #[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct ResponseModification {
+pub struct ResponseModifications {
     #[serde(default)]
     pub headers: ModifyHeaders,
 }
 
-#[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct MatchedResponseModification {
     #[serde(rename = "status-code")]
-    pub status_code: Option<StatusCodeRange>,
-    pub modifications: ResponseModification,
+    pub status_code: StatusCodeRange,
+    pub modifications: ResponseModifications,
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
@@ -166,20 +166,24 @@ pub struct Filter {
     pub trailing_slash: TrailingSlashFilterRule,
 }
 
-// #[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone)]
-// #[serde(deny_unknown_fields)]
-// pub struct Modify {}
-
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(deny_unknown_fields, tag = "kind")]
 pub enum Action {
     /// process by the handler
     #[serde(rename = "invoke")]
     Invoke {
-        #[serde(default, rename = "modify-request")]
-        modify_request: Option<RequestModification>,
+        #[serde(
+            default,
+            rename = "modify-request",
+            skip_serializing_if = "Option::is_none"
+        )]
+        modify_request: Option<RequestModifications>,
 
-        #[serde(default, rename = "modify-response")]
+        #[serde(
+            default,
+            rename = "modify-response",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         modify_response: Vec<MatchedResponseModification>,
 
         #[serde(default)]
@@ -193,8 +197,12 @@ pub enum Action {
     /// move on to the next rule. typically, combined with rewrite
     #[serde(rename = "none")]
     None {
-        #[serde(default, rename = "modify-request")]
-        modify_request: Option<RequestModification>,
+        #[serde(
+            default,
+            rename = "modify-request",
+            skip_serializing_if = "Option::is_none"
+        )]
+        modify_request: Option<RequestModifications>,
     },
 
     /// finish the whole handlers chain and move to finalizer
@@ -220,6 +228,27 @@ pub enum Action {
         #[serde(default)]
         rescue: Vec<RescueItem>,
     },
+}
+
+impl Action {
+    pub fn modify_request(&self) -> Option<&RequestModifications> {
+        match self {
+            Action::Invoke { modify_request, .. } => modify_request.as_ref(),
+            Action::NextHandler => None,
+            Action::None { modify_request } => modify_request.as_ref(),
+            Action::Throw { .. } => None,
+            Action::Respond { .. } => None,
+        }
+    }
+
+    pub fn modify_response(&self) -> Vec<&MatchedResponseModification> {
+        match self {
+            Action::Invoke {
+                modify_response, ..
+            } => modify_response.iter().collect(),
+            _ => vec![],
+        }
+    }
 }
 
 #[cfg(test)]

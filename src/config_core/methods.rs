@@ -10,6 +10,17 @@ pub enum MethodMatcher {
     Exact(Vec<Method>),
 }
 
+impl MethodMatcher {
+    pub fn is_match(&self, method: &http::Method) -> bool {
+        match self {
+            MethodMatcher::All => true,
+            MethodMatcher::Exact(expected_method) => {
+                expected_method.iter().any(|expected| expected == method)
+            }
+        }
+    }
+}
+
 impl Default for MethodMatcher {
     fn default() -> Self {
         MethodMatcher::All

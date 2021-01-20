@@ -1,6 +1,7 @@
 use crate::config_core::parametrized::google::bucket::GcsBucket;
 use crate::config_core::parametrized::google::credentials::GoogleCredentials;
 use crate::config_core::parametrized::Container;
+use crate::config_core::rebase::Rebase;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
@@ -8,4 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct GcsBucketAccess {
     pub bucket: Container<GcsBucket>,
     pub credentials: Container<GoogleCredentials>,
+
+    #[serde(flatten)]
+    pub rebase: Rebase,
 }

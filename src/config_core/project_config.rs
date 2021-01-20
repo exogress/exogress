@@ -6,7 +6,6 @@ use crate::config_core::client_config::ClientMount;
 use crate::config_core::config::default_rules;
 use crate::config_core::gcs::GcsBucketAccess;
 use crate::config_core::parametrized::Container;
-use crate::config_core::path_segment::UrlPathSegmentOrQueryPart;
 use crate::config_core::s3::S3BucketAccess;
 use crate::config_core::{Auth, AuthProvider, Config, ConfigVersion, Rule};
 use crate::config_core::{ClientHandler, ClientHandlerVariant, StaticResponse, CURRENT_VERSION};
@@ -59,8 +58,6 @@ impl ProjectConfig {
                         acl: Container::Parameter("acl-var".parse().unwrap()),
                     }],
                 }),
-                base_path: vec![],
-                replace_base_path: vec![],
                 rules: default_rules(),
                 priority: 10,
                 rescue: Default::default(),
@@ -200,12 +197,6 @@ pub struct ProjectHandler {
     #[serde(flatten)]
     pub variant: ProjectHandlerVariant,
 
-    #[serde(default, rename = "base-path")]
-    pub base_path: Vec<UrlPathSegmentOrQueryPart>,
-
-    #[serde(default, rename = "replace-base-path")]
-    pub replace_base_path: Vec<UrlPathSegmentOrQueryPart>,
-
     #[serde(default = "default_rules")]
     pub rules: Vec<Rule>,
 
@@ -226,8 +217,6 @@ impl From<ProjectHandler> for ClientHandler {
         };
         ClientHandler {
             variant: v,
-            base_path: f.base_path,
-            replace_base_path: f.replace_base_path,
             rules: f.rules,
             priority: f.priority,
             rescue: f.rescue,

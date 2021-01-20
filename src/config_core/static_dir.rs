@@ -1,3 +1,4 @@
+use crate::config_core::rebase::Rebase;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -29,9 +30,9 @@ impl From<http::StatusCode> for Error {
 #[serde(deny_unknown_fields)]
 pub struct StaticDir {
     pub dir: PathBuf,
-    // cache_policy: Option<String>,
-    //
-    // errors: Vec<(Error, PathBuf)>,
+
+    #[serde(flatten)]
+    pub rebase: Rebase,
 }
 
 #[cfg(test)]

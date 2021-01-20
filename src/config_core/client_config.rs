@@ -10,8 +10,8 @@ use crate::config_core::catch::RescueItem;
 use crate::config_core::config::default_rules;
 use crate::config_core::config::Config;
 use crate::config_core::gcs::GcsBucketAccess;
-use crate::config_core::path_segment::UrlPathSegmentOrQueryPart;
 use crate::config_core::proxy::Proxy;
+use crate::config_core::rebase::Rebase;
 use crate::config_core::s3::S3BucketAccess;
 use crate::config_core::static_dir::StaticDir;
 use crate::config_core::upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr};
@@ -83,9 +83,11 @@ impl ClientConfig {
             ClientHandler {
                 variant: ClientHandlerVariant::Proxy(Proxy {
                     upstream: upstream_name,
+                    rebase: Rebase {
+                        base_path: vec![],
+                        replace_base_path: vec![],
+                    },
                 }),
-                base_path: vec![],
-                replace_base_path: vec![],
                 rules: default_rules(),
                 priority: 10,
                 rescue: Default::default(),
@@ -274,18 +276,24 @@ pub enum ClientHandlerVariant {
     GcsBucket(GcsBucketAccess),
 }
 
+impl ClientHandlerVariant {
+    pub fn rebase(&self) -> Option<&Rebase> {
+        match self {
+            ClientHandlerVariant::Proxy(v) => Some(&v.rebase),
+            ClientHandlerVariant::StaticDir(v) => Some(&v.rebase),
+            ClientHandlerVariant::Auth(_) => None,
+            ClientHandlerVariant::S3Bucket(v) => Some(&v.rebase),
+            ClientHandlerVariant::GcsBucket(v) => Some(&v.rebase),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 // FIXME: report bug with enabling `deny_unknown_fields`
 // #[serde(deny_unknown_fields)]
 pub struct ClientHandler {
     #[serde(flatten)]
     pub variant: ClientHandlerVariant,
-
-    #[serde(default, rename = "base-path")]
-    pub base_path: Vec<UrlPathSegmentOrQueryPart>,
-
-    #[serde(default, rename = "replace-base-path")]
-    pub replace_base_path: Vec<UrlPathSegmentOrQueryPart>,
 
     #[serde(default = "default_rules")]
     pub rules: Vec<Rule>,
