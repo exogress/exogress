@@ -18,10 +18,12 @@ pub fn default_rules() -> Vec<Rule> {
     vec![Rule {
         filter: Filter {
             path: MatchingPath::Wildcard,
+            methods: Default::default(),
             trailing_slash: Default::default(),
         },
-        modify: None,
         action: Action::Invoke {
+            modify_request: Default::default(),
+            modify_response: Default::default(),
             rescue: Default::default(),
         },
     }]

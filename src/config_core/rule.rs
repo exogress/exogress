@@ -1,6 +1,7 @@
 use crate::config_core::catch::{Exception, RescueItem};
+use crate::config_core::methods::MethodMatcher;
 use crate::config_core::path::MatchingPath;
-use crate::config_core::StatusCode;
+use crate::config_core::{StatusCode, StatusCodeRange};
 use crate::entities::StaticResponseName;
 use core::fmt;
 use http::header::HeaderName;
@@ -60,7 +61,7 @@ mod header_value_ser {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize, Default)]
 #[serde(transparent)]
 pub struct HeaderMapWrapper(#[serde(with = "http_serde::header_map")] pub HeaderMap);
 
@@ -80,7 +81,7 @@ impl HeaderMapWrapper {
 }
 
 #[serde_as]
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Default, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ModifyHeaders {
     #[serde(default, skip_serializing_if = "HeaderMapWrapper::is_empty")]
@@ -94,24 +95,34 @@ pub struct ModifyHeaders {
     pub remove: Vec<HeaderName>,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct Modify {
+pub struct RequestModification {
+    #[serde(default)]
     pub headers: ModifyHeaders,
+    // rewrite url
+}
+
+#[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct ResponseModification {
+    #[serde(default)]
+    pub headers: ModifyHeaders,
+}
+
+#[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct MatchedResponseModification {
+    #[serde(rename = "status-code")]
+    pub status_code: Option<StatusCodeRange>,
+    pub modifications: ResponseModification,
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Rule {
     pub filter: Filter,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub modify: Option<Modify>,
-    #[serde(skip_serializing_if = "Action::is_none", default = "default_action")]
     pub action: Action,
-}
-
-fn default_action() -> Action {
-    Action::None
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, Copy)]
@@ -138,10 +149,14 @@ impl TrailingSlashFilterRule {
     }
 }
 
+#[serde_as]
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct Filter {
     pub path: MatchingPath,
+
+    #[serde(default)]
+    pub methods: MethodMatcher,
 
     #[serde(
         rename = "trailing-slash",
@@ -155,12 +170,18 @@ pub struct Filter {
 // #[serde(deny_unknown_fields)]
 // pub struct Modify {}
 
-#[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(deny_unknown_fields, tag = "kind")]
 pub enum Action {
     /// process by the handler
     #[serde(rename = "invoke")]
     Invoke {
+        #[serde(default, rename = "modify-request")]
+        modify_request: Option<RequestModification>,
+
+        #[serde(default, rename = "modify-response")]
+        modify_response: Vec<MatchedResponseModification>,
+
         #[serde(default)]
         rescue: Vec<RescueItem>,
     },
@@ -171,7 +192,10 @@ pub enum Action {
 
     /// move on to the next rule. typically, combined with rewrite
     #[serde(rename = "none")]
-    None,
+    None {
+        #[serde(default, rename = "modify-request")]
+        modify_request: Option<RequestModification>,
+    },
 
     /// finish the whole handlers chain and move to finalizer
     #[serde(rename = "throw")]
@@ -196,18 +220,6 @@ pub enum Action {
         #[serde(default)]
         rescue: Vec<RescueItem>,
     },
-}
-
-impl Default for Action {
-    fn default() -> Self {
-        Action::None
-    }
-}
-
-impl Action {
-    fn is_none(&self) -> bool {
-        matches!(self, Action::None)
-    }
 }
 
 #[cfg(test)]
