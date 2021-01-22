@@ -53,7 +53,7 @@ fn parse_server_header(value: u64) -> Result<ServerPacket, Error> {
     })
 }
 
-fn encode_server_header(slot: Slot, header: ServerHeader) -> Result<u64, Error> {
+fn encode_server_header(slot: Slot, header: ServerHeader) -> u64 {
     use crate::tunnel::proto::CommonHeader::*;
     use crate::tunnel::proto::ServerHeader::*;
 
@@ -70,12 +70,10 @@ fn encode_server_header(slot: Slot, header: ServerHeader) -> Result<u64, Error> 
         TunnelClose { .. } => SERVER_CODE_TUNNEL_CLOSE,
     };
 
-    let res = (slot_val << CODE_BITS_RESERVED) | u64::from(code);
-
-    Ok(res)
+    (slot_val << CODE_BITS_RESERVED) | u64::from(code)
 }
 
-fn encode_client_header(slot: Slot, header: ClientHeader) -> Result<u64, Error> {
+fn encode_client_header(slot: Slot, header: ClientHeader) -> u64 {
     use crate::tunnel::proto::ClientHeader::*;
     use crate::tunnel::proto::CommonHeader::*;
 
@@ -92,9 +90,7 @@ fn encode_client_header(slot: Slot, header: ClientHeader) -> Result<u64, Error> 
         Rejected => CLIENT_CODE_REJECTED,
     };
 
-    let res = (slot_val << CODE_BITS_RESERVED) | u64::from(code);
-
-    Ok(res)
+    (slot_val << CODE_BITS_RESERVED) | u64::from(code)
 }
 
 #[inline]
@@ -126,7 +122,7 @@ pub fn server_framed(
         })
         .with(|(packet, bytes): (ServerPacket, Vec<u8>)| async move {
             let mut out = BytesMut::with_capacity(bytes.len() + HEADER_BYTES);
-            let header_bytes = encode_server_header(packet.slot, packet.header)?;
+            let header_bytes = encode_server_header(packet.slot, packet.header);
 
             out.put_uint(header_bytes, 3);
             out.put_slice(bytes.as_slice());
@@ -150,7 +146,7 @@ pub fn client_framed(
         })
         .with(|(packet, bytes): (ClientPacket, Vec<u8>)| async move {
             let mut out = BytesMut::with_capacity(bytes.len() + HEADER_BYTES);
-            let header_bytes = encode_client_header(packet.slot, packet.header)?;
+            let header_bytes = encode_client_header(packet.slot, packet.header);
 
             out.put_uint(header_bytes, 3);
             out.put_slice(bytes.as_slice());
@@ -174,7 +170,7 @@ mod test {
 
         for server_header in server_headers.into_iter() {
             let slot = 23u64.try_into().unwrap();
-            let server_header_bytes = encode_server_header(slot, server_header).unwrap();
+            let server_header_bytes = encode_server_header(slot, server_header);
             assert!(server_header_bytes <= MAX_HEADER_CODE);
             let ServerPacket {
                 header: parsed_server_header,
@@ -197,7 +193,7 @@ mod test {
 
         for client_header in client_headers.into_iter() {
             let slot = 93182u64.try_into().unwrap();
-            let client_header_bytes = encode_client_header(slot, client_header).unwrap();
+            let client_header_bytes = encode_client_header(slot, client_header);
             assert!(client_header_bytes <= MAX_HEADER_CODE);
             let ClientPacket {
                 header: parsed_client_header,

@@ -61,9 +61,15 @@ mod header_value_ser {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Eq, Clone, Serialize, Deserialize, Default)]
 #[serde(transparent)]
 pub struct HeaderMapWrapper(#[serde(with = "http_serde::header_map")] pub HeaderMap);
+
+impl PartialEq for HeaderMapWrapper {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.eq(&other.0)
+    }
+}
 
 impl Hash for HeaderMapWrapper {
     fn hash<H: Hasher>(&self, state: &mut H) {

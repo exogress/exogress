@@ -211,7 +211,7 @@ impl Client {
 
                     debug!("received fs event: {:?}", event);
 
-                    if !event.paths.iter().any(|path| {
+                    let is_path_updated = event.paths.iter().any(|path| {
                         let config_path_str = config_path.to_str().unwrap();
                         let path_str = path.to_str().unwrap().to_string();
                         if let Some(stripped_symlink_suffix) = path_str.strip_suffix("~") {
@@ -219,7 +219,9 @@ impl Client {
                         } else {
                             path_str.as_str() == config_path_str
                         }
-                    }) {
+                    });
+
+                    if !is_path_updated {
                         return;
                     }
 
@@ -278,20 +280,16 @@ impl Client {
                                 Ok(client_config) => {
                                     if let Err(err) = client_config.validate() {
                                         error!("Error in config: {}. Changes are not applied", err);
-                                    } else {
-                                        if last_config
-                                            .as_ref()
-                                            .map(|c| serde_yaml::to_string(c).unwrap())
-                                            != Some(serde_yaml::to_string(&client_config).unwrap())
-                                        {
-                                            upstream_health_checkers
-                                                .sync_probes(&client_config)
-                                                .await;
-                                            *current_config.write() = client_config.clone();
-                                            config_tx.send(client_config.clone()).unwrap();
-                                            info!("New config successfully loaded");
-                                            last_config = Some(client_config);
-                                        }
+                                    } else if last_config
+                                        .as_ref()
+                                        .map(|c| serde_yaml::to_string(c).unwrap())
+                                        != Some(serde_yaml::to_string(&client_config).unwrap())
+                                    {
+                                        upstream_health_checkers.sync_probes(&client_config).await;
+                                        *current_config.write() = client_config.clone();
+                                        config_tx.send(client_config.clone()).unwrap();
+                                        info!("New config successfully loaded");
+                                        last_config = Some(client_config);
                                     }
                                 }
                                 Err(e) => {

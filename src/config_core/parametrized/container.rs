@@ -85,7 +85,7 @@ where
             Container::Parameter(param) => {
                 let found = params
                     .get(&param)
-                    .ok_or_else(|| Error::ParamNotDefined(param))?
+                    .ok_or(Error::ParamNotDefined(param))?
                     .clone();
 
                 let provided_schema = found.schema();
