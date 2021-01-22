@@ -1,5 +1,6 @@
 use hashbrown::HashSet;
 
+use crate::config_core::application_firewall::ApplicationFirewall;
 use crate::config_core::auth::AuthDefinition;
 use crate::config_core::catch::RescueItem;
 use crate::config_core::client_config::ClientMount;
@@ -178,8 +179,6 @@ impl From<ProjectMount> for ClientMount {
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(deny_unknown_fields, tag = "kind")]
 pub enum ProjectHandlerVariant {
-    // #[serde(rename = "static_app")]
-    // StaticApp(StaticApp),
     #[serde(rename = "auth")]
     Auth(Auth),
 
@@ -188,6 +187,9 @@ pub enum ProjectHandlerVariant {
 
     #[serde(rename = "gcs-bucket")]
     GcsBucket(GcsBucketAccess),
+
+    #[serde(rename = "application-firewall")]
+    ApplicationFirewall(ApplicationFirewall),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
@@ -213,6 +215,9 @@ impl From<ProjectHandler> for ClientHandler {
             ProjectHandlerVariant::S3Bucket(s3_bucket) => ClientHandlerVariant::S3Bucket(s3_bucket),
             ProjectHandlerVariant::GcsBucket(gcs_bucket) => {
                 ClientHandlerVariant::GcsBucket(gcs_bucket)
+            }
+            ProjectHandlerVariant::ApplicationFirewall(app_firewall) => {
+                ClientHandlerVariant::ApplicationFirewall(app_firewall)
             }
         };
         ClientHandler {
