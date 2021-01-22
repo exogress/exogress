@@ -23,7 +23,7 @@ pub use status_code::{StatusCode, StatusCodeRange};
 pub use upstream::{Probe, UpstreamDefinition, UpstreamSocketAddr};
 pub use version::ConfigVersion;
 
-mod app;
+mod application_firewall;
 mod auth;
 mod catch;
 mod client_config;

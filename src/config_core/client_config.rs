@@ -6,6 +6,7 @@ use crate::entities::{
     ConfigName, HandlerName, HealthCheckProbeName, MountPointName, StaticResponseName, Upstream,
 };
 
+use crate::config_core::application_firewall::ApplicationFirewall;
 use crate::config_core::catch::RescueItem;
 use crate::config_core::config::default_rules;
 use crate::config_core::config::Config;
@@ -274,6 +275,9 @@ pub enum ClientHandlerVariant {
 
     #[serde(rename = "gcs-bucket")]
     GcsBucket(GcsBucketAccess),
+
+    #[serde(rename = "application-firewall")]
+    ApplicationFirewall(ApplicationFirewall),
 }
 
 impl ClientHandlerVariant {
@@ -284,6 +288,7 @@ impl ClientHandlerVariant {
             ClientHandlerVariant::Auth(_) => None,
             ClientHandlerVariant::S3Bucket(v) => Some(&v.rebase),
             ClientHandlerVariant::GcsBucket(v) => Some(&v.rebase),
+            ClientHandlerVariant::ApplicationFirewall(_) => None,
         }
     }
 }
