@@ -16,6 +16,7 @@ use crate::config_core::rebase::Rebase;
 use crate::config_core::s3::S3BucketAccess;
 use crate::config_core::static_dir::StaticDir;
 use crate::config_core::upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr};
+use crate::config_core::PassThrough;
 use crate::config_core::{Auth, ConfigVersion, Rule};
 use crate::config_core::{StaticResponse, CURRENT_VERSION};
 use maplit::btreemap;
@@ -278,6 +279,9 @@ pub enum ClientHandlerVariant {
 
     #[serde(rename = "application-firewall")]
     ApplicationFirewall(ApplicationFirewall),
+
+    #[serde(rename = "pass-through")]
+    PassThrough(PassThrough),
 }
 
 impl ClientHandlerVariant {
@@ -289,6 +293,7 @@ impl ClientHandlerVariant {
             ClientHandlerVariant::S3Bucket(v) => Some(&v.rebase),
             ClientHandlerVariant::GcsBucket(v) => Some(&v.rebase),
             ClientHandlerVariant::ApplicationFirewall(_) => None,
+            ClientHandlerVariant::PassThrough(_) => None,
         }
     }
 }

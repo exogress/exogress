@@ -6,6 +6,7 @@ pub use client_config::{ClientConfig, ClientConfigRevision, ClientHandler, Clien
 pub use config::Config;
 use lazy_static::lazy_static;
 pub use methods::MethodMatcher;
+pub use pass_through::PassThrough;
 pub use path::{MatchPathSegment, MatchingPath};
 pub use path_segment::UrlPathSegmentOrQueryPart;
 pub use project_config::{ProjectConfig, ProjectHandler, ProjectHandlerVariant};
@@ -31,6 +32,7 @@ mod config;
 mod gcs;
 mod methods;
 pub mod parametrized;
+mod pass_through;
 mod path;
 mod path_segment;
 mod project_config;

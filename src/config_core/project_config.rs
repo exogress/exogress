@@ -8,7 +8,7 @@ use crate::config_core::config::default_rules;
 use crate::config_core::gcs::GcsBucketAccess;
 use crate::config_core::parametrized::Container;
 use crate::config_core::s3::S3BucketAccess;
-use crate::config_core::{Auth, AuthProvider, Config, ConfigVersion, Rule};
+use crate::config_core::{Auth, AuthProvider, Config, ConfigVersion, PassThrough, Rule};
 use crate::config_core::{ClientHandler, ClientHandlerVariant, StaticResponse, CURRENT_VERSION};
 use crate::entities::{HandlerName, MountPointName, StaticResponseName};
 use maplit::btreemap;
@@ -190,6 +190,9 @@ pub enum ProjectHandlerVariant {
 
     #[serde(rename = "application-firewall")]
     ApplicationFirewall(ApplicationFirewall),
+
+    #[serde(rename = "pass-through")]
+    PassThrough(PassThrough),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
@@ -218,6 +221,9 @@ impl From<ProjectHandler> for ClientHandler {
             }
             ProjectHandlerVariant::ApplicationFirewall(app_firewall) => {
                 ClientHandlerVariant::ApplicationFirewall(app_firewall)
+            }
+            ProjectHandlerVariant::PassThrough(pass_through) => {
+                ClientHandlerVariant::PassThrough(pass_through)
             }
         };
         ClientHandler {
