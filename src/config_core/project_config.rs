@@ -207,7 +207,7 @@ pub struct ProjectHandler {
 
     pub priority: u16,
 
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rescue: Vec<RescueItem>,
 }
 

@@ -8,8 +8,8 @@ use crate::entities::{
 
 use crate::config_core::application_firewall::ApplicationFirewall;
 use crate::config_core::catch::RescueItem;
-use crate::config_core::config::default_rules;
 use crate::config_core::config::Config;
+use crate::config_core::config::{default_rules, is_default_rules};
 use crate::config_core::gcs::GcsBucketAccess;
 use crate::config_core::proxy::Proxy;
 use crate::config_core::rebase::Rebase;
@@ -305,13 +305,17 @@ pub struct ClientHandler {
     #[serde(flatten)]
     pub variant: ClientHandlerVariant,
 
-    #[serde(default = "default_rules")]
+    #[serde(default = "default_rules", skip_serializing_if = "is_default_rules")]
     pub rules: Vec<Rule>,
 
     pub priority: u16,
 
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rescue: Vec<RescueItem>,
+}
+
+fn default_cache() -> bool {
+    true
 }
 
 #[cfg(test)]

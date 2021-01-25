@@ -192,7 +192,7 @@ pub enum Action {
         )]
         modify_response: Vec<MatchedResponseModification>,
 
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         rescue: Vec<RescueItem>,
     },
 
