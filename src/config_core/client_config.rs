@@ -3,7 +3,8 @@ use hashbrown::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 
 use crate::entities::{
-    ConfigName, HandlerName, HealthCheckProbeName, MountPointName, StaticResponseName, Upstream,
+    ConfigName, HandlerName, HealthCheckProbeName, MountPointName, ProfileName, StaticResponseName,
+    Upstream,
 };
 
 use crate::config_core::application_firewall::ApplicationFirewall;
@@ -93,6 +94,7 @@ impl ClientConfig {
                 rules: default_rules(),
                 priority: 10,
                 rescue: Default::default(),
+                profiles: None,
             },
         );
 
@@ -111,6 +113,7 @@ impl ClientConfig {
                 handlers,
                 rescue: Default::default(),
                 static_responses,
+                profiles: Default::default(),
             }
         };
 
@@ -257,6 +260,9 @@ pub struct ClientMount {
         rename = "static-responses"
     )]
     pub static_responses: BTreeMap<StaticResponseName, StaticResponse>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profiles: Option<Vec<ProfileName>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
@@ -312,6 +318,9 @@ pub struct ClientHandler {
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rescue: Vec<RescueItem>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profiles: Option<Vec<ProfileName>>,
 }
 
 fn default_cache() -> bool {

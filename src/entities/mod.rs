@@ -39,3 +39,4 @@ string_type!(StaticResponseName);
 string_type!(ExceptionSegment);
 string_type!(HealthCheckProbeName);
 string_type!(ParameterName);
+string_type!(ProfileName);

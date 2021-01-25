@@ -172,6 +172,7 @@ impl From<ProjectMount> for ClientMount {
             handlers: m.handlers.into_iter().map(|(k, v)| (k, v.into())).collect(),
             rescue: m.rescue,
             static_responses: m.static_responses,
+            profiles: None,
         }
     }
 }
@@ -231,6 +232,7 @@ impl From<ProjectHandler> for ClientHandler {
             rules: f.rules,
             priority: f.priority,
             rescue: f.rescue,
+            profiles: None,
         }
     }
 }

@@ -1,5 +1,5 @@
 use crate::config_core::ClientConfig;
-use crate::entities::{HealthCheckProbeName, InstanceId, Upstream};
+use crate::entities::{HealthCheckProbeName, InstanceId, ProfileName, Upstream};
 use hashbrown::HashMap;
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -24,6 +24,7 @@ pub enum SignalerHandshakeResponse {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct InstanceConfigMessage {
     pub config: ClientConfig,
+    pub active_profile: Option<ProfileName>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

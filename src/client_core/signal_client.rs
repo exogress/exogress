@@ -22,7 +22,7 @@ use crate::signaling::{
 use crate::client_core::health::UpstreamsHealth;
 use crate::client_core::TunnelsStorage;
 use crate::common_utils::jwt::JwtError;
-use crate::entities::{InstanceId, SmolStr};
+use crate::entities::{InstanceId, ProfileName, SmolStr};
 use crate::ws_client;
 use crate::ws_client::connect_ws;
 use parking_lot::{Mutex, RwLock};
@@ -52,6 +52,7 @@ pub async fn spawn(
     url: Url,
     mut tx: mpsc::Sender<TunnelRequest>,
     mut rx: mpsc::Receiver<String>,
+    active_profile: Option<ProfileName>,
     upstream_healthcheck: UpstreamsHealth,
     authorization: SmolStr,
     backoff_min_duration: Duration,
@@ -74,6 +75,7 @@ pub async fn spawn(
             &url,
             &mut tx,
             &mut rx,
+            &active_profile,
             &upstream_healthcheck,
             maybe_identity.clone(),
             &resolver,
@@ -155,6 +157,7 @@ async fn do_conection(
     url: &Url,
     tx: &mut mpsc::Sender<TunnelRequest>,
     rx: &mut mpsc::Receiver<String>,
+    active_profile: &Option<ProfileName>,
     upstream_healthcheck: &UpstreamsHealth,
     maybe_identity: Option<Vec<u8>>,
     resolver: &TokioAsyncResolver,
@@ -197,6 +200,7 @@ async fn do_conection(
                         serde_json::to_string(&WsInstanceToCloudMessage::InstanceConfig(
                             InstanceConfigMessage {
                                 config: current_config.clone(),
+                                active_profile: active_profile.clone(),
                             },
                         ))
                         .unwrap(),
@@ -263,7 +267,10 @@ async fn do_conection(
                 send_tx2
                     .send(Message::Text(
                         serde_json::to_string(&WsInstanceToCloudMessage::InstanceConfig(
-                            InstanceConfigMessage { config },
+                            InstanceConfigMessage {
+                                config,
+                                active_profile: active_profile.clone(),
+                            },
                         ))
                         .unwrap(),
                     ))

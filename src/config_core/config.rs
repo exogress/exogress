@@ -24,6 +24,7 @@ pub fn default_rules() -> Vec<Rule> {
             path: MatchingPath::Wildcard,
             methods: Default::default(),
             trailing_slash: Default::default(),
+            profiles: None,
         },
         action: Action::Invoke {
             modify_request: Default::default(),

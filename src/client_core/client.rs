@@ -15,7 +15,7 @@ use url::Url;
 
 use crate::config_core::{ClientConfig, Config, UpstreamSocketAddr};
 use crate::entities::{
-    AccessKeyId, AccountName, LabelName, LabelValue, ProjectName, SmolStr, Upstream,
+    AccessKeyId, AccountName, LabelName, LabelValue, ProfileName, ProjectName, SmolStr, Upstream,
 };
 
 use crate::client_core::{signal_client, tunnel};
@@ -65,6 +65,9 @@ pub struct Client {
     #[builder(setter(into), default = "DEFAULT_CLOUD_ENDPOINT.into()")]
     pub cloud_endpoint: SmolStr,
 
+    #[builder(setter(into))]
+    pub profile: Option<ProfileName>,
+
     #[builder(setter(into), default = "Default::default()")]
     pub labels: HashMap<LabelName, LabelValue>,
 
@@ -97,6 +100,7 @@ impl Client {
         let project_name: ProjectName = self.project.parse()?;
         let account_name: AccountName = self.account.parse()?;
         let maybe_identity = self.maybe_identity.clone();
+        let profile = self.profile.clone();
 
         let (health_update_tx, mut health_update_rx) = mpsc::channel(16);
 
@@ -324,6 +328,7 @@ impl Client {
                 url,
                 send_tx,
                 recv_rx,
+                profile,
                 upstream_health_checkers,
                 authorization,
                 Duration::from_millis(50),

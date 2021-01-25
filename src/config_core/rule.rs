@@ -2,7 +2,7 @@ use crate::config_core::catch::{Exception, RescueItem};
 use crate::config_core::methods::MethodMatcher;
 use crate::config_core::path::MatchingPath;
 use crate::config_core::{StatusCode, StatusCodeRange};
-use crate::entities::StaticResponseName;
+use crate::entities::{ProfileName, StaticResponseName};
 use core::fmt;
 use http::header::HeaderName;
 use http::{HeaderMap, HeaderValue};
@@ -170,6 +170,9 @@ pub struct Filter {
         skip_serializing_if = "TrailingSlashFilterRule::is_default"
     )]
     pub trailing_slash: TrailingSlashFilterRule,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profiles: Option<Vec<ProfileName>>,
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]

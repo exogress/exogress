@@ -2,8 +2,10 @@ pub use auth::{Auth, AuthDefinition, AuthProvider};
 pub use catch::{
     CatchAction, CatchMatcher, CatchMatcherParseError, Exception, ExceptionParseError, RescueItem,
 };
-pub use client_config::{ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant};
-pub use config::Config;
+pub use client_config::{
+    ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant, ClientMount,
+};
+pub use config::{default_rules, Config};
 use lazy_static::lazy_static;
 pub use methods::MethodMatcher;
 pub use pass_through::PassThrough;
