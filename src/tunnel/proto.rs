@@ -303,7 +303,7 @@ pub async fn client_listener(
 
         pin_mut!(pongs);
 
-        while pongs.next().await.is_some() {}
+        while let Some(Ok(())) = pongs.next().await {}
     };
 
     let read_future = {
@@ -1147,7 +1147,7 @@ pub fn server_connection(
 
                 pin_mut!(pongs);
 
-                while pongs.next().await.is_some() {}
+                while let Some(Ok(())) = pongs.next().await {}
             }
             .fuse();
 
