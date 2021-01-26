@@ -141,7 +141,7 @@ impl Client {
             .as_str(),
         ));
 
-        if let Some(profile) = self.profile {
+        if let Some(profile) = &self.profile {
             url.query_pairs_mut().append_pair(
                 "active_profile",
                 urlencoding::encode(profile.to_string().as_str()).as_str(),
@@ -171,12 +171,12 @@ impl Client {
         let upstream_health_checkers = UpstreamsHealth::new(
             &client_config,
             health_update_tx,
+            &self.profile,
             tokio::runtime::Handle::current(),
         )?;
 
         tokio::spawn({
-            shadow_clone!(upstream_health_checkers);
-            shadow_clone!(mut recv_tx);
+            shadow_clone!(upstream_health_checkers, mut recv_tx);
 
             async move {
                 while let Some(status) = health_update_rx.next().await {
@@ -204,17 +204,14 @@ impl Client {
         let mut watcher: RecommendedWatcher;
 
         if self.watch_config {
-            shadow_clone!(reload_config_tx);
-            shadow_clone!(config_path);
-            shadow_clone!(config_dir);
+            shadow_clone!(reload_config_tx, config_path, config_dir);
 
             info!("Watching for config changes");
 
             let (re_add_tx, mut re_add_rx) = mpsc::unbounded();
 
             watcher = Watcher::new_immediate({
-                shadow_clone!(config_path);
-                shadow_clone!(config_dir);
+                shadow_clone!(config_path, config_dir);
 
                 move |event: Result<Event, notify::Error>| {
                     let event = event.expect("Error watching for file change");
@@ -260,10 +257,12 @@ impl Client {
         }
 
         tokio::spawn({
-            shadow_clone!(config_path);
-            shadow_clone!(current_config);
-            shadow_clone!(refined_upstream_addrs);
-            shadow_clone!(upstream_health_checkers);
+            shadow_clone!(
+                config_path,
+                current_config,
+                refined_upstream_addrs,
+                upstream_health_checkers
+            );
 
             async move {
                 let mut last_config = None;
@@ -320,11 +319,13 @@ impl Client {
         let authorization = jwt_token(&self.access_key_id, self.secret_access_key.as_str())?.into();
 
         let connector_result = tokio::spawn({
-            shadow_clone!(tunnels);
-            shadow_clone!(resolver);
-            shadow_clone!(current_config);
-            shadow_clone!(instance_id_storage);
-            shadow_clone!(upstream_health_checkers);
+            shadow_clone!(
+                tunnels,
+                resolver,
+                current_config,
+                instance_id_storage,
+                upstream_health_checkers
+            );
 
             signal_client::spawn(
                 instance_id_storage,
@@ -371,17 +372,7 @@ impl Client {
                                     .insert(tunnel_index, stop_tunnel_tx);
 
                                 tokio::spawn({
-                                    shadow_clone!(account_name);
-                                    shadow_clone!(project_name);
-                                    shadow_clone!(secret_access_key);
-                                    shadow_clone!(gw_tunnels_port);
-                                    shadow_clone!(access_key_id);
-                                    shadow_clone!(instance_id_storage);
-                                    shadow_clone!(hostname);
-                                    shadow_clone!(current_config);
-                                    shadow_clone!(tunnels);
-                                    shadow_clone!(resolver);
-                                    shadow_clone!( mut internal_server_connector);
+                                    shadow_clone!(account_name, project_name, secret_access_key, gw_tunnels_port, access_key_id, instance_id_storage, hostname, current_config, tunnels, resolver,  mut internal_server_connector);
 
                                     async move {
                                         let connector = async {

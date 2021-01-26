@@ -1,5 +1,5 @@
 use crate::config_core::{HttpHeaders, StatusCodeRange};
-use crate::entities::HealthCheckProbeName;
+use crate::entities::{HealthCheckProbeName, ProfileName};
 use http::{Method, StatusCode};
 use humantime::format_duration;
 use serde::{Deserialize, Serialize};
@@ -77,6 +77,8 @@ pub struct UpstreamDefinition {
         skip_serializing_if = "BTreeMap::is_empty"
     )]
     pub health_checks: BTreeMap<HealthCheckProbeName, Probe>,
+
+    pub profiles: Option<Vec<ProfileName>>,
 }
 
 impl UpstreamDefinition {
@@ -84,6 +86,7 @@ impl UpstreamDefinition {
         UpstreamDefinition {
             addr: UpstreamSocketAddr { port, host: None },
             health_checks: BTreeMap::new(),
+            profiles: None,
         }
     }
 

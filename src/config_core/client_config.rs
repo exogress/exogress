@@ -17,7 +17,7 @@ use crate::config_core::rebase::Rebase;
 use crate::config_core::s3::S3BucketAccess;
 use crate::config_core::static_dir::StaticDir;
 use crate::config_core::upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr};
-use crate::config_core::PassThrough;
+use crate::config_core::{is_profile_active, PassThrough};
 use crate::config_core::{Auth, ConfigVersion, Rule};
 use crate::config_core::{StaticResponse, CURRENT_VERSION};
 use maplit::btreemap;
@@ -77,6 +77,7 @@ impl ClientConfig {
                     host: None,
                 },
                 health_checks: Default::default(),
+                profiles: None,
             },
         );
 
@@ -144,8 +145,17 @@ impl ClientConfig {
         Ok(cfg)
     }
 
-    pub fn resolve_upstream(&self, upstream: &Upstream) -> Option<UpstreamDefinition> {
-        self.upstreams.get(upstream).cloned()
+    pub fn resolve_upstream(
+        &self,
+        upstream: &Upstream,
+        active_profile: &Option<ProfileName>,
+    ) -> Option<UpstreamDefinition> {
+        self.upstreams
+            .get(upstream)
+            .filter(|upstream_definition| {
+                is_profile_active(&upstream_definition.profiles, active_profile)
+            })
+            .cloned()
     }
 }
 

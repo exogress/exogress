@@ -1,3 +1,4 @@
+use crate::entities::ProfileName;
 pub use auth::{Auth, AuthDefinition, AuthProvider};
 pub use catch::{
     CatchAction, CatchMatcher, CatchMatcherParseError, Exception, ExceptionParseError, RescueItem,
@@ -55,4 +56,17 @@ pub const DEFAULT_CONFIG_FILE: &str = "Exofile";
 
 lazy_static! {
     pub static ref CURRENT_VERSION: ConfigVersion = ConfigVersion("1.0.0-pre.1".parse().unwrap());
+}
+
+pub fn is_profile_active(
+    profiles: &Option<Vec<ProfileName>>,
+    active_profile: &Option<ProfileName>,
+) -> bool {
+    match profiles {
+        None => true,
+        Some(allowed_profiles) => match active_profile {
+            None => false,
+            Some(profile) => allowed_profiles.iter().any(|allowed| allowed == profile),
+        },
+    }
 }

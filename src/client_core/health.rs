@@ -1,7 +1,7 @@
 //! Upstream healthchecks
 
-use crate::config_core::{ClientConfig, Probe, UpstreamDefinition};
-use crate::entities::{HealthCheckProbeName, Upstream};
+use crate::config_core::{is_profile_active, ClientConfig, Probe, UpstreamDefinition};
+use crate::entities::{HealthCheckProbeName, ProfileName, Upstream};
 use crate::signaling::{ProbeHealthStatus, UnhealthyReason};
 use core::mem;
 use futures::channel::{mpsc, oneshot};
@@ -63,13 +63,11 @@ pub async fn start_checker(
 
     tokio::spawn(
         {
-            shadow_clone!(upstream);
-            shadow_clone!(probe_name);
+            shadow_clone!(upstream, probe_name);
 
             async move {
                 let check = {
-                    shadow_clone!(mut update_tx);
-                    shadow_clone!(upstream);
+                    shadow_clone!(mut update_tx, upstream);
 
                     #[allow(unreachable_code)]
                     async move {
@@ -241,6 +239,7 @@ pub struct UpstreamsHealth {
     inner:
         Arc<tokio::sync::Mutex<HashMap<Upstream, HashMap<HealthCheckProbeName, HealthCheckProbe>>>>,
     update_tx: mpsc::Sender<ProbeStatusUpdate>,
+    active_profile: Option<ProfileName>,
     handle: Handle,
 }
 
@@ -267,12 +266,16 @@ impl UpstreamsHealth {
     pub fn new(
         config: &ClientConfig,
         update_tx: mpsc::Sender<ProbeStatusUpdate>,
+        active_profile: &Option<ProfileName>,
         handle: Handle,
     ) -> Result<Self, url::ParseError> {
         let mut storage =
             HashMap::<Upstream, HashMap<HealthCheckProbeName, HealthCheckProbe>>::new();
 
         for (upstream, upstream_definition) in &config.upstreams {
+            if !is_profile_active(&upstream_definition.profiles, active_profile) {
+                continue;
+            }
             let entry = storage.entry(upstream.clone()).or_default();
             for (probe_name, probe) in &upstream_definition.health_checks {
                 entry.insert(
@@ -292,15 +295,28 @@ impl UpstreamsHealth {
         Ok(UpstreamsHealth {
             inner: Arc::new(tokio::sync::Mutex::new(storage)),
             update_tx,
+            active_profile: active_profile.clone(),
             handle,
         })
     }
 
     pub async fn sync_probes(&self, config: &ClientConfig) {
         let mut update_tx = self.update_tx.clone();
+        let active_profile = self.active_profile.clone();
 
         let locked = &mut *self.inner.lock().await;
-        let new_upstreams: HashSet<_> = config.upstreams.keys().cloned().collect();
+        let new_upstreams: HashSet<_> = config
+            .upstreams
+            .iter()
+            .filter_map(|(upstream_name, upstream_definition)| {
+                if is_profile_active(&upstream_definition.profiles, &active_profile) {
+                    Some(upstream_name)
+                } else {
+                    None
+                }
+            })
+            .cloned()
+            .collect();
         let existing_upstreams: HashSet<_> = locked.keys().cloned().collect();
 
         let span = span!(Level::INFO, "healthcheck config");

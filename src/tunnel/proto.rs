@@ -1,5 +1,5 @@
 use crate::entities::{
-    AccessKeyId, AccountName, ConfigName, InstanceId, ProjectName, SmolStr, TunnelId,
+    AccessKeyId, AccountName, ConfigName, InstanceId, ProfileName, ProjectName, SmolStr, TunnelId,
 };
 use crate::tunnel::connector::ConnectorRequest;
 use bytes::BytesMut;
@@ -259,6 +259,7 @@ pub async fn client_listener(
         + 'static,
     client_config: Arc<RwLock<ClientConfig>>,
     mut internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
+    active_profile: &Option<ProfileName>,
     resolver: TokioAsyncResolver,
 ) -> Result<bool, crate::tunnel::error::Error> {
     let storage = Arc::new(Mutex::new(HashMap::<Slot, Connection>::new()));
@@ -307,11 +308,7 @@ pub async fn client_listener(
     };
 
     let read_future = {
-        shadow_clone!(client_config);
-        shadow_clone!(storage);
-        shadow_clone!(outgoing_messages_tx);
-        shadow_clone!(just_closed_by_us);
-        shadow_clone!(mut outgoing_messages_tx);
+        shadow_clone!(client_config, storage, outgoing_messages_tx, just_closed_by_us, mut outgoing_messages_tx, active_profile);
 
         async move {
             while let Some(res) = rx.next().await {
@@ -328,14 +325,10 @@ pub async fn client_listener(
                                 match target {
                                     ConnectTarget::Upstream(upstream) => {
                                         tokio::spawn({
-                                            shadow_clone!(resolver);
-                                            shadow_clone!(storage);
-                                            shadow_clone!(client_config);
-                                            shadow_clone!(mut outgoing_messages_tx);
-                                            shadow_clone!(just_closed_by_us);
+                                            shadow_clone!(resolver, storage, client_config, mut outgoing_messages_tx, just_closed_by_us, active_profile);
 
                                             async move {
-                                                let maybe_upstream_target = client_config.read().resolve_upstream(&upstream);
+                                                let maybe_upstream_target = client_config.read().resolve_upstream(&upstream, &active_profile);
 
                                                 if let Some(upstream_target) = maybe_upstream_target {
                                                     let host = upstream_target.get_host();
@@ -418,17 +411,13 @@ pub async fn client_listener(
                                                                 });
 
                                                             tokio::spawn({
-                                                                shadow_clone!(storage);
-                                                                shadow_clone!(outgoing_messages_tx);
-                                                                shadow_clone!(just_closed_by_us);
-                                                                shadow_clone!(compressors);
+                                                                shadow_clone!(storage, outgoing_messages_tx, just_closed_by_us, compressors);
 
                                                                 async move {
                                                                     let (mut from_tcp, mut to_tcp) = tcp.split();
 
                                                                     let forward_to_tunnel = {
-                                                                        shadow_clone!(outgoing_messages_tx);
-                                                                        shadow_clone!(compressors);
+                                                                        shadow_clone!(outgoing_messages_tx, compressors);
 
                                                                         async move {
                                                                             loop {
@@ -479,8 +468,7 @@ pub async fn client_listener(
                                                                     };
 
                                                                     let forwarders = {
-                                                                        shadow_clone!(mut outgoing_messages_tx);
-                                                                        shadow_clone!(just_closed_by_us);
+                                                                        shadow_clone!(mut outgoing_messages_tx, just_closed_by_us);
 
                                                                         async move {
                                                                             let res = tokio::select! {
@@ -565,10 +553,7 @@ pub async fn client_listener(
                                         let (ch, mut tx, mut rx) = MixedChannel::new(16, 16);
 
                                         tokio::spawn({
-                                            shadow_clone!(internal_server_connector);
-                                            shadow_clone!(mut outgoing_messages_tx);
-                                            shadow_clone!(storage);
-                                            shadow_clone!(just_closed_by_us);
+                                            shadow_clone!(internal_server_connector, mut outgoing_messages_tx, storage, just_closed_by_us);
 
                                             async move {
                                                 outgoing_messages_tx.send((
@@ -593,15 +578,11 @@ pub async fn client_listener(
                                                     });
 
                                                 tokio::spawn({
-                                                    shadow_clone!(compressors);
-                                                    shadow_clone!(storage);
-                                                    shadow_clone!(storage);
-                                                    shadow_clone!(outgoing_messages_tx);
+                                                    shadow_clone!(compressors, storage, storage, outgoing_messages_tx);
 
                                                     async move {
                                                         let forward_to_tunnel = {
-                                                            shadow_clone!(mut outgoing_messages_tx);
-                                                            shadow_clone!(compressors);
+                                                            shadow_clone!(mut outgoing_messages_tx, compressors);
 
                                                             async move {
                                                                 while let Some(buf) = rx.next().await {
@@ -857,8 +838,7 @@ pub fn server_connection(
             let (outgoing_messages_tx, outgoing_messages_rx) = mpsc::channel(16);
 
             let accept_connect_future = {
-                shadow_clone!(mut outgoing_messages_tx);
-                shadow_clone!(storage);
+                shadow_clone!(mut outgoing_messages_tx, storage);
 
                 #[allow(unreachable_code)]
                 async move {
@@ -900,8 +880,7 @@ pub fn server_connection(
             };
 
             let read_future = {
-                shadow_clone!(storage);
-                shadow_clone!(mut outgoing_messages_tx);
+                shadow_clone!(storage, mut outgoing_messages_tx);
 
                 async move {
                     while let Some(res) = rx.next().await {
@@ -934,16 +913,11 @@ pub fn server_connection(
                                                         .map_err(|_| io::Error::new(io::ErrorKind::Other, "tunnel closed: could ot sed to read_connection_resolver"))?;
 
                                                     tokio::spawn({
-                                                        shadow_clone!(storage);
-                                                        shadow_clone!(compressors);
-                                                        shadow_clone!(outgoing_messages_tx);
-                                                        shadow_clone!(just_closed_by_us);
-                                                        shadow_clone!(just_closed_by_us);
+                                                        shadow_clone!(storage, compressors, outgoing_messages_tx, just_closed_by_us, just_closed_by_us);
 
                                                         async move {
                                                             let forward_to_tunnel = {
-                                                                shadow_clone!(outgoing_messages_tx);
-                                                                shadow_clone!(compressors);
+                                                                shadow_clone!(outgoing_messages_tx, compressors);
 
                                                                 async move {
                                                                     while let Some(buf) = to_tunnel_rx.next().await {
@@ -987,8 +961,7 @@ pub fn server_connection(
                                                             };
 
                                                             let forwarders = {
-                                                                shadow_clone!(mut outgoing_messages_tx);
-                                                                shadow_clone!(just_closed_by_us);
+                                                                shadow_clone!(mut outgoing_messages_tx, just_closed_by_us);
 
                                                                 async move {
                                                                     let res = tokio::select! {
@@ -1275,10 +1248,7 @@ mod test {
         let server_side_socket = server_side_listener.local_addr().unwrap();
 
         let send_handle = tokio::spawn({
-            shadow_clone!(buf1);
-            shadow_clone!(buf2);
-            shadow_clone!(buf4);
-            shadow_clone!(buf1_3);
+            shadow_clone!(buf1, buf2, buf4, buf1_3);
 
             async move {
                 let (server_side, _remote_addr) = server_side_listener.accept().await.unwrap();
