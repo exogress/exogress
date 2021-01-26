@@ -3,7 +3,7 @@ use std::io;
 use std::net::SocketAddr;
 
 use crate::config_core::ClientConfig;
-use crate::entities::{AccessKeyId, AccountName, InstanceId, ProjectName, SmolStr};
+use crate::entities::{AccessKeyId, AccountName, InstanceId, ProfileName, ProjectName, SmolStr};
 use crate::tunnel::{
     client_framed, client_listener, MixedChannel, TunnelHello, TunnelHelloResponse, ALPN_PROTOCOL,
 };
@@ -70,6 +70,7 @@ pub async fn spawn(
     secret_access_key: SmolStr,
     gw_hostname: SmolStr,
     gw_port: u16,
+    active_profile: &Option<ProfileName>,
     internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
     resolver: TokioAsyncResolver,
 ) -> Result<bool, Error> {
@@ -151,6 +152,7 @@ pub async fn spawn(
         client_framed(stream),
         client_config,
         internal_server_connector,
+        active_profile,
         resolver.clone(),
     )
     .await?;

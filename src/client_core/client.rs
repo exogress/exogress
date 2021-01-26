@@ -168,10 +168,13 @@ impl Client {
         let client_config =
             ClientConfig::parse_with_redefined_upstreams(&config, &refined_upstream_addrs).unwrap();
         client_config.validate()?;
+
+        let profile = self.profile;
+
         let upstream_health_checkers = UpstreamsHealth::new(
             &client_config,
             health_update_tx,
-            &self.profile,
+            &profile,
             tokio::runtime::Handle::current(),
         )?;
 
@@ -372,7 +375,12 @@ impl Client {
                                     .insert(tunnel_index, stop_tunnel_tx);
 
                                 tokio::spawn({
-                                    shadow_clone!(account_name, project_name, secret_access_key, gw_tunnels_port, access_key_id, instance_id_storage, hostname, current_config, tunnels, resolver,  mut internal_server_connector);
+                                    shadow_clone!(
+                                        profile, account_name, project_name, secret_access_key,
+                                        gw_tunnels_port, access_key_id, instance_id_storage,
+                                        hostname, current_config, tunnels, resolver,
+                                        mut internal_server_connector
+                                    );
 
                                     async move {
                                         let connector = async {
@@ -420,6 +428,7 @@ impl Client {
                                                             secret_access_key.clone(),
                                                             hostname.clone(),
                                                             gw_tunnels_port,
+                                                            &profile,
                                                             internal_server_connector.clone(),
                                                             resolver.clone(),
                                                         )
