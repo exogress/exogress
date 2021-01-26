@@ -129,6 +129,8 @@ pub struct MatchedResponseModification {
 pub struct Rule {
     pub filter: Filter,
     pub action: Action,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profiles: Option<Vec<ProfileName>>,
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, Copy)]
@@ -170,9 +172,6 @@ pub struct Filter {
         skip_serializing_if = "TrailingSlashFilterRule::is_default"
     )]
     pub trailing_slash: TrailingSlashFilterRule,
-
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub profiles: Option<Vec<ProfileName>>,
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]

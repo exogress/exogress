@@ -100,7 +100,6 @@ impl Client {
         let project_name: ProjectName = self.project.parse()?;
         let account_name: AccountName = self.account.parse()?;
         let maybe_identity = self.maybe_identity.clone();
-        let profile = self.profile.clone();
 
         let (health_update_tx, mut health_update_rx) = mpsc::channel(16);
 
@@ -141,6 +140,13 @@ impl Client {
             )
             .as_str(),
         ));
+
+        if let Some(profile) = self.profile {
+            url.query_pairs_mut().append_pair(
+                "active_profile",
+                urlencoding::encode(profile.to_string().as_str()).as_str(),
+            );
+        }
 
         info!("Will connect signalling channel to {}", url);
 
@@ -328,7 +334,6 @@ impl Client {
                 url,
                 send_tx,
                 recv_rx,
-                profile,
                 upstream_health_checkers,
                 authorization,
                 Duration::from_millis(50),
