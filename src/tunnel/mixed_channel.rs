@@ -295,6 +295,7 @@ mod test {
                     client_framed(tunnel),
                     client_config,
                     internal_server_connector,
+                    &None,
                     resolver,
                 ));
 

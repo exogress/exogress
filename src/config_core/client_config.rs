@@ -333,9 +333,9 @@ pub struct ClientHandler {
     pub profiles: Option<Vec<ProfileName>>,
 }
 
-fn default_cache() -> bool {
-    true
-}
+// fn default_cache() -> bool {
+//     true
+// }
 
 #[cfg(test)]
 mod test {

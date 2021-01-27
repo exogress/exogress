@@ -1338,6 +1338,7 @@ mod test {
                     client_framed(client_side),
                     client_config,
                     internal_server_connector,
+                    &None,
                     resolver,
                 )
                 .await
