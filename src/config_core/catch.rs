@@ -17,10 +17,14 @@ pub enum CatchAction {
         #[serde(rename = "static-response")]
         name: StaticResponseName,
 
-        #[serde(rename = "status-code", default)]
+        #[serde(
+            rename = "status-code",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
         status_code: Option<StatusCode>,
 
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
         data: BTreeMap<SmolStr, SmolStr>,
     },
 
@@ -29,7 +33,7 @@ pub enum CatchAction {
         #[serde(rename = "exception")]
         exception: Exception,
 
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
         data: BTreeMap<SmolStr, SmolStr>,
     },
 

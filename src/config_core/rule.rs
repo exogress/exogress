@@ -65,6 +65,12 @@ mod header_value_ser {
 #[serde(transparent)]
 pub struct HeaderMapWrapper(#[serde(with = "http_serde::header_map")] pub HeaderMap);
 
+impl From<HeaderMap> for HeaderMapWrapper {
+    fn from(map: HeaderMap) -> Self {
+        HeaderMapWrapper(map)
+    }
+}
+
 impl PartialEq for HeaderMapWrapper {
     fn eq(&self, other: &Self) -> bool {
         self.0.eq(&other.0)
@@ -101,10 +107,18 @@ pub struct ModifyHeaders {
     pub remove: Vec<HeaderName>,
 }
 
+impl ModifyHeaders {
+    pub fn is_empty(&self) -> bool {
+        HeaderMapWrapper::is_empty(&self.insert)
+            && HeaderMapWrapper::is_empty(&self.append)
+            && Vec::is_empty(&self.remove)
+    }
+}
+
 #[derive(Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RequestModifications {
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "ModifyHeaders::is_empty")]
     pub headers: ModifyHeaders,
     // rewrite url
 }
@@ -112,7 +126,7 @@ pub struct RequestModifications {
 #[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct ResponseModifications {
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "ModifyHeaders::is_empty")]
     pub headers: ModifyHeaders,
 }
 
@@ -163,7 +177,7 @@ impl TrailingSlashFilterRule {
 pub struct Filter {
     pub path: MatchingPath,
 
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "MethodMatcher::is_all")]
     pub methods: MethodMatcher,
 
     #[serde(
@@ -227,13 +241,17 @@ pub enum Action {
         #[serde(rename = "static-response")]
         name: StaticResponseName,
 
-        #[serde(rename = "status-code", default)]
+        #[serde(
+            rename = "status-code",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
         status_code: Option<StatusCode>,
 
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
         data: BTreeMap<SmolStr, SmolStr>,
 
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         rescue: Vec<RescueItem>,
     },
 }

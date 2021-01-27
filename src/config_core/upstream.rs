@@ -78,6 +78,7 @@ pub struct UpstreamDefinition {
     )]
     pub health_checks: BTreeMap<HealthCheckProbeName, Probe>,
 
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profiles: Option<Vec<ProfileName>>,
 }
 
@@ -123,7 +124,7 @@ pub struct Probe {
     #[serde(with = "humantime_serde")]
     pub period: Duration,
 
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "HttpHeaders::is_default")]
     pub headers: HttpHeaders,
 
     #[serde(with = "http_serde::method", default = "default_method")]

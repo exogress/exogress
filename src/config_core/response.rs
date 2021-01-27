@@ -52,8 +52,18 @@ impl RedirectType {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct HttpHeaders {
-    #[serde(with = "http_serde::header_map", default)]
+    #[serde(
+        with = "http_serde::header_map",
+        default,
+        skip_serializing_if = "HeaderMap::is_empty"
+    )]
     pub headers: HeaderMap,
+}
+
+impl HttpHeaders {
+    pub fn is_default(&self) -> bool {
+        self == &Default::default()
+    }
 }
 
 impl Hash for HttpHeaders {
@@ -100,11 +110,18 @@ pub struct RawResponse {
     #[serde(
         rename = "status-code",
         with = "http_serde::status_code",
-        default = "default_status_code"
+        default = "default_status_code",
+        skip_serializing_if = "is_default_status_code"
     )]
     pub status_code: StatusCode,
 
-    #[serde(default)]
+    #[serde(
+        rename = "fallback-accept",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub fallback_accept: Option<SmolStr>,
+
     pub body: Vec<ResponseBody>,
 
     #[serde(flatten)]
@@ -113,6 +130,10 @@ pub struct RawResponse {
 
 fn default_status_code() -> StatusCode {
     StatusCode::OK
+}
+
+fn is_default_status_code(code: &StatusCode) -> bool {
+    code == &StatusCode::OK
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]

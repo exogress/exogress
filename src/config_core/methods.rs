@@ -11,6 +11,10 @@ pub enum MethodMatcher {
 }
 
 impl MethodMatcher {
+    pub fn is_all(&self) -> bool {
+        matches!(self, &MethodMatcher::All)
+    }
+
     pub fn is_match(&self, method: &http::Method) -> bool {
         match self {
             MethodMatcher::All => true,
