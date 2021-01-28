@@ -159,6 +159,7 @@ common-utils = [
     "entities",
     "futures",
     "hostname",
+    "http",
     "jsonwebtoken",
     "lazy_static",
     "num_cpus",

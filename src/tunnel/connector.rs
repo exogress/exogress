@@ -1,21 +1,21 @@
 use std::io;
 
+use crate::common_utils::uri_ext::UriExt;
 use crate::entities::{HandlerName, StringIdentifierParseError, Upstream};
+use crate::tunnel::Conn;
+use crate::tunnel::TunneledConnection;
+use core::fmt;
 use futures::channel::{mpsc, oneshot};
 use futures::future::BoxFuture;
 use futures::task::Poll;
 use futures::{task, FutureExt, SinkExt};
-use hyper::Uri;
-use url::Url;
-
-use crate::tunnel::Conn;
-use crate::tunnel::TunneledConnection;
-use core::fmt;
 use hyper::service::Service;
+use hyper::Uri;
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use ulid::Ulid;
+use url::Url;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Compression {
@@ -93,8 +93,9 @@ impl ConnectTarget {
     }
 
     /// Change hostname in the URL to connect target name
-    pub fn update_url(&self, url: &mut Url) {
-        url.set_host(Some(&self.hostname())).expect("FIXME");
+    pub fn update_url(&self, uri: &mut http::uri::Uri) {
+        uri.unset_port();
+        uri.set_hostname(self.hostname().as_str());
     }
 
     pub fn with_path(&self, path: &str) -> Result<Url, url::ParseError> {
