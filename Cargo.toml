@@ -281,7 +281,3 @@ ws-client = [
     "url",
     "webpki",
 ]
-
-
-[profile.release]
-lto = true

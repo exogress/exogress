@@ -100,20 +100,16 @@ impl UriExt for http::uri::Uri {
         let current_query = self.query();
         let mut current_path = self.path().to_string();
 
-        eprintln!("{}", current_path);
-
         if !current_path.ends_with('/') {
             current_path.push('/');
         }
         current_path.push_str(segment);
-        eprintln!("=> {}", current_path);
 
         let mut path_and_query = current_path;
         if let Some(q) = current_query {
             path_and_query.push('?');
             path_and_query.push_str(q);
         }
-        eprintln!("=>>> {}", path_and_query);
         builder = builder.path_and_query(path_and_query);
 
         *self = builder.build().expect("FIXME");
