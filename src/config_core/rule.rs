@@ -133,9 +133,15 @@ pub struct ResponseModifications {
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct MatchedResponseModification {
+    pub conditions: ResponseConditions,
+    pub modifications: ResponseModifications,
+}
+
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct ResponseConditions {
     #[serde(rename = "status-code")]
     pub status_code: StatusCodeRange,
-    pub modifications: ResponseModifications,
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
