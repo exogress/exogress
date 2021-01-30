@@ -27,7 +27,7 @@ pub fn default_rules() -> Vec<Rule> {
         },
         action: Action::Invoke {
             modify_request: Default::default(),
-            modify_response: Default::default(),
+            on_response: Default::default(),
             rescue: Default::default(),
         },
         profiles: None,

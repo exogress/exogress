@@ -132,8 +132,8 @@ pub struct ResponseModifications {
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct MatchedResponseModification {
-    pub conditions: ResponseConditions,
+pub struct OnResponse {
+    pub when: ResponseConditions,
     pub modifications: ResponseModifications,
 }
 
@@ -207,12 +207,8 @@ pub enum Action {
         )]
         modify_request: Option<RequestModifications>,
 
-        #[serde(
-            default,
-            rename = "modify-response",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        modify_response: Vec<MatchedResponseModification>,
+        #[serde(default, rename = "on-response", skip_serializing_if = "Vec::is_empty")]
+        on_response: Vec<OnResponse>,
 
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         rescue: Vec<RescueItem>,
@@ -273,11 +269,9 @@ impl Action {
         }
     }
 
-    pub fn modify_response(&self) -> Vec<&MatchedResponseModification> {
+    pub fn on_response(&self) -> Vec<&OnResponse> {
         match self {
-            Action::Invoke {
-                modify_response, ..
-            } => modify_response.iter().collect(),
+            Action::Invoke { on_response, .. } => on_response.iter().collect(),
             _ => vec![],
         }
     }

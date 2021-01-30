@@ -10,7 +10,7 @@ pub use config::{default_rules, Config};
 use lazy_static::lazy_static;
 pub use methods::MethodMatcher;
 pub use pass_through::PassThrough;
-pub use path::{MatchPathSegment, MatchingPath};
+pub use path::{MatchPathSegment, MatchPathSingleSegment, MatchingPath};
 pub use path_segment::UrlPathSegmentOrQueryPart;
 pub use project_config::{ProjectConfig, ProjectHandler, ProjectHandlerVariant};
 pub use proxy::Proxy;
@@ -19,8 +19,8 @@ pub use response::{
     HttpHeaders, RawResponse, RedirectResponse, ResponseBody, StaticResponse, TemplateEngine,
 };
 pub use rule::{
-    Action, Filter, MatchedResponseModification, ModifyHeaders, RequestModifications,
-    ResponseModifications, Rule, TrailingSlashFilterRule,
+    Action, Filter, ModifyHeaders, OnResponse, RequestModifications, ResponseModifications, Rule,
+    TrailingSlashFilterRule,
 };
 pub use static_dir::StaticDir;
 pub use status_code::{StatusCode, StatusCodeRange};

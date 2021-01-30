@@ -32,6 +32,12 @@ impl AsRef<str> for UrlPathSegmentOrQueryPart {
     }
 }
 
+impl AsRef<[u8]> for UrlPathSegmentOrQueryPart {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
+
 impl FromStr for UrlPathSegmentOrQueryPart {
     type Err = PathSegmentParseError;
 
@@ -69,7 +75,7 @@ impl UrlPathSegmentOrQueryPart {
     }
 }
 
-struct UrlPathSegmentOrQueryPartVisitor;
+pub(crate) struct UrlPathSegmentOrQueryPartVisitor;
 
 impl<'de> Visitor<'de> for UrlPathSegmentOrQueryPartVisitor {
     type Value = UrlPathSegmentOrQueryPart;
