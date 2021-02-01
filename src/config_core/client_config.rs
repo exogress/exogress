@@ -96,6 +96,7 @@ impl ClientConfig {
                 priority: 10,
                 rescue: Default::default(),
                 profiles: None,
+                languages: None,
             },
         );
 
@@ -331,11 +332,10 @@ pub struct ClientHandler {
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profiles: Option<Vec<ProfileName>>,
-}
 
-// fn default_cache() -> bool {
-//     true
-// }
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub languages: Option<Vec<langtag::LanguageTagBuf>>,
+}
 
 #[cfg(test)]
 mod test {

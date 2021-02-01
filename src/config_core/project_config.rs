@@ -233,6 +233,7 @@ impl From<ProjectHandler> for ClientHandler {
             priority: f.priority,
             rescue: f.rescue,
             profiles: None,
+            languages: None,
         }
     }
 }
