@@ -17,8 +17,6 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::net::IpAddr;
 use std::net::SocketAddr;
-use std::sync::atomic::AtomicU32;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 use std::{io, mem};
@@ -36,6 +34,7 @@ use crate::tunnel::mixed_channel::to_async_rw;
 use crate::tunnel::{Error, MixedChannel};
 use lru_time_cache::LruCache;
 use parking_lot::RwLock;
+use rand::{thread_rng, Rng};
 use rw_stream_sink::RwStreamSink;
 use serde::{Deserialize, Serialize};
 use tokio_util::compat::FuturesAsyncReadCompatExt;
@@ -831,7 +830,7 @@ pub fn server_connection(
 
     let f = {
         async move {
-            let slot_counter = AtomicU32::new(0);
+            let slot_counter = Mutex::new(0u32);
 
             let (tx, mut rx) = transport.split();
 
@@ -848,11 +847,23 @@ pub fn server_connection(
                         compression,
                     }) = new_connection_req_rx.next().await
                     {
-                        let slot: Slot = slot_counter
-                            .fetch_add(1, Ordering::SeqCst)
-                            .try_into()
-                            .expect("slot overflow");
+                        let slot = {
+                            let mut locked_slot_counter = slot_counter.lock();
 
+                            *locked_slot_counter += 1;
+                            loop {
+                                if *locked_slot_counter > MAX_SLOT_NUM as u32 {
+                                    *locked_slot_counter = 0;
+                                }
+                                let slot = (*locked_slot_counter).try_into().unwrap();
+                                if !storage.lock().contains_key(&slot) {
+                                    break slot;
+                                } else {
+                                    *locked_slot_counter =
+                                        thread_rng().gen_range(0..MAX_SLOT_NUM as u32);
+                                }
+                            }
+                        };
                         storage.lock().insert(
                             slot,
                             ServerConnection::Initiating((ready_async_channel_tx, compression)),
