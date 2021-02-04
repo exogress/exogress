@@ -8,7 +8,9 @@ use crate::config_core::config::default_rules;
 use crate::config_core::gcs::GcsBucketAccess;
 use crate::config_core::parametrized::Container;
 use crate::config_core::s3::S3BucketAccess;
-use crate::config_core::{Auth, AuthProvider, Config, ConfigVersion, PassThrough, Rule};
+use crate::config_core::{
+    is_version_supported, Auth, AuthProvider, Config, ConfigVersion, PassThrough, Rule,
+};
 use crate::config_core::{ClientHandler, ClientHandlerVariant, StaticResponse, CURRENT_VERSION};
 use crate::entities::{HandlerName, MountPointName, StaticResponseName};
 use maplit::btreemap;
@@ -141,7 +143,7 @@ impl Config for ProjectConfig {
     }
 
     fn validate(&self) -> Result<(), ProjectConfigError> {
-        if self.version != *CURRENT_VERSION {
+        if !is_version_supported(&self.version.0) {
             return Err(ProjectConfigError::UnsupportedVersion(self.version.clone()));
         }
 

@@ -22,6 +22,7 @@ pub use rule::{
     Action, Filter, ModifyHeaders, OnResponse, RequestModifications, ResponseModifications, Rule,
     TrailingSlashFilterRule,
 };
+use semver::{Version, VersionReq};
 pub use static_dir::StaticDir;
 pub use status_code::{StatusCode, StatusCodeRange};
 pub use upstream::{Probe, UpstreamDefinition, UpstreamSocketAddr};
@@ -55,7 +56,19 @@ mod version;
 pub const DEFAULT_CONFIG_FILE: &str = "Exofile";
 
 lazy_static! {
+    pub static ref MIN_SUPPORTED_VERSION: Version = "1.0.0-pre.1".parse().unwrap();
     pub static ref CURRENT_VERSION: ConfigVersion = ConfigVersion("1.0.0-pre.1".parse().unwrap());
+    pub static ref VERSION_REQUIREMENT: VersionReq = format!(
+        ">={} <={} <2",
+        MIN_SUPPORTED_VERSION.to_string(),
+        CURRENT_VERSION.to_string()
+    )
+    .parse()
+    .unwrap();
+}
+
+pub fn is_version_supported(version: &Version) -> bool {
+    VERSION_REQUIREMENT.matches(version)
 }
 
 pub fn is_profile_active(
@@ -68,5 +81,19 @@ pub fn is_profile_active(
             None => false,
             Some(profile) => allowed_profiles.iter().any(|allowed| allowed == profile),
         },
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_version_supported() {
+        assert!(!is_version_supported(&"0.2.4".parse().unwrap()));
+        assert!(is_version_supported(&"1.0.0-pre.1".parse().unwrap()));
+        assert!(!is_version_supported(&"1.0.0-pre.2".parse().unwrap()));
+        assert!(!is_version_supported(&"1.23.1".parse().unwrap()));
+        assert!(!is_version_supported(&"2.0.0".parse().unwrap()));
     }
 }

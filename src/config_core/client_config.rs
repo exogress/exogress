@@ -17,7 +17,7 @@ use crate::config_core::rebase::Rebase;
 use crate::config_core::s3::S3BucketAccess;
 use crate::config_core::static_dir::StaticDir;
 use crate::config_core::upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr};
-use crate::config_core::{is_profile_active, PassThrough};
+use crate::config_core::{is_profile_active, is_version_supported, PassThrough};
 use crate::config_core::{Auth, ConfigVersion, Rule};
 use crate::config_core::{StaticResponse, CURRENT_VERSION};
 use maplit::btreemap;
@@ -207,7 +207,7 @@ impl Config for ClientConfig {
     }
 
     fn validate(&self) -> Result<(), ClientConfigError> {
-        if self.version != *CURRENT_VERSION {
+        if !is_version_supported(&self.version.0) {
             return Err(ClientConfigError::UnsupportedVersion(self.version.clone()));
         }
 
