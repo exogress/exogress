@@ -145,9 +145,9 @@ pub struct ResponseConditions {
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
-#[serde(deny_unknown_fields)]
 pub struct Rule {
     pub filter: Filter,
+    #[serde(flatten)]
     pub action: Action,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profiles: Option<Vec<ProfileName>>,
@@ -195,7 +195,7 @@ pub struct Filter {
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
-#[serde(deny_unknown_fields, tag = "kind")]
+#[serde(deny_unknown_fields, tag = "action")]
 pub enum Action {
     /// process by the handler
     #[serde(rename = "invoke")]
