@@ -91,6 +91,8 @@ impl ClientConfig {
                         base_path: vec![],
                         replace_base_path: vec![],
                     },
+                    cache: Default::default(),
+                    post_processing: Default::default(),
                 }),
                 rules: default_rules(),
                 priority: 10,

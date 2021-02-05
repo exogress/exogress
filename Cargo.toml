@@ -29,6 +29,7 @@ jsonwebtoken = { optional = true, version = "7.2.0" }
 lazy_static = { optional = true, version = "1.4.0" }
 lru_time_cache = { optional = true, version = "0.11.0" }
 maplit = { optional = true, version = "1.0.2" }
+mime = { optional = true, version = "0.3.16" }
 mime_guess = { optional = true, version = "2.0.3" }
 notify = { optional = true, version = "5.0.0-pre.4" }
 num_cpus = { optional = true, version = "1.0" }
@@ -199,6 +200,7 @@ config-core = [
     "langtag/serde",
     "lazy_static",
     "maplit",
+    "mime",
     "percent-encoding",
     "regex",
     "rusty-s3",

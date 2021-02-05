@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::config_core::cache::Cache;
+use crate::config_core::post_processing::PostProcessing;
 use crate::config_core::rebase::Rebase;
 use crate::entities::Upstream;
 
@@ -10,27 +12,10 @@ pub struct Proxy {
 
     #[serde(flatten, default)]
     pub rebase: Rebase,
-}
 
-// #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
-// #[serde(deny_unknown_fields)]
-// pub enum Method {
-//     #[serde(rename = "GET")]
-//     Get,
-//     #[serde(rename = "POST")]
-//     Post,
-//     #[serde(rename = "PUT")]
-//     Put,
-//     #[serde(rename = "DELETE")]
-//     Delete,
-//     #[serde(rename = "HEAD")]
-//     Head,
-//     #[serde(rename = "OPTIONS")]
-//     Options,
-//     #[serde(rename = "CONNECT")]
-//     Connect,
-//     #[serde(rename = "PATCH")]
-//     Patch,
-//     #[serde(rename = "TRACE")]
-//     Trace,
-// }
+    #[serde(default)]
+    pub cache: Cache,
+
+    #[serde(rename = "post-processing", default)]
+    pub post_processing: PostProcessing,
+}

@@ -3,6 +3,7 @@ use crate::config_core::parametrized::aws::bucket::S3Bucket;
 use crate::config_core::parametrized::aws::credentials::AwsCredentials;
 use crate::config_core::parametrized::google::bucket::GcsBucket;
 use crate::config_core::parametrized::google::credentials::GoogleCredentials;
+use crate::config_core::parametrized::mime_types::MimeTypes;
 pub use container::Container;
 use core::convert::TryFrom;
 use core::fmt;
@@ -14,6 +15,7 @@ use serde::{Deserialize, Serialize};
 pub mod acl;
 pub mod aws;
 pub mod google;
+pub mod mime_types;
 
 mod container;
 
@@ -47,6 +49,9 @@ pub enum Parameter {
 
     #[serde(rename = "acl")]
     Acl(Acl),
+
+    #[serde(rename = "mime-types")]
+    MimeTypes(MimeTypes),
     // #[serde(rename = "string")]
     // String(SmolStr),
 }
@@ -59,7 +64,7 @@ impl Parameter {
             Parameter::GoogleCredentials(_) => ParameterSchema::GoogleCredentials,
             Parameter::GcsBucket(_) => ParameterSchema::GcsBucket,
             Parameter::Acl(_) => ParameterSchema::Acl,
-            // Parameter::String(_) => ParameterSchema::S
+            Parameter::MimeTypes(_) => ParameterSchema::MimeTypes,
         }
     }
     pub fn to_inner_yaml(&self) -> String {
@@ -69,7 +74,7 @@ impl Parameter {
             Parameter::GoogleCredentials(inner) => serde_yaml::to_string(&inner).unwrap(),
             Parameter::GcsBucket(inner) => serde_yaml::to_string(&inner).unwrap(),
             Parameter::Acl(inner) => serde_yaml::to_string(&inner).unwrap(),
-            // Parameter::String(inner) => serde_yaml::to_string(&inner).unwrap(),
+            Parameter::MimeTypes(inner) => serde_yaml::to_string(&inner).unwrap(),
         }
     }
 
@@ -80,17 +85,19 @@ impl Parameter {
             Parameter::GoogleCredentials(inner) => serde_json::to_string_pretty(&inner).unwrap(),
             Parameter::GcsBucket(inner) => serde_json::to_string_pretty(&inner).unwrap(),
             Parameter::Acl(inner) => serde_json::to_string_pretty(&inner).unwrap(),
+            Parameter::MimeTypes(inner) => serde_json::to_string_pretty(&inner).unwrap(),
             // Parameter::String(inner) => serde_json::to_string_pretty(&inner).unwrap(),
         }
     }
 }
 
-pub const ALL_PARAMETER_SCHEMAS: [ParameterSchema; 5] = [
+pub const ALL_PARAMETER_SCHEMAS: [ParameterSchema; 6] = [
     ParameterSchema::AwsCredentials,
     ParameterSchema::S3Bucket,
     ParameterSchema::GoogleCredentials,
     ParameterSchema::GcsBucket,
     ParameterSchema::Acl,
+    ParameterSchema::MimeTypes,
 ];
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, Copy)]
@@ -108,6 +115,9 @@ pub enum ParameterSchema {
 
     #[serde(rename = "acl")]
     Acl,
+
+    #[serde(rename = "mime-types")]
+    MimeTypes,
 }
 
 impl ParameterSchema {
@@ -153,6 +163,10 @@ impl ParameterSchema {
                 ]);
                 serde_yaml::to_string(&sample).unwrap()
             }
+            ParameterSchema::MimeTypes => {
+                let sample: MimeTypes = MimeTypes(vec!["text/html".parse().unwrap()]);
+                serde_yaml::to_string(&sample).unwrap()
+            }
         }
     }
 }
@@ -165,6 +179,7 @@ impl fmt::Display for ParameterSchema {
             ParameterSchema::GoogleCredentials => "google-credentials",
             ParameterSchema::GcsBucket => "gcs-bucket",
             ParameterSchema::Acl => "acl",
+            ParameterSchema::MimeTypes => "mime-types",
         };
 
         write!(f, "{}", s)
@@ -181,6 +196,7 @@ impl FromStr for ParameterSchema {
             "google-credentials" => Ok(ParameterSchema::GoogleCredentials),
             "gcs-bucket" => Ok(ParameterSchema::GcsBucket),
             "acl" => Ok(ParameterSchema::Acl),
+            "mime-types" => Ok(ParameterSchema::MimeTypes),
             _ => Err(()),
         }
     }
@@ -204,6 +220,9 @@ impl TryFrom<(ParameterSchema, String)> for Parameter {
                 Ok(Parameter::GcsBucket(serde_yaml::from_str(s.as_str())?))
             }
             (ParameterSchema::Acl, s) => Ok(Parameter::Acl(serde_yaml::from_str(s.as_str())?)),
+            (ParameterSchema::MimeTypes, s) => {
+                Ok(Parameter::MimeTypes(serde_yaml::from_str(s.as_str())?))
+            }
         }
     }
 }

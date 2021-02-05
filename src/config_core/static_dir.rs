@@ -1,3 +1,5 @@
+use crate::config_core::cache::Cache;
+use crate::config_core::post_processing::PostProcessing;
 use crate::config_core::rebase::Rebase;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -33,6 +35,12 @@ pub struct StaticDir {
 
     #[serde(flatten)]
     pub rebase: Rebase,
+
+    #[serde(default)]
+    pub cache: Cache,
+
+    #[serde(rename = "post-processing", default)]
+    pub post_processing: PostProcessing,
 }
 
 #[cfg(test)]
