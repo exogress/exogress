@@ -93,6 +93,7 @@ impl ClientConfig {
                     },
                     cache: Default::default(),
                     post_processing: Default::default(),
+                    websockets: true,
                 }),
                 rules: default_rules(),
                 priority: 10,
