@@ -2,21 +2,46 @@ use crate::config_core::parametrized::mime_types::MimeTypes;
 use crate::config_core::parametrized::Container;
 use serde::{Deserialize, Serialize};
 
-// #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-// #[serde(deny_unknown_fields)]
-// pub struct ImagePostProcessing {
-//     pub webp: WebpPostProcessing,
-// }
-//
-// #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-// #[serde(deny_unknown_fields)]
-// pub struct WebpPostProcessing {
-//     enabled: bool,
-// }
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ImagePostProcessing {
+    #[serde(default)]
+    pub webp: WebpPostProcessing,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct WebpPostProcessing {
+    #[serde(default = "default_webp")]
+    pub enabled: bool,
+
+    #[serde(default = "default_webp")]
+    pub png: bool,
+
+    #[serde(default = "default_webp")]
+    pub jpeg: bool,
+}
+
+impl Default for WebpPostProcessing {
+    fn default() -> Self {
+        WebpPostProcessing {
+            enabled: default_webp(),
+            png: default_webp(),
+            jpeg: default_webp(),
+        }
+    }
+}
+
+fn default_webp() -> bool {
+    true
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Encoding {
+    #[serde(default = "default_compression")]
+    pub enabled: bool,
+
     #[serde(rename = "mime-types")]
     pub mime_types: Container<MimeTypes>,
 
@@ -29,7 +54,7 @@ pub struct Encoding {
     #[serde(default = "default_compression")]
     pub deflate: bool,
 
-    #[serde(default = "default_compression_min_size")]
+    #[serde(default = "default_compression_min_size", rename = "min-size")]
     pub min_size: u32,
 }
 
@@ -48,22 +73,29 @@ fn default_compression_min_size() -> u32 {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct PostProcessing {
-    // pub image: ImagePostProcessing,
+    #[serde(default)]
+    pub image: ImagePostProcessing,
+
+    #[serde(default)]
     pub encoding: Encoding,
 }
 
-// impl Default for ImagePostProcessing {
-//     fn default() -> Self {
-//         Self {
-//             image: true,
-//             encoding: false,
-//         }
-//     }
-// }
+impl Default for ImagePostProcessing {
+    fn default() -> Self {
+        Self {
+            webp: WebpPostProcessing {
+                enabled: default_webp(),
+                png: default_webp(),
+                jpeg: default_webp(),
+            },
+        }
+    }
+}
 
 impl Default for Encoding {
     fn default() -> Self {
         Self {
+            enabled: default_compression(),
             mime_types: default_compressible_mime_types(),
             brotli: default_compression(),
             gzip: default_compression(),
@@ -76,6 +108,7 @@ impl Default for Encoding {
 impl Default for PostProcessing {
     fn default() -> Self {
         Self {
+            image: Default::default(),
             encoding: Default::default(),
         }
     }
