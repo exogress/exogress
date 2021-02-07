@@ -153,7 +153,8 @@ mod test {
 
     use super::*;
     use crate::config_core::{
-        ClientConfig, ClientConfigRevision, UpstreamDefinition, CURRENT_VERSION,
+        refinable::Refinable, ClientConfig, ClientConfigRevision, UpstreamDefinition,
+        CURRENT_VERSION,
     };
     use bytes::Bytes;
     use futures::{AsyncReadExt, AsyncWriteExt};
@@ -287,8 +288,10 @@ mod test {
                         name: "my-config".parse().unwrap(),
                         mount_points: Default::default(),
                         upstreams,
-                        static_responses: Default::default(),
-                        rescue: vec![],
+                        refinable: Refinable {
+                            static_responses: Default::default(),
+                            rescue: vec![],
+                        },
                     }
                     .into(),
                 ));

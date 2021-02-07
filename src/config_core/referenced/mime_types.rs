@@ -1,4 +1,4 @@
-use crate::config_core::parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema};
+use crate::config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use std::convert::TryFrom;
@@ -19,7 +19,7 @@ impl TryFrom<Parameter> for MimeTypes {
     }
 }
 
-impl ParameterOrConfigValue for MimeTypes {
+impl ReferencedConfigValue for MimeTypes {
     fn schema() -> ParameterSchema {
         ParameterSchema::MimeTypes
     }

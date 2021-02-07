@@ -1,4 +1,4 @@
-use crate::config_core::parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema};
+use crate::config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue};
 use core::fmt::{self, Formatter};
 use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
@@ -232,7 +232,7 @@ pub struct S3Bucket {
     pub region: S3Region,
 }
 
-impl ParameterOrConfigValue for S3Bucket {
+impl ReferencedConfigValue for S3Bucket {
     fn schema() -> ParameterSchema {
         ParameterSchema::S3Bucket
     }

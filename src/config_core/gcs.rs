@@ -1,11 +1,11 @@
 use crate::config_core::{
     cache::Cache,
-    parametrized::{
+    post_processing::PostProcessing,
+    rebase::Rebase,
+    referenced::{
         google::{bucket::GcsBucket, credentials::GoogleCredentials},
         Container,
     },
-    post_processing::PostProcessing,
-    rebase::Rebase,
 };
 use serde::{Deserialize, Serialize};
 

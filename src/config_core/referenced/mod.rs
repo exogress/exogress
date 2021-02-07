@@ -1,4 +1,4 @@
-use crate::config_core::parametrized::{
+use crate::config_core::referenced::{
     acl::Acl,
     aws::{bucket::S3Bucket, credentials::AwsCredentials},
     google::{bucket::GcsBucket, credentials::GoogleCredentials},
@@ -12,12 +12,15 @@ pub mod acl;
 pub mod aws;
 pub mod google;
 pub mod mime_types;
+pub mod static_response;
 
 mod container;
 
+use crate::config_core::{CatchAction, RawResponse, RescueItem, ResponseBody, StaticResponse};
 pub use container::Error;
+use http::StatusCode;
 
-pub trait ParameterOrConfigValue:
+pub trait ReferencedConfigValue:
     DeserializeOwned
     + Serialize
     + core::fmt::Debug
@@ -48,8 +51,9 @@ pub enum Parameter {
 
     #[serde(rename = "mime-types")]
     MimeTypes(MimeTypes),
-    // #[serde(rename = "string")]
-    // String(SmolStr),
+
+    #[serde(rename = "static-response")]
+    StaticResponse(StaticResponse),
 }
 
 impl Parameter {
@@ -61,6 +65,7 @@ impl Parameter {
             Parameter::GcsBucket(_) => ParameterSchema::GcsBucket,
             Parameter::Acl(_) => ParameterSchema::Acl,
             Parameter::MimeTypes(_) => ParameterSchema::MimeTypes,
+            Parameter::StaticResponse(_) => ParameterSchema::StaticResponse,
         }
     }
     pub fn to_inner_yaml(&self) -> String {
@@ -71,6 +76,7 @@ impl Parameter {
             Parameter::GcsBucket(inner) => serde_yaml::to_string(&inner).unwrap(),
             Parameter::Acl(inner) => serde_yaml::to_string(&inner).unwrap(),
             Parameter::MimeTypes(inner) => serde_yaml::to_string(&inner).unwrap(),
+            Parameter::StaticResponse(resp) => serde_yaml::to_string(&resp).unwrap(),
         }
     }
 
@@ -82,18 +88,19 @@ impl Parameter {
             Parameter::GcsBucket(inner) => serde_json::to_string_pretty(&inner).unwrap(),
             Parameter::Acl(inner) => serde_json::to_string_pretty(&inner).unwrap(),
             Parameter::MimeTypes(inner) => serde_json::to_string_pretty(&inner).unwrap(),
-            // Parameter::String(inner) => serde_json::to_string_pretty(&inner).unwrap(),
+            Parameter::StaticResponse(inner) => serde_json::to_string_pretty(&inner).unwrap(),
         }
     }
 }
 
-pub const ALL_PARAMETER_SCHEMAS: [ParameterSchema; 6] = [
+pub const ALL_PARAMETER_SCHEMAS: [ParameterSchema; 7] = [
     ParameterSchema::AwsCredentials,
     ParameterSchema::S3Bucket,
     ParameterSchema::GoogleCredentials,
     ParameterSchema::GcsBucket,
     ParameterSchema::Acl,
     ParameterSchema::MimeTypes,
+    ParameterSchema::StaticResponse,
 ];
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, Copy)]
@@ -114,6 +121,9 @@ pub enum ParameterSchema {
 
     #[serde(rename = "mime-types")]
     MimeTypes,
+
+    #[serde(rename = "static-response")]
+    StaticResponse,
 }
 
 impl ParameterSchema {
@@ -159,8 +169,21 @@ impl ParameterSchema {
                 ]);
                 serde_yaml::to_string(&sample).unwrap()
             }
-            ParameterSchema::MimeTypes => {
+            Self::MimeTypes => {
                 let sample: MimeTypes = MimeTypes(vec!["text/html".parse().unwrap()]);
+                serde_yaml::to_string(&sample).unwrap()
+            }
+            Self::StaticResponse => {
+                let sample = StaticResponse::Raw(RawResponse {
+                    status_code: StatusCode::OK,
+                    fallback_accept: None,
+                    body: vec![ResponseBody {
+                        content_type: mime::TEXT_HTML,
+                        content: "<html><body>response</body></html>".into(),
+                        engine: None,
+                    }],
+                    common: Default::default(),
+                });
                 serde_yaml::to_string(&sample).unwrap()
             }
         }
@@ -176,6 +199,7 @@ impl fmt::Display for ParameterSchema {
             ParameterSchema::GcsBucket => "gcs-bucket",
             ParameterSchema::Acl => "acl",
             ParameterSchema::MimeTypes => "mime-types",
+            ParameterSchema::StaticResponse => "static-response",
         };
 
         write!(f, "{}", s)
@@ -193,6 +217,7 @@ impl FromStr for ParameterSchema {
             "gcs-bucket" => Ok(ParameterSchema::GcsBucket),
             "acl" => Ok(ParameterSchema::Acl),
             "mime-types" => Ok(ParameterSchema::MimeTypes),
+            "static-response" => Ok(ParameterSchema::StaticResponse),
             _ => Err(()),
         }
     }
@@ -218,6 +243,9 @@ impl TryFrom<(ParameterSchema, String)> for Parameter {
             (ParameterSchema::Acl, s) => Ok(Parameter::Acl(serde_yaml::from_str(s.as_str())?)),
             (ParameterSchema::MimeTypes, s) => {
                 Ok(Parameter::MimeTypes(serde_yaml::from_str(s.as_str())?))
+            }
+            (ParameterSchema::StaticResponse, s) => {
+                Ok(Parameter::StaticResponse(serde_yaml::from_str(s.as_str())?))
             }
         }
     }

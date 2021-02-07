@@ -1,17 +1,24 @@
-use crate::config_core::redirect::RedirectTo;
+use crate::config_core::{
+    redirect::RedirectTo,
+    referenced::{Parameter, ParameterSchema, ReferencedConfigValue},
+};
 use http::{HeaderMap, StatusCode};
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 use smol_str::SmolStr;
-use std::hash::{Hash, Hasher};
+use std::{
+    convert::TryFrom,
+    hash::{Hash, Hasher},
+};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub enum TemplateEngine {
     #[serde(rename = "handlebars")]
     Handlebars,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub enum RedirectType {
     #[serde(rename = "moved-permanently")]
@@ -85,7 +92,7 @@ impl PartialEq for HttpHeaders {
 
 impl Eq for HttpHeaders {}
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct RedirectResponse {
     #[serde(rename = "redirect-type")]
@@ -95,16 +102,18 @@ pub struct RedirectResponse {
     pub common: HttpHeaders,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[serde_as]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ResponseBody {
+    #[serde_as(as = "DisplayFromStr")]
     #[serde(rename = "content-type")]
-    pub content_type: SmolStr,
+    pub content_type: mime::Mime,
     pub content: SmolStr,
     pub engine: Option<TemplateEngine>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct RawResponse {
     #[serde(
@@ -136,7 +145,7 @@ fn is_default_status_code(code: &StatusCode) -> bool {
     code == &StatusCode::OK
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(deny_unknown_fields, tag = "kind")]
 pub enum StaticResponse {
     #[serde(rename = "redirect")]

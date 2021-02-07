@@ -483,25 +483,25 @@ mod test {
     #[test]
     pub fn test_path_segment_serialize() {
         assert_eq!(
-            "---\n\"?\"",
+            "---\n\"?\"\n",
             serde_yaml::to_string(&MatchPathSegment::Single(MatchPathSingleSegment::Any)).unwrap()
         );
         assert_eq!(
-            "---\nseg",
+            "---\nseg\n",
             serde_yaml::to_string(&MatchPathSegment::Single(MatchPathSingleSegment::Exact(
                 "seg".parse().unwrap()
             )))
             .unwrap()
         );
         assert_eq!(
-            "---\n\"/[a-z]{1,}/\"",
+            "---\n\"/[a-z]{1,}/\"\n",
             serde_yaml::to_string(&MatchPathSegment::Single(MatchPathSingleSegment::Regex(
                 "[a-z]{1,}".parse().unwrap()
             )))
             .unwrap()
         );
         assert_eq!(
-            "---\n- seg\n- seg2",
+            "---\n- seg\n- seg2\n",
             serde_yaml::to_string(&MatchPathSegment::Choice(vec![
                 "seg".parse().unwrap(),
                 "seg2".parse().unwrap()

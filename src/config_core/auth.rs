@@ -1,4 +1,4 @@
-use crate::config_core::parametrized::{acl::Acl, Container};
+use crate::config_core::referenced::{acl::Acl, Container};
 use core::fmt;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;

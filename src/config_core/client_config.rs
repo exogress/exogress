@@ -15,6 +15,8 @@ use crate::config_core::{
     is_profile_active, is_version_supported,
     proxy::Proxy,
     rebase::Rebase,
+    referenced::Container,
+    refinable::Refinable,
     s3::S3BucketAccess,
     static_dir::StaticDir,
     upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr},
@@ -47,14 +49,9 @@ pub struct ClientConfig {
     pub mount_points: BTreeMap<MountPointName, ClientMount>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub upstreams: BTreeMap<Upstream, UpstreamDefinition>,
-    #[serde(
-        default,
-        skip_serializing_if = "BTreeMap::is_empty",
-        rename = "static-responses"
-    )]
-    pub static_responses: BTreeMap<StaticResponseName, StaticResponse>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub rescue: Vec<RescueItem>,
+
+    #[serde(flatten)]
+    pub refinable: Refinable,
 }
 
 impl ClientConfig {
@@ -99,7 +96,10 @@ impl ClientConfig {
                 }),
                 rules: default_rules(),
                 priority: 10,
-                rescue: Default::default(),
+                refinable: Refinable {
+                    static_responses: Default::default(),
+                    rescue: vec![],
+                },
                 profiles: None,
                 languages: None,
             },
@@ -118,9 +118,11 @@ impl ClientConfig {
         let mount_points = btreemap! {
             mount_point_name => ClientMount {
                 handlers,
-                rescue: Default::default(),
-                static_responses,
                 profiles: Default::default(),
+                refinable: Refinable {
+                    rescue: Default::default(),
+                    static_responses,
+                }
             }
         };
 
@@ -130,8 +132,10 @@ impl ClientConfig {
             name: config_name,
             mount_points,
             upstreams,
-            static_responses: Default::default(),
-            rescue: vec![],
+            refinable: Refinable {
+                static_responses: Default::default(),
+                rescue: vec![],
+            },
         }
     }
 
@@ -262,23 +266,15 @@ impl Config for ClientConfig {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
-#[serde(deny_unknown_fields)]
 pub struct ClientMount {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub handlers: BTreeMap<HandlerName, ClientHandler>,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub rescue: Vec<RescueItem>,
-
-    #[serde(
-        default,
-        skip_serializing_if = "BTreeMap::is_empty",
-        rename = "static-responses"
-    )]
-    pub static_responses: BTreeMap<StaticResponseName, StaticResponse>,
-
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profiles: Option<Vec<ProfileName>>,
+
+    #[serde(flatten)]
+    pub refinable: Refinable,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
@@ -332,8 +328,8 @@ pub struct ClientHandler {
 
     pub priority: u16,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub rescue: Vec<RescueItem>,
+    #[serde(flatten)]
+    pub refinable: Refinable,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profiles: Option<Vec<ProfileName>>,
@@ -369,13 +365,13 @@ mount-points:
               path: ["a", "b"]
             action: invoke
             rescue:
-              - catch: status-code:5xx
+              - catch: "status-code:5xx"
                 action: respond
                 static-response: tmpl
-              - catch: status-code:3xx
+              - catch: "status-code:3xx"
                 action: throw-exception
                 exception: asd
-              - catch: status-code:200-220
+              - catch: "status-code:200-220"
                 action: next-handler
           - filter:
               path: ["*"]

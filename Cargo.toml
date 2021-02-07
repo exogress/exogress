@@ -66,6 +66,7 @@ webpki = { optional = true, version = "0.21.3" }
 zstd = { optional = true, version = "0.6" }
 tokio-stream = { optional = true, version = "0.1.2" }
 serde_with = { optional = true, version = "1.6.0" }
+never = { optional = true, version = "0.1.0" }
 
 seahash = { optional = true, version = "4.1.0" }
 tokio-tungstenite = { optional = true, version = "0.13" }
@@ -221,6 +222,7 @@ config-core = [
 ]
 entities = [
     "bytes",
+    "never",
     "paste",
     "serde",
     "serde/derive",

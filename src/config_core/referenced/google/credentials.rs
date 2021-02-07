@@ -1,27 +1,26 @@
-use crate::config_core::parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema};
+use crate::config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use std::convert::TryFrom;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
-pub struct AwsCredentials {
-    pub access_key_id: SmolStr,
-    pub secret_access_key: SmolStr,
+pub struct GoogleCredentials {
+    pub json: SmolStr,
 }
 
-impl ParameterOrConfigValue for AwsCredentials {
+impl ReferencedConfigValue for GoogleCredentials {
     fn schema() -> ParameterSchema {
-        ParameterSchema::AwsCredentials
+        ParameterSchema::GoogleCredentials
     }
 }
 
-impl TryFrom<Parameter> for AwsCredentials {
+impl TryFrom<Parameter> for GoogleCredentials {
     type Error = ();
 
     fn try_from(value: Parameter) -> Result<Self, Self::Error> {
         match value {
-            Parameter::AwsCredentials(creds) => Ok(creds),
+            Parameter::GoogleCredentials(creds) => Ok(creds),
             _ => Err(()),
         }
     }

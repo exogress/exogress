@@ -6,7 +6,8 @@ use crate::{
         path::MatchingPath,
         path_modify::PathSegmentsModify,
         query::QueryMatcher,
-        StatusCode, StatusCodeRange,
+        referenced::Container,
+        StaticResponse, StatusCode, StatusCodeRange, UrlPathSegment,
     },
     entities::{ProfileName, StaticResponseName},
 };
@@ -290,7 +291,7 @@ pub enum Action {
     #[serde(rename = "respond")]
     Respond {
         #[serde(rename = "static-response")]
-        name: StaticResponseName,
+        name: Container<StaticResponse, StaticResponseName>,
 
         #[serde(
             rename = "status-code",
@@ -322,6 +323,13 @@ impl Action {
         match self {
             Action::Invoke { on_response, .. } => on_response.iter().collect(),
             _ => vec![],
+        }
+    }
+
+    pub fn rescue(&self) -> Option<&Vec<RescueItem>> {
+        match self {
+            Action::Invoke { rescue, .. } | Action::Respond { rescue, .. } => Some(rescue),
+            _ => None,
         }
     }
 }

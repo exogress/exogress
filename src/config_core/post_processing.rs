@@ -1,4 +1,7 @@
-use crate::config_core::parametrized::{mime_types::MimeTypes, Container};
+use crate::{
+    config_core::referenced::{mime_types::MimeTypes, Container},
+    entities::NonExistingSharedEntity,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
@@ -57,7 +60,7 @@ pub struct Encoding {
     pub min_size: u32,
 }
 
-fn default_compressible_mime_types() -> Container<MimeTypes> {
+fn default_compressible_mime_types() -> Container<MimeTypes, NonExistingSharedEntity> {
     Container::Parameter("compressible-mime-types".parse().unwrap())
 }
 

@@ -1,26 +1,26 @@
-use crate::config_core::parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema};
+use crate::config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use std::convert::TryFrom;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]
-pub struct GoogleCredentials {
-    pub json: SmolStr,
+pub struct GcsBucket {
+    pub name: SmolStr,
 }
 
-impl ParameterOrConfigValue for GoogleCredentials {
+impl ReferencedConfigValue for GcsBucket {
     fn schema() -> ParameterSchema {
-        ParameterSchema::GoogleCredentials
+        ParameterSchema::GcsBucket
     }
 }
 
-impl TryFrom<Parameter> for GoogleCredentials {
+impl TryFrom<Parameter> for GcsBucket {
     type Error = ();
 
     fn try_from(value: Parameter) -> Result<Self, Self::Error> {
         match value {
-            Parameter::GoogleCredentials(creds) => Ok(creds),
+            Parameter::GcsBucket(bucket) => Ok(bucket),
             _ => Err(()),
         }
     }

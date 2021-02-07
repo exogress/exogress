@@ -260,7 +260,8 @@ to: "https://google.com"
         assert_eq!(
             r#"---
 redirect_type: temporary
-to: []"#,
+to: []
+"#,
             serde_yaml::to_string(&Redirect {
                 redirect_type: RedirectType::Temporary,
                 to: RedirectTo::Root,
@@ -271,7 +272,8 @@ to: []"#,
         assert_eq!(
             r#"---
 redirect_type: permanent
-to: "https://example.com/""#,
+to: "https://example.com/"
+"#,
             serde_yaml::to_string(&Redirect {
                 redirect_type: RedirectType::Permanent,
                 to: RedirectTo::AbsoluteUrl("https://example.com".parse().unwrap()),

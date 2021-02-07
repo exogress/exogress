@@ -1,4 +1,4 @@
-use crate::config_core::parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema};
+use crate::config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use std::convert::TryFrom;
@@ -20,7 +20,7 @@ pub enum AclEntry {
     },
 }
 
-impl ParameterOrConfigValue for Acl {
+impl ReferencedConfigValue for Acl {
     fn schema() -> ParameterSchema {
         ParameterSchema::Acl
     }
