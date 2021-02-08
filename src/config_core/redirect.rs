@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::config_core::rewrite::{PathSegmentRewrite, PathSegmentRewriteVisitor};
+use crate::config_core::path_modify::{PathSegmentRewriteVisitor, PathSegmentsModify};
 use serde::de::{IntoDeserializer, SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -9,8 +9,8 @@ use url::Url;
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub enum RedirectTo {
     AbsoluteUrl(Url),
-    WithBaseUrl(Url, Vec<PathSegmentRewrite>),
-    Segments(Vec<PathSegmentRewrite>),
+    WithBaseUrl(Url, Vec<PathSegmentsModify>),
+    Segments(Vec<PathSegmentsModify>),
     Root,
 }
 
@@ -90,14 +90,18 @@ impl RedirectTo {
             RedirectTo::WithBaseUrl(base_url, segments) => {
                 let mut url = base_url.clone();
                 for segment in segments {
-                    url.path_segments_mut().unwrap().push(segment.as_ref());
+                    url.path_segments_mut()
+                        .unwrap()
+                        .push(segment.to_string().as_str());
                 }
                 url.to_string()
             }
             RedirectTo::Segments(segments) => {
                 let mut url = Url::parse("http://base").unwrap();
                 for segment in segments {
-                    url.path_segments_mut().unwrap().push(segment.as_ref());
+                    url.path_segments_mut()
+                        .unwrap()
+                        .push(segment.to_string().as_str());
                 }
                 url.path().to_string()
             }
@@ -161,7 +165,7 @@ pub struct Redirect {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::config_core::UrlPathSegmentOrQueryPart;
+    use crate::config_core::UrlPathSegment;
 
     #[test]
     pub fn test_deserialize() {
@@ -183,8 +187,8 @@ to: []
             Redirect {
                 redirect_type: RedirectType::Permanent,
                 to: RedirectTo::Segments(vec![
-                    "a".parse::<UrlPathSegmentOrQueryPart>().unwrap().into(),
-                    "b".parse::<UrlPathSegmentOrQueryPart>().unwrap().into()
+                    "a".parse::<UrlPathSegment>().unwrap().into(),
+                    "b".parse::<UrlPathSegment>().unwrap().into()
                 ]),
             },
             serde_yaml::from_str(
@@ -247,7 +251,7 @@ to: "https://google.com"
         //                 redirect_type: RedirectType::Temporary,
         //                 to: RedirectTo::Segments(vec![
         //                     PathSegmentRewrite::Reference(1),
-        //                     "a".parse::<UrlPathSegmentOrQueryPart>().unwrap().into(),
+        //                     "a".parse::<UrlPathSegment>().unwrap().into(),
         //                     PathSegmentRewrite::Reference(2),
         //                 ]),
         //             },

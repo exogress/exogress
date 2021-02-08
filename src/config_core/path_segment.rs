@@ -24,21 +24,21 @@ pub enum PathSegmentParseError {
 
 #[derive(Debug, Hash, Eq, Serialize, PartialEq, Clone)]
 #[serde(transparent)]
-pub struct UrlPathSegmentOrQueryPart(SmolStr);
+pub struct UrlPathSegment(SmolStr);
 
-impl AsRef<str> for UrlPathSegmentOrQueryPart {
+impl AsRef<str> for UrlPathSegment {
     fn as_ref(&self) -> &str {
         self.0.as_ref()
     }
 }
 
-impl AsRef<[u8]> for UrlPathSegmentOrQueryPart {
+impl AsRef<[u8]> for UrlPathSegment {
     fn as_ref(&self) -> &[u8] {
         self.0.as_ref()
     }
 }
 
-impl FromStr for UrlPathSegmentOrQueryPart {
+impl FromStr for UrlPathSegment {
     type Err = PathSegmentParseError;
 
     fn from_str(segment: &str) -> Result<Self, Self::Err> {
@@ -65,20 +65,20 @@ impl FromStr for UrlPathSegmentOrQueryPart {
             }
         }
 
-        Ok(UrlPathSegmentOrQueryPart(segment.into()))
+        Ok(UrlPathSegment(segment.into()))
     }
 }
 
-impl UrlPathSegmentOrQueryPart {
+impl UrlPathSegment {
     pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
 }
 
-pub(crate) struct UrlPathSegmentOrQueryPartVisitor;
+pub(crate) struct UrlPathSegmentVisitor;
 
-impl<'de> Visitor<'de> for UrlPathSegmentOrQueryPartVisitor {
-    type Value = UrlPathSegmentOrQueryPart;
+impl<'de> Visitor<'de> for UrlPathSegmentVisitor {
+    type Value = UrlPathSegment;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(formatter, "Path segment")
@@ -88,18 +88,18 @@ impl<'de> Visitor<'de> for UrlPathSegmentOrQueryPartVisitor {
     where
         E: de::Error,
     {
-        match UrlPathSegmentOrQueryPart::from_str(value) {
+        match UrlPathSegment::from_str(value) {
             Ok(segment) => Ok(segment),
             Err(e) => Err(de::Error::custom(e)),
         }
     }
 }
 
-impl<'de> Deserialize<'de> for UrlPathSegmentOrQueryPart {
+impl<'de> Deserialize<'de> for UrlPathSegment {
     fn deserialize<D>(deserializer: D) -> Result<Self, <D as Deserializer<'de>>::Error>
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_str(UrlPathSegmentOrQueryPartVisitor)
+        deserializer.deserialize_str(UrlPathSegmentVisitor)
     }
 }

@@ -1,5 +1,5 @@
 use crate::config_core::rule::Filter;
-use crate::config_core::{Action, MatchingPath, Rule};
+use crate::config_core::{Action, MatchingPath, QueryMatcher, Rule};
 use crate::entities::MountPointName;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -22,6 +22,9 @@ pub fn default_rules() -> Vec<Rule> {
     vec![Rule {
         filter: Filter {
             path: MatchingPath::Wildcard,
+            query: QueryMatcher {
+                inner: Default::default(),
+            },
             methods: Default::default(),
             trailing_slash: Default::default(),
         },

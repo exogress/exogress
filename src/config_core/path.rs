@@ -5,9 +5,7 @@ use serde::de::{IntoDeserializer, SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::config_core::path_segment::{
-    UrlPathSegmentOrQueryPart, UrlPathSegmentOrQueryPartVisitor,
-};
+use crate::config_core::path_segment::{UrlPathSegment, UrlPathSegmentVisitor};
 use std::hash::{Hash, Hasher};
 
 pub const ANY_SEGMENTS_MATCH_STR: &str = "*";
@@ -17,7 +15,7 @@ pub const ANY_STR: &str = "?";
 #[derive(Debug, Clone, PartialEq, Hash)]
 pub enum MatchPathSegment {
     Single(MatchPathSingleSegment),
-    Choice(Vec<UrlPathSegmentOrQueryPart>),
+    Choice(Vec<UrlPathSegment>),
 }
 
 impl Serialize for MatchPathSegment {
@@ -41,7 +39,7 @@ impl Serialize for MatchPathSegment {
 #[derive(Debug, Clone)]
 pub enum MatchPathSingleSegment {
     Any,
-    Exact(UrlPathSegmentOrQueryPart),
+    Exact(UrlPathSegment),
     Regex(Regex),
 }
 
@@ -50,7 +48,7 @@ impl MatchPathSingleSegment {
         matches!(self, MatchPathSingleSegment::Any)
     }
 
-    pub fn single_segment(&self) -> Option<&UrlPathSegmentOrQueryPart> {
+    pub fn single_segment(&self) -> Option<&UrlPathSegment> {
         match self {
             MatchPathSingleSegment::Exact(segment) => Some(segment),
             _ => None,
@@ -296,7 +294,7 @@ impl<'de> Visitor<'de> for MatchPathSegmentVisitor {
         while let Some(item) = visitor.next_element::<String>()? {
             r.push(
                 item.into_deserializer()
-                    .deserialize_str(UrlPathSegmentOrQueryPartVisitor)?,
+                    .deserialize_str(UrlPathSegmentVisitor)?,
             );
         }
         Ok(MatchPathSegment::Choice(r))
@@ -352,7 +350,7 @@ impl<'de> Visitor<'de> for MatchPathSegmentOrStarVisitor {
         while let Some(item) = visitor.next_element::<String>()? {
             r.push(
                 item.into_deserializer()
-                    .deserialize_str(UrlPathSegmentOrQueryPartVisitor)?,
+                    .deserialize_str(UrlPathSegmentVisitor)?,
             );
         }
         Ok(MatchPathSegmentOrStar::Segment(MatchPathSegment::Choice(r)))

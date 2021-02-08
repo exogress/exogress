@@ -1,6 +1,8 @@
 use hashbrown::HashMap;
+use url::Url;
 
 pub trait UriExt {
+    fn to_url(&self) -> Url;
     fn path_segments(&self) -> Vec<&str>;
     fn query_pairs(&self) -> HashMap<String, String>;
     fn set_scheme(&mut self, scheme: &str);
@@ -11,6 +13,10 @@ pub trait UriExt {
 }
 
 impl UriExt for http::uri::Uri {
+    fn to_url(&self) -> Url {
+        self.to_string().parse().unwrap()
+    }
+
     fn path_segments(&self) -> Vec<&str> {
         self.path().split("/").skip(1).collect()
     }

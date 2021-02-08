@@ -1,6 +1,7 @@
 use crate::config_core::catch::{Exception, RescueItem};
 use crate::config_core::methods::MethodMatcher;
 use crate::config_core::path::MatchingPath;
+use crate::config_core::query::QueryMatcher;
 use crate::config_core::{StatusCode, StatusCodeRange};
 use crate::entities::{ProfileName, StaticResponseName};
 use core::fmt;
@@ -183,6 +184,9 @@ impl TrailingSlashFilterRule {
 pub struct Filter {
     pub path: MatchingPath,
 
+    #[serde(default, skip_serializing_if = "QueryMatcher::is_empty")]
+    pub query: QueryMatcher,
+
     #[serde(default, skip_serializing_if = "MethodMatcher::is_all")]
     pub methods: MethodMatcher,
 
@@ -280,6 +284,8 @@ impl Action {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::config_core::{MatchQuerySingleValue, MatchQueryValue, QueryMatcher};
+    use maplit::btreemap;
 
     #[test]
     pub fn test_modify_headers() {
@@ -298,6 +304,38 @@ insert:
   X-Amz-1: "1"
 remove: 
   - X-Amz-2
+"#
+            )
+            .unwrap()
+        );
+    }
+
+    #[test]
+    pub fn test_query_matcher() {
+        let matcher = QueryMatcher {
+            inner: btreemap! {
+                "q1".into() => Some(MatchQueryValue::Single(MatchQuerySingleValue::MayBeAnyMultipleSegments)),
+                "q2".into() => Some(MatchQueryValue::Single(MatchQuerySingleValue::AnySingleSegment)),
+                "q3".into() => Some(MatchQueryValue::Single(MatchQuerySingleValue::Exact("v1".into()))),
+                "q4".into() => Some(MatchQueryValue::Single(MatchQuerySingleValue::Regex(".+".parse().unwrap())))
+            },
+        };
+        assert_eq!(
+            Filter {
+                path: MatchingPath::Root,
+                query: matcher,
+                methods: Default::default(),
+                trailing_slash: Default::default()
+            },
+            serde_yaml::from_str::<Filter>(
+                r#"
+---
+path: []
+query: 
+  q1: "*"
+  q2: "?"
+  q3: "v1"
+  q4: "/.+/"
 "#
             )
             .unwrap()
