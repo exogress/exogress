@@ -8,6 +8,8 @@ pub trait UriExt {
     fn set_scheme(&mut self, scheme: &str);
     fn set_hostname(&mut self, hostname: &str);
     fn unset_port(&mut self);
+    fn clear_query(&mut self);
+    fn set_query(&mut self, pairs: HashMap<String, String>);
     fn clear_segments(&mut self);
     fn push_segment(&mut self, segment: &str);
 }
@@ -77,6 +79,35 @@ impl UriExt for http::uri::Uri {
         if let Some(p_a_q) = self.path_and_query() {
             builder = builder.path_and_query(p_a_q.as_str());
         }
+
+        *self = builder.build().expect("FIXME");
+    }
+
+    fn clear_query(&mut self) {
+        let builder = http::Uri::builder()
+            .path_and_query(self.path())
+            .scheme(self.scheme_str().unwrap())
+            .authority(self.authority().unwrap().as_str());
+        *self = builder.build().expect("FIXME");
+    }
+
+    fn set_query(&mut self, pairs: HashMap<String, String>) {
+        let mut new_path = self.path().to_string();
+
+        if !pairs.is_empty() {
+            new_path.push_str("?");
+            let new_query_string = pairs
+                .into_iter()
+                .map(|(k, v)| format!("{}={}", k, v))
+                .collect::<Vec<String>>()
+                .join("&");
+            new_path.push_str(new_query_string.as_str());
+        }
+
+        let builder = http::Uri::builder()
+            .path_and_query(new_path)
+            .scheme(self.scheme_str().unwrap())
+            .authority(self.authority().unwrap().as_str());
 
         *self = builder.build().expect("FIXME");
     }

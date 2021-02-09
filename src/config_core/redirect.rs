@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::config_core::path_modify::{PathSegmentRewriteVisitor, PathSegmentsModify};
+use crate::config_core::path_modify::PathSegmentsModify;
 use serde::de::{IntoDeserializer, SeqAccess, Visitor};
 use serde::ser::SerializeSeq;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -48,19 +48,14 @@ impl<'de> Visitor<'de> for RedirectToItemVisitor {
             if let Ok(url) = Url::parse(first.as_str()) {
                 first_url = Some(url);
             } else {
-                let r = first
-                    .into_deserializer()
-                    .deserialize_str(PathSegmentRewriteVisitor)?;
-                vec.push(r);
+                vec.push(Deserialize::deserialize(first.into_deserializer())?);
             }
         } else {
             return Ok(RedirectTo::Root);
         }
 
         while let Some(elem) = visitor.next_element::<String>()? {
-            let r = elem
-                .into_deserializer()
-                .deserialize_str(PathSegmentRewriteVisitor)?;
+            let r = Deserialize::deserialize(elem.into_deserializer())?;
             vec.push(r);
         }
 
@@ -90,18 +85,14 @@ impl RedirectTo {
             RedirectTo::WithBaseUrl(base_url, segments) => {
                 let mut url = base_url.clone();
                 for segment in segments {
-                    url.path_segments_mut()
-                        .unwrap()
-                        .push(segment.to_string().as_str());
+                    url.path_segments_mut().unwrap().push(segment.as_str());
                 }
                 url.to_string()
             }
             RedirectTo::Segments(segments) => {
                 let mut url = Url::parse("http://base").unwrap();
                 for segment in segments {
-                    url.path_segments_mut()
-                        .unwrap()
-                        .push(segment.to_string().as_str());
+                    url.path_segments_mut().unwrap().push(segment.as_str());
                 }
                 url.path().to_string()
             }
@@ -165,7 +156,6 @@ pub struct Redirect {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::config_core::UrlPathSegment;
 
     #[test]
     pub fn test_deserialize() {
@@ -186,10 +176,7 @@ to: []
         assert_eq!(
             Redirect {
                 redirect_type: RedirectType::Permanent,
-                to: RedirectTo::Segments(vec![
-                    "a".parse::<UrlPathSegment>().unwrap().into(),
-                    "b".parse::<UrlPathSegment>().unwrap().into()
-                ]),
+                to: RedirectTo::Segments(vec!["a".parse().unwrap(), "b".parse().unwrap(),]),
             },
             serde_yaml::from_str(
                 r#"

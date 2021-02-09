@@ -365,21 +365,19 @@ mount-points:
         rules:
           - filter:
               path: ["a", "b"]
-            action:
-              kind: invoke
-              rescue:
-                - catch: status-code:5xx
-                  action: respond
-                  static-response: tmpl
-                - catch: status-code:3xx
-                  action: throw-exception
-                  exception: asd
-                - catch: status-code:200-220
-                  action: next-handler
+            action: invoke
+            rescue:
+              - catch: status-code:5xx
+                action: respond
+                static-response: tmpl
+              - catch: status-code:3xx
+                action: throw-exception
+                exception: asd
+              - catch: status-code:200-220
+                action: next-handler
           - filter:
               path: ["*"]
-            action:
-              kind: invoke
+            action: invoke
     static-responses:
       tmpl:
         kind: raw

@@ -11,6 +11,7 @@ use lazy_static::lazy_static;
 pub use methods::MethodMatcher;
 pub use pass_through::PassThrough;
 pub use path::{MatchPathSegment, MatchPathSingleSegment, MatchingPath};
+pub use path_modify::PathSegmentsModify;
 pub use path_segment::UrlPathSegment;
 pub use post_processing::{Encoding, PostProcessing};
 pub use project_config::{ProjectConfig, ProjectHandler, ProjectHandlerVariant};

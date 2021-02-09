@@ -1,76 +1,28 @@
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
-use crate::config_core::UrlPathSegment;
-use serde::de::Visitor;
-use std::fmt;
+use smol_str::SmolStr;
+use std::str::FromStr;
 
-pub type RefNumber = u8;
+#[derive(Serialize, Deserialize, Debug, Hash, Clone, Eq, PartialEq)]
+#[serde(transparent)]
+pub struct PathSegmentsModify(pub SmolStr);
 
-#[derive(Debug, Hash, Clone, Eq, PartialEq)]
-pub enum PathSegmentsModify {
-    Reference(RefNumber),
-    Single(UrlPathSegment),
-}
-
-impl ToString for PathSegmentsModify {
-    fn to_string(&self) -> String {
-        match self {
-            PathSegmentsModify::Reference(r) => format!("${}", r),
-            PathSegmentsModify::Single(s) => AsRef::<str>::as_ref(s).to_string(),
-        }
+impl AsRef<str> for PathSegmentsModify {
+    fn as_ref(&self) -> &str {
+        self.0.as_ref()
     }
 }
 
-impl Serialize for PathSegmentsModify {
-    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(self.to_string().as_ref())
+impl PathSegmentsModify {
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
     }
 }
 
-impl From<UrlPathSegment> for PathSegmentsModify {
-    fn from(part: UrlPathSegment) -> Self {
-        PathSegmentsModify::Single(part)
-    }
-}
+impl FromStr for PathSegmentsModify {
+    type Err = ();
 
-pub struct PathSegmentRewriteVisitor;
-
-impl<'de> Visitor<'de> for PathSegmentRewriteVisitor {
-    type Value = PathSegmentsModify;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            formatter,
-            "single path segment or \"$NUM\" or \"$NUM:GROUP\""
-        )
-    }
-
-    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
-        if value.starts_with("$") {
-            let num: RefNumber = value[1..]
-                .parse()
-                .map_err(|e| de::Error::custom(format!("bad reference number: {}", e)))?;
-            Ok(PathSegmentsModify::Reference(num))
-        } else {
-            match value.parse() {
-                Ok(r) => Ok(PathSegmentsModify::Single(r)),
-                Err(e) => Err(de::Error::custom(e)),
-            }
-        }
-    }
-}
-
-impl<'de> Deserialize<'de> for PathSegmentsModify {
-    fn deserialize<D>(deserializer: D) -> Result<PathSegmentsModify, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_str(PathSegmentRewriteVisitor)
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(PathSegmentsModify(s.into()))
     }
 }

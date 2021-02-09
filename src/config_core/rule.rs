@@ -1,6 +1,7 @@
 use crate::config_core::catch::{Exception, RescueItem};
 use crate::config_core::methods::MethodMatcher;
 use crate::config_core::path::MatchingPath;
+use crate::config_core::path_modify::PathSegmentsModify;
 use crate::config_core::query::QueryMatcher;
 use crate::config_core::{StatusCode, StatusCodeRange};
 use crate::entities::{ProfileName, StaticResponseName};
@@ -121,7 +122,25 @@ impl ModifyHeaders {
 pub struct RequestModifications {
     #[serde(default, skip_serializing_if = "ModifyHeaders::is_empty")]
     pub headers: ModifyHeaders,
-    // rewrite url
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<Vec<PathSegmentsModify>>,
+
+    #[serde(default, skip_serializing_if = "ModifyQuery::is_empty")]
+    pub query: ModifyQuery,
+}
+
+#[derive(Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct ModifyQuery {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub remove: Vec<SmolStr>,
+}
+
+impl ModifyQuery {
+    fn is_empty(&self) -> bool {
+        self.remove.is_empty()
+    }
 }
 
 #[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
