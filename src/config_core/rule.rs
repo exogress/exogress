@@ -1,6 +1,7 @@
 use crate::{
     config_core::{
         catch::{Exception, RescueItem},
+        is_default,
         methods::MethodMatcher,
         path::MatchingPath,
         path_modify::PathSegmentsModify,
@@ -121,6 +122,24 @@ impl ModifyHeaders {
     }
 }
 
+#[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
+pub enum TrailingSlashModification {
+    #[serde(rename = "keep")]
+    Keep,
+
+    #[serde(rename = "set")]
+    Set,
+
+    #[serde(rename = "unset")]
+    Unset,
+}
+
+impl Default for TrailingSlashModification {
+    fn default() -> Self {
+        TrailingSlashModification::Keep
+    }
+}
+
 #[derive(Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct RequestModifications {
@@ -129,6 +148,9 @@ pub struct RequestModifications {
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<Vec<PathSegmentsModify>>,
+
+    #[serde(rename = "trailing-slash", default, skip_serializing_if = "is_default")]
+    pub trailing_slash: TrailingSlashModification,
 
     #[serde(default, skip_serializing_if = "ModifyQuery::is_empty")]
     pub query: ModifyQuery,

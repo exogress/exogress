@@ -12,6 +12,7 @@ pub trait UriExt {
     fn set_query(&mut self, pairs: HashMap<String, String>);
     fn clear_segments(&mut self);
     fn push_segment(&mut self, segment: &str);
+    fn ensure_trailing_slash(&mut self, set: bool);
 }
 
 impl UriExt for http::uri::Uri {
@@ -88,6 +89,33 @@ impl UriExt for http::uri::Uri {
             .path_and_query(self.path())
             .scheme(self.scheme_str().unwrap())
             .authority(self.authority().unwrap().as_str());
+        *self = builder.build().expect("FIXME");
+    }
+
+    fn ensure_trailing_slash(&mut self, set: bool) {
+        let mut new_path_and_query = self.path().to_string();
+        let query = self.query();
+
+        if set {
+            if !new_path_and_query.ends_with("/") {
+                new_path_and_query.push_str("/");
+            }
+        } else {
+            if new_path_and_query.ends_with("/") {
+                new_path_and_query.pop();
+            }
+        }
+
+        if let Some(q) = query {
+            new_path_and_query.push_str("?");
+            new_path_and_query.push_str(q);
+        }
+
+        let builder = http::Uri::builder()
+            .path_and_query(new_path_and_query)
+            .scheme(self.scheme_str().unwrap())
+            .authority(self.authority().unwrap().as_str());
+
         *self = builder.build().expect("FIXME");
     }
 

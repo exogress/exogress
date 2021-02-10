@@ -23,7 +23,7 @@ pub use response::{
 };
 pub use rule::{
     Action, Filter, ModifyHeaders, OnResponse, RequestModifications, ResponseModifications, Rule,
-    TrailingSlashFilterRule,
+    TrailingSlashFilterRule, TrailingSlashModification,
 };
 use semver::{Version, VersionReq};
 pub use static_dir::StaticDir;
@@ -88,6 +88,10 @@ pub fn is_profile_active(
             Some(profile) => allowed_profiles.iter().any(|allowed| allowed == profile),
         },
     }
+}
+
+pub fn is_default<T: Default + PartialEq>(v: &T) -> bool {
+    v == &Default::default()
 }
 
 #[cfg(test)]
