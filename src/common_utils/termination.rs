@@ -5,8 +5,7 @@ use tracing::info;
 
 #[cfg(unix)]
 async fn wait_unix_signal() -> SignalKind {
-    use futures::stream::FuturesUnordered;
-    use futures::StreamExt;
+    use futures::{stream::FuturesUnordered, StreamExt};
 
     let unix_signals: [SignalKind; 3] = [
         SignalKind::interrupt(),

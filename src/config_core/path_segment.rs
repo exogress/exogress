@@ -4,8 +4,10 @@ use serde::de::Visitor;
 use crate::config_core::path::ANY_SEGMENTS_MATCH_STR;
 use serde::{de, Deserialize, Deserializer, Serialize};
 use smol_str::SmolStr;
-use std::fmt;
-use std::str::{FromStr, Utf8Error};
+use std::{
+    fmt,
+    str::{FromStr, Utf8Error},
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum PathSegmentParseError {

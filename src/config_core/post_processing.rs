@@ -1,5 +1,4 @@
-use crate::config_core::parametrized::mime_types::MimeTypes;
-use crate::config_core::parametrized::Container;
+use crate::config_core::parametrized::{mime_types::MimeTypes, Container};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]

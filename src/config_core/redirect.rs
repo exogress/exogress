@@ -1,9 +1,12 @@
 use std::fmt;
 
 use crate::config_core::path_modify::PathSegmentsModify;
-use serde::de::{IntoDeserializer, SeqAccess, Visitor};
-use serde::ser::SerializeSeq;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{
+    de,
+    de::{IntoDeserializer, SeqAccess, Visitor},
+    ser::SerializeSeq,
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 use url::Url;
 
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]

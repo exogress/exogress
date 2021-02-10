@@ -107,8 +107,7 @@ macro_rules! ulid_type {
 #[cfg(test)]
 mod test {
     use bytes::Bytes;
-    use std::convert::TryFrom;
-    use std::str::FromStr;
+    use std::{convert::TryFrom, str::FromStr};
 
     ulid_type!(TestUlid);
 

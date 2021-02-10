@@ -7,23 +7,25 @@ use crate::entities::{
     Upstream,
 };
 
-use crate::config_core::application_firewall::ApplicationFirewall;
-use crate::config_core::catch::RescueItem;
-use crate::config_core::config::Config;
-use crate::config_core::config::{default_rules, is_default_rules};
-use crate::config_core::gcs::GcsBucketAccess;
-use crate::config_core::proxy::Proxy;
-use crate::config_core::rebase::Rebase;
-use crate::config_core::s3::S3BucketAccess;
-use crate::config_core::static_dir::StaticDir;
-use crate::config_core::upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr};
-use crate::config_core::{is_profile_active, is_version_supported, PassThrough};
-use crate::config_core::{Auth, ConfigVersion, Rule};
-use crate::config_core::{StaticResponse, CURRENT_VERSION};
+use crate::config_core::{
+    application_firewall::ApplicationFirewall,
+    catch::RescueItem,
+    config::{default_rules, is_default_rules, Config},
+    gcs::GcsBucketAccess,
+    is_profile_active, is_version_supported,
+    proxy::Proxy,
+    rebase::Rebase,
+    s3::S3BucketAccess,
+    static_dir::StaticDir,
+    upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr},
+    Auth, ConfigVersion, PassThrough, Rule, StaticResponse, CURRENT_VERSION,
+};
 use maplit::btreemap;
-use std::collections::BTreeMap;
-use std::hash::{Hash, Hasher};
-use std::mem;
+use std::{
+    collections::BTreeMap,
+    hash::{Hash, Hasher},
+    mem,
+};
 
 #[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone, PartialOrd, Ord, Copy)]
 #[serde(transparent)]

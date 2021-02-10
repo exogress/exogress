@@ -1,7 +1,6 @@
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 #[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone)]
 #[serde(transparent)]

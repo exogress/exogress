@@ -1,10 +1,9 @@
-use crate::config_core::rule::Filter;
-use crate::config_core::{Action, MatchingPath, QueryMatcher, Rule};
-use crate::entities::MountPointName;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use std::fmt::Debug;
-use std::hash::Hash;
+use crate::{
+    config_core::{rule::Filter, Action, MatchingPath, QueryMatcher, Rule},
+    entities::MountPointName,
+};
+use serde::{de::DeserializeOwned, Serialize};
+use std::{fmt::Debug, hash::Hash};
 
 pub trait Config: Serialize + DeserializeOwned + Debug + Clone + Hash {
     type Error: std::error::Error;

@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::config_core::cache::Cache;
-use crate::config_core::post_processing::PostProcessing;
-use crate::config_core::rebase::Rebase;
-use crate::entities::Upstream;
+use crate::{
+    config_core::{cache::Cache, post_processing::PostProcessing, rebase::Rebase},
+    entities::Upstream,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(deny_unknown_fields)]

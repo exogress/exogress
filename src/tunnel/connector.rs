@@ -1,19 +1,24 @@
 use std::io;
 
-use crate::common_utils::uri_ext::UriExt;
-use crate::entities::{HandlerName, StringIdentifierParseError, Upstream};
-use crate::tunnel::Conn;
-use crate::tunnel::TunneledConnection;
+use crate::{
+    common_utils::uri_ext::UriExt,
+    entities::{HandlerName, StringIdentifierParseError, Upstream},
+    tunnel::{Conn, TunneledConnection},
+};
 use core::fmt;
-use futures::channel::{mpsc, oneshot};
-use futures::future::BoxFuture;
-use futures::task::Poll;
-use futures::{task, FutureExt, SinkExt};
-use hyper::service::Service;
-use hyper::Uri;
+use futures::{
+    channel::{mpsc, oneshot},
+    future::BoxFuture,
+    task,
+    task::Poll,
+    FutureExt, SinkExt,
+};
+use hyper::{service::Service, Uri};
 use serde::{Deserialize, Serialize};
-use std::hash::{Hash, Hasher};
-use std::str::FromStr;
+use std::{
+    hash::{Hash, Hasher},
+    str::FromStr,
+};
 use ulid::Ulid;
 use url::Url;
 

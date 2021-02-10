@@ -1,35 +1,41 @@
-use std::io;
-use std::time::Duration;
+use std::{io, time::Duration};
 
-use futures::channel::mpsc;
-use futures::future::pending;
-use futures::future::FutureExt;
-use futures::{pin_mut, select_biased, stream::select, SinkExt, StreamExt};
+use futures::{
+    channel::mpsc,
+    future::{pending, FutureExt},
+    pin_mut, select_biased,
+    stream::select,
+    SinkExt, StreamExt,
+};
 use http::StatusCode;
-use tokio::time::sleep;
-use tokio::time::timeout;
+use tokio::time::{sleep, timeout};
 use tokio_tungstenite::tungstenite::Message;
 use tracing::{debug, error, info, trace, warn};
 use trust_dns_resolver::TokioAsyncResolver;
 use url::Url;
 
-use crate::common_utils::backoff::{Backoff, BackoffHandle};
-use crate::config_core::ClientConfig;
-use crate::signaling::{
-    InstanceConfigMessage, SignalerHandshakeResponse, TunnelRequest, WsInstanceToCloudMessage,
+use crate::{
+    common_utils::backoff::{Backoff, BackoffHandle},
+    config_core::ClientConfig,
+    signaling::{
+        InstanceConfigMessage, SignalerHandshakeResponse, TunnelRequest, WsInstanceToCloudMessage,
+    },
 };
 
-use crate::client_core::health::UpstreamsHealth;
-use crate::client_core::TunnelsStorage;
-use crate::common_utils::jwt::JwtError;
-use crate::entities::{InstanceId, SmolStr};
-use crate::ws_client;
-use crate::ws_client::connect_ws;
+use crate::{
+    client_core::{health::UpstreamsHealth, TunnelsStorage},
+    common_utils::jwt::JwtError,
+    entities::{InstanceId, SmolStr},
+    ws_client,
+    ws_client::connect_ws,
+};
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tokio::sync::watch::Receiver;
-use tokio_tungstenite::tungstenite::http::{Method, Request};
-use tokio_tungstenite::tungstenite::protocol::CloseFrame;
+use tokio_tungstenite::tungstenite::{
+    http::{Method, Request},
+    protocol::CloseFrame,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum CloudConnectError {

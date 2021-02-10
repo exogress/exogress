@@ -1,5 +1,7 @@
-use crate::config_core::ClientConfig;
-use crate::entities::{HealthCheckProbeName, InstanceId, Upstream};
+use crate::{
+    config_core::ClientConfig,
+    entities::{HealthCheckProbeName, InstanceId, Upstream},
+};
 use hashbrown::HashMap;
 use http::StatusCode;
 use serde::{Deserialize, Serialize};

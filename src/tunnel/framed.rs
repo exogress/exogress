@@ -1,14 +1,12 @@
-use std::convert::TryInto;
-use std::mem;
+use std::{convert::TryInto, mem};
 
-use crate::tunnel::proto::*;
-use crate::tunnel::Error;
+use crate::tunnel::{proto::*, Error};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-use futures::sink::SinkExt;
-use futures::stream::TryStreamExt;
-use futures::{Sink, Stream};
-use tokio::io;
-use tokio::io::{AsyncRead, AsyncWrite};
+use futures::{sink::SinkExt, stream::TryStreamExt, Sink, Stream};
+use tokio::{
+    io,
+    io::{AsyncRead, AsyncWrite},
+};
 use tokio_util::codec::length_delimited::LengthDelimitedCodec;
 
 fn parse_client_header(value: u64) -> Result<ClientPacket, Error> {
@@ -54,8 +52,7 @@ fn parse_server_header(value: u64) -> Result<ServerPacket, Error> {
 }
 
 fn encode_server_header(slot: Slot, header: ServerHeader) -> u64 {
-    use crate::tunnel::proto::CommonHeader::*;
-    use crate::tunnel::proto::ServerHeader::*;
+    use crate::tunnel::proto::{CommonHeader::*, ServerHeader::*};
 
     let slot_val: u64 = slot.into_inner().into();
     assert!(slot_val <= MAX_SLOT_NUM);
@@ -74,8 +71,7 @@ fn encode_server_header(slot: Slot, header: ServerHeader) -> u64 {
 }
 
 fn encode_client_header(slot: Slot, header: ClientHeader) -> u64 {
-    use crate::tunnel::proto::ClientHeader::*;
-    use crate::tunnel::proto::CommonHeader::*;
+    use crate::tunnel::proto::{ClientHeader::*, CommonHeader::*};
 
     let slot_val: u64 = slot.into_inner().into();
     assert!(slot_val <= MAX_HEADER_CODE);

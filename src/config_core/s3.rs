@@ -1,9 +1,12 @@
-use crate::config_core::cache::Cache;
-use crate::config_core::parametrized::aws::bucket::S3Bucket;
-use crate::config_core::parametrized::aws::credentials::AwsCredentials;
-use crate::config_core::parametrized::Container;
-use crate::config_core::post_processing::PostProcessing;
-use crate::config_core::rebase::Rebase;
+use crate::config_core::{
+    cache::Cache,
+    parametrized::{
+        aws::{bucket::S3Bucket, credentials::AwsCredentials},
+        Container,
+    },
+    post_processing::PostProcessing,
+    rebase::Rebase,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]

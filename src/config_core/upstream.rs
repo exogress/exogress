@@ -1,15 +1,19 @@
-use crate::config_core::{HttpHeaders, StatusCodeRange};
-use crate::entities::{HealthCheckProbeName, ProfileName};
+use crate::{
+    config_core::{HttpHeaders, StatusCodeRange},
+    entities::{HealthCheckProbeName, ProfileName},
+};
 use http::{Method, StatusCode};
 use humantime::format_duration;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
-use std::collections::BTreeMap;
-use std::hash::{Hash, Hasher};
-use std::net::AddrParseError;
-use std::num::ParseIntError;
-use std::str::FromStr;
-use std::time::Duration;
+use std::{
+    collections::BTreeMap,
+    hash::{Hash, Hasher},
+    net::AddrParseError,
+    num::ParseIntError,
+    str::FromStr,
+    time::Duration,
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum UpstreamSocketAddrParseError {

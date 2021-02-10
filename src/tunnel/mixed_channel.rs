@@ -1,11 +1,15 @@
 use std::io;
 
-use futures::channel::mpsc;
-use futures::channel::mpsc::{Receiver, Sender};
-use futures::ready;
-use futures::stream::Fuse;
-use futures::task::{Context, Poll, Waker};
-use futures::{Sink, Stream, StreamExt};
+use futures::{
+    channel::{
+        mpsc,
+        mpsc::{Receiver, Sender},
+    },
+    ready,
+    stream::Fuse,
+    task::{Context, Poll, Waker},
+    Sink, Stream, StreamExt,
+};
 use rw_stream_sink::RwStreamSink;
 use tokio::macros::support::Pin;
 
@@ -141,8 +145,11 @@ mod test {
 
     use hyper::Uri;
 
-    use crate::tunnel::framed::{client_framed, server_framed};
-    use crate::tunnel::{client_listener, server_connection};
+    use crate::tunnel::{
+        client_listener,
+        framed::{client_framed, server_framed},
+        server_connection,
+    };
 
     use super::*;
     use crate::config_core::{
@@ -151,9 +158,7 @@ mod test {
     use bytes::Bytes;
     use futures::{AsyncReadExt, AsyncWriteExt};
     use parking_lot::lock_api::RwLock;
-    use std::collections::BTreeMap;
-    use std::mem;
-    use std::sync::Arc;
+    use std::{collections::BTreeMap, mem, sync::Arc};
     use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
     use trust_dns_resolver::{TokioAsyncResolver, TokioHandle};
 

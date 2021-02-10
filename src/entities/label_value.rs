@@ -1,5 +1,4 @@
-use std::fmt;
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 #[derive(Debug, Clone, serde::Serialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
 #[serde(transparent)]

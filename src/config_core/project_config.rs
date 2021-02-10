@@ -1,22 +1,21 @@
 use hashbrown::HashSet;
 
-use crate::config_core::application_firewall::ApplicationFirewall;
-use crate::config_core::auth::AuthDefinition;
-use crate::config_core::catch::RescueItem;
-use crate::config_core::client_config::ClientMount;
-use crate::config_core::config::default_rules;
-use crate::config_core::gcs::GcsBucketAccess;
-use crate::config_core::parametrized::Container;
-use crate::config_core::s3::S3BucketAccess;
-use crate::config_core::{
-    is_version_supported, Auth, AuthProvider, Config, ConfigVersion, PassThrough, Rule,
+use crate::{
+    config_core::{
+        application_firewall::ApplicationFirewall, auth::AuthDefinition, catch::RescueItem,
+        client_config::ClientMount, config::default_rules, gcs::GcsBucketAccess,
+        is_version_supported, parametrized::Container, s3::S3BucketAccess, Auth, AuthProvider,
+        ClientHandler, ClientHandlerVariant, Config, ConfigVersion, PassThrough, Rule,
+        StaticResponse, CURRENT_VERSION,
+    },
+    entities::{HandlerName, MountPointName, StaticResponseName},
 };
-use crate::config_core::{ClientHandler, ClientHandlerVariant, StaticResponse, CURRENT_VERSION};
-use crate::entities::{HandlerName, MountPointName, StaticResponseName};
 use maplit::btreemap;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
-use std::hash::{Hash, Hasher};
+use std::{
+    collections::BTreeMap,
+    hash::{Hash, Hasher},
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 #[serde(deny_unknown_fields)]

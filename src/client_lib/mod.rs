@@ -3,8 +3,7 @@ use std::thread;
 use tokio::runtime::Runtime;
 use trust_dns_resolver::{TokioAsyncResolver, TokioHandle};
 
-use crate::client_core::Client;
-use crate::entities::AccessKeyId;
+use crate::{client_core::Client, entities::AccessKeyId};
 use futures::channel::mpsc;
 use tracing::Level;
 

@@ -1,13 +1,19 @@
-use crate::config_core::parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema};
-use crate::config_core::Exception;
-use crate::entities::ParameterName;
+use crate::{
+    config_core::{
+        parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema},
+        Exception,
+    },
+    entities::ParameterName,
+};
 use core::fmt;
 use hashbrown::HashMap;
-use serde::de::{MapAccess, SeqAccess, Visitor};
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{
+    de,
+    de::{MapAccess, SeqAccess, Visitor},
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 use smol_str::SmolStr;
-use std::convert::TryInto;
-use std::marker::PhantomData;
+use std::{convert::TryInto, marker::PhantomData};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum Container<P>

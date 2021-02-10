@@ -1,9 +1,11 @@
 use core::fmt;
 use http::status::InvalidStatusCode;
-use serde::de::{Unexpected, Visitor};
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use std::convert::TryInto;
-use std::str::FromStr;
+use serde::{
+    de,
+    de::{Unexpected, Visitor},
+    Deserialize, Deserializer, Serialize, Serializer,
+};
+use std::{convert::TryInto, str::FromStr};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub struct StatusCode(pub http::StatusCode);

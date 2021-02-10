@@ -1,27 +1,26 @@
-use crate::config_core::{ClientConfig, ClientHandlerVariant};
-use crate::tunnel::MixedChannel;
-use crate::tunnel::INT_SUFFIX;
+use crate::{
+    config_core::{ClientConfig, ClientHandlerVariant},
+    tunnel::{MixedChannel, INT_SUFFIX},
+};
 use bytes::{Bytes, BytesMut};
-use futures::channel::mpsc;
-use futures::future::Either;
-use futures::{future, Stream, StreamExt};
-use http::uri::Authority;
-use http::StatusCode;
+use futures::{channel::mpsc, future, future::Either, Stream, StreamExt};
+use http::{uri::Authority, StatusCode};
 use parking_lot::RwLock;
 use rw_stream_sink::RwStreamSink;
 use shadow_clone::shadow_clone;
-use std::cmp;
-use std::fs::Metadata;
-use std::future::Future;
-use std::io;
-use std::path::{Path, PathBuf};
-use std::pin::Pin;
-use std::sync::Arc;
-use std::task::Poll;
+use std::{
+    cmp,
+    fs::Metadata,
+    future::Future,
+    io,
+    path::{Path, PathBuf},
+    pin::Pin,
+    sync::Arc,
+    task::Poll,
+};
 use tokio_util::io::poll_read_buf;
 use tracing::info;
-use warp::hyper::Body;
-use warp::path::FullPath;
+use warp::{hyper::Body, path::FullPath};
 
 use futures::{ready, stream, FutureExt, TryFutureExt};
 use headers::{
@@ -29,13 +28,14 @@ use headers::{
     IfModifiedSince, IfRange, IfUnmodifiedSince, LastModified, Range,
 };
 use percent_encoding::percent_decode_str;
-use tokio::fs::File as TkFile;
-use tokio::io::AsyncSeekExt;
+use tokio::{fs::File as TkFile, io::AsyncSeekExt};
 
 use tokio_util::compat::FuturesAsyncReadCompatExt;
-use warp::reject::{self, Rejection};
-use warp::reply::{Reply, Response};
-use warp::Filter;
+use warp::{
+    reject::{self, Rejection},
+    reply::{Reply, Response},
+    Filter,
+};
 
 pub async fn internal_server(
     new_conn_rx: mpsc::Receiver<RwStreamSink<MixedChannel>>,

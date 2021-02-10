@@ -1,37 +1,48 @@
-use crate::entities::{
-    AccessKeyId, AccountName, ConfigName, InstanceId, ProfileName, ProjectName, SmolStr, TunnelId,
+use crate::{
+    entities::{
+        AccessKeyId, AccountName, ConfigName, InstanceId, ProfileName, ProjectName, SmolStr,
+        TunnelId,
+    },
+    tunnel::connector::ConnectorRequest,
 };
-use crate::tunnel::connector::ConnectorRequest;
 use bytes::BytesMut;
-use futures::channel::{mpsc, oneshot};
-use futures::select_biased;
-use futures::stream::StreamExt;
-use futures::task::{Context, Poll};
-use futures::{pin_mut, Future, FutureExt, Sink, SinkExt, Stream};
-use hashbrown::hash_map::Entry;
-use hashbrown::HashMap;
+use futures::{
+    channel::{mpsc, oneshot},
+    pin_mut, select_biased,
+    stream::StreamExt,
+    task::{Context, Poll},
+    Future, FutureExt, Sink, SinkExt, Stream,
+};
+use hashbrown::{hash_map::Entry, HashMap};
 use parking_lot::Mutex;
 use shadow_clone::shadow_clone;
-use std::convert::{TryFrom, TryInto};
-use std::fmt;
-use std::fmt::Formatter;
-use std::net::IpAddr;
-use std::net::SocketAddr;
-use std::sync::Arc;
-use std::time::Duration;
-use std::{io, mem};
+use std::{
+    convert::{TryFrom, TryInto},
+    fmt,
+    fmt::Formatter,
+    io, mem,
+    net::{IpAddr, SocketAddr},
+    sync::Arc,
+    time::Duration,
+};
 use stop_handle::{stop_handle, StopHandle};
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, ReadBuf};
-use tokio::macros::support::Pin;
-use tokio::net::TcpStream;
-use tokio::time::{sleep, timeout};
+use tokio::{
+    io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, ReadBuf},
+    macros::support::Pin,
+    net::TcpStream,
+    time::{sleep, timeout},
+};
 use tracing::{debug, info, warn};
 use trust_dns_resolver::TokioAsyncResolver;
 
-use crate::config_core::ClientConfig;
-use crate::tunnel::connector::{Compression, ConnectTarget, Connector};
-use crate::tunnel::mixed_channel::to_async_rw;
-use crate::tunnel::{Error, MixedChannel};
+use crate::{
+    config_core::ClientConfig,
+    tunnel::{
+        connector::{Compression, ConnectTarget, Connector},
+        mixed_channel::to_async_rw,
+        Error, MixedChannel,
+    },
+};
 use lru_time_cache::LruCache;
 use parking_lot::RwLock;
 use rand::{thread_rng, Rng};
@@ -1238,8 +1249,7 @@ mod test {
     use crate::tunnel::framed::{client_framed, server_framed};
 
     use super::*;
-    use crate::config_core::UpstreamDefinition;
-    use crate::config_core::{ClientConfig, ClientConfigRevision};
+    use crate::config_core::{ClientConfig, ClientConfigRevision, UpstreamDefinition};
     use std::collections::BTreeMap;
     use trust_dns_resolver::TokioHandle;
 

@@ -1,8 +1,11 @@
 use core::fmt;
 use http::Method;
-use serde::de::{SeqAccess, Visitor};
-use serde::ser::SerializeSeq;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{
+    de,
+    de::{SeqAccess, Visitor},
+    ser::SerializeSeq,
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MethodMatcher {

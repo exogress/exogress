@@ -1,6 +1,4 @@
-use crate::config_core::cache::Cache;
-use crate::config_core::post_processing::PostProcessing;
-use crate::config_core::rebase::Rebase;
+use crate::config_core::{cache::Cache, post_processing::PostProcessing, rebase::Rebase};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 

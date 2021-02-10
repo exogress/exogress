@@ -1,9 +1,12 @@
 use std::fmt;
 
 use regex::Regex;
-use serde::de::{IntoDeserializer, SeqAccess, Visitor};
-use serde::ser::SerializeSeq;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{
+    de,
+    de::{IntoDeserializer, SeqAccess, Visitor},
+    ser::SerializeSeq,
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 
 use crate::config_core::path_segment::{UrlPathSegment, UrlPathSegmentVisitor};
 use std::hash::{Hash, Hasher};

@@ -1,12 +1,14 @@
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
-use std::collections::BTreeMap;
-use std::fmt;
+use std::{collections::BTreeMap, fmt};
 
 use regex::Regex;
-use serde::de::{IntoDeserializer, SeqAccess, Visitor};
-use serde::ser::SerializeSeq;
-use serde::{de, Deserializer, Serializer};
+use serde::{
+    de,
+    de::{IntoDeserializer, SeqAccess, Visitor},
+    ser::SerializeSeq,
+    Deserializer, Serializer,
+};
 
 use crate::config_core::path::{ANY_SEGMENTS_MATCH_STR, ANY_STR};
 use std::hash::{Hash, Hasher};

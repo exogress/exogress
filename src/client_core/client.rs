@@ -1,21 +1,22 @@
 use anyhow::anyhow;
-use futures::channel::{mpsc, oneshot};
-use futures::{pin_mut, select_biased, FutureExt, SinkExt, StreamExt};
+use futures::{
+    channel::{mpsc, oneshot},
+    pin_mut, select_biased, FutureExt, SinkExt, StreamExt,
+};
 use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use shadow_clone::shadow_clone;
-use std::path::PathBuf;
-use std::time::Duration;
-use std::{env, io, mem};
-use tokio::fs::File;
-use tokio::io::AsyncReadExt;
-use tokio::sync::watch;
+use std::{env, io, mem, path::PathBuf, time::Duration};
+use tokio::{fs::File, io::AsyncReadExt, sync::watch};
 use tracing::{debug, error, info, warn};
 use trust_dns_resolver::TokioAsyncResolver;
 use url::Url;
 
-use crate::config_core::{ClientConfig, Config, UpstreamSocketAddr};
-use crate::entities::{
-    AccessKeyId, AccountName, LabelName, LabelValue, ProfileName, ProjectName, SmolStr, Upstream,
+use crate::{
+    config_core::{ClientConfig, Config, UpstreamSocketAddr},
+    entities::{
+        AccessKeyId, AccountName, LabelName, LabelValue, ProfileName, ProjectName, SmolStr,
+        Upstream,
+    },
 };
 
 use crate::client_core::{signal_client, tunnel};
@@ -25,16 +26,15 @@ use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tracing_futures::Instrument;
 
-use crate::client_core::health::UpstreamsHealth;
-use crate::client_core::internal_server::internal_server;
-use crate::common_utils::backoff::Backoff;
-use crate::common_utils::jwt::jwt_token;
-use crate::config_core::DEFAULT_CONFIG_FILE;
+use crate::{
+    client_core::{health::UpstreamsHealth, internal_server::internal_server},
+    common_utils::{backoff::Backoff, jwt::jwt_token},
+    config_core::DEFAULT_CONFIG_FILE,
+};
 use dashmap::DashMap;
 use derive_builder::Builder;
 use hashbrown::HashMap;
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tokio::time::sleep;
 
 pub const DEFAULT_CLOUD_ENDPOINT: &str = "https://app.exogress.com/";

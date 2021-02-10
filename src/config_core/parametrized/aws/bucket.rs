@@ -1,11 +1,8 @@
 use crate::config_core::parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema};
 use core::fmt::{self, Formatter};
-use serde::de::Visitor;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
-use std::convert::TryFrom;
-use std::hash::Hash;
-use std::str::FromStr;
+use std::{convert::TryFrom, hash::Hash, str::FromStr};
 use url::Url;
 
 // https://github.com/durch/rust-s3/blob/45dd3f25a4047186e414e47fcedb4f83e492368e/aws-region/src/region.rs

@@ -1,22 +1,23 @@
 //! Upstream healthchecks
 
-use crate::config_core::{is_profile_active, ClientConfig, Probe, UpstreamDefinition};
-use crate::entities::{HealthCheckProbeName, ProfileName, Upstream};
-use crate::signaling::{ProbeHealthStatus, UnhealthyReason};
+use crate::{
+    config_core::{is_profile_active, ClientConfig, Probe, UpstreamDefinition},
+    entities::{HealthCheckProbeName, ProfileName, Upstream},
+    signaling::{ProbeHealthStatus, UnhealthyReason},
+};
 use core::mem;
-use futures::channel::{mpsc, oneshot};
-use futures::SinkExt;
+use futures::{
+    channel::{mpsc, oneshot},
+    SinkExt,
+};
 use hashbrown::{HashMap, HashSet};
 use http::Request;
-use hyper::client::HttpConnector;
-use hyper::Body;
+use hyper::{client::HttpConnector, Body};
 use parking_lot::Mutex;
 use shadow_clone::shadow_clone;
 use std::sync::Arc;
 use tokio::runtime::Handle;
-use tracing::error;
-use tracing::span;
-use tracing::Level;
+use tracing::{error, span, Level};
 use tracing_futures::Instrument;
 use url::Url;
 

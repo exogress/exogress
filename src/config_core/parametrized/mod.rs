@@ -1,16 +1,12 @@
-use crate::config_core::parametrized::acl::Acl;
-use crate::config_core::parametrized::aws::bucket::S3Bucket;
-use crate::config_core::parametrized::aws::credentials::AwsCredentials;
-use crate::config_core::parametrized::google::bucket::GcsBucket;
-use crate::config_core::parametrized::google::credentials::GoogleCredentials;
-use crate::config_core::parametrized::mime_types::MimeTypes;
+use crate::config_core::parametrized::{
+    acl::Acl,
+    aws::{bucket::S3Bucket, credentials::AwsCredentials},
+    google::{bucket::GcsBucket, credentials::GoogleCredentials},
+    mime_types::MimeTypes,
+};
 pub use container::Container;
-use core::convert::TryFrom;
-use core::fmt;
-use core::fmt::Formatter;
-use core::str::FromStr;
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use core::{convert::TryFrom, fmt, fmt::Formatter, str::FromStr};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub mod acl;
 pub mod aws;

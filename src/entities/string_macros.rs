@@ -176,8 +176,7 @@ macro_rules! string_type {
 #[cfg(test)]
 mod test {
     use bytes::Bytes;
-    use std::convert::TryFrom;
-    use std::str::FromStr;
+    use std::{convert::TryFrom, str::FromStr};
 
     string_type!(TestIdentifier);
 

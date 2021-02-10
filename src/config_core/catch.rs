@@ -1,13 +1,14 @@
-use crate::config_core::status_code::{StatusCode, StatusCodeRangeParseError};
-use crate::config_core::StatusCodeRange;
-use crate::entities::{ExceptionSegment, StaticResponseName, StringIdentifierParseError};
+use crate::{
+    config_core::{
+        status_code::{StatusCode, StatusCodeRangeParseError},
+        StatusCodeRange,
+    },
+    entities::{ExceptionSegment, StaticResponseName, StringIdentifierParseError},
+};
 use core::fmt;
-use serde::de::Visitor;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
-use std::collections::BTreeMap;
-use std::convert::TryFrom;
-use std::str::FromStr;
+use std::{collections::BTreeMap, convert::TryFrom, str::FromStr};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 #[serde(tag = "action", deny_unknown_fields)]

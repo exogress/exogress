@@ -2,27 +2,28 @@ use std::io;
 
 use std::net::SocketAddr;
 
-use crate::config_core::ClientConfig;
-use crate::entities::{AccessKeyId, AccountName, InstanceId, ProfileName, ProjectName, SmolStr};
-use crate::tunnel::{
-    client_framed, client_listener, MixedChannel, TunnelHello, TunnelHelloResponse, ALPN_PROTOCOL,
+use crate::{
+    config_core::ClientConfig,
+    entities::{AccessKeyId, AccountName, InstanceId, ProfileName, ProjectName, SmolStr},
+    tunnel::{
+        client_framed, client_listener, MixedChannel, TunnelHello, TunnelHelloResponse,
+        ALPN_PROTOCOL,
+    },
 };
 use core::time::Duration;
 use futures::channel::mpsc;
 use parking_lot::RwLock;
-use rand::seq::IteratorRandom;
-use rand::thread_rng;
+use rand::{seq::IteratorRandom, thread_rng};
 use rustls::ClientConfig as RustlsClientConfig;
 use rw_stream_sink::RwStreamSink;
-use std::convert::TryInto;
-use std::sync::Arc;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpStream;
-use tokio_rustls::webpki::DNSNameRef;
-use tokio_rustls::{rustls, TlsConnector};
+use std::{convert::TryInto, sync::Arc};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpStream,
+};
+use tokio_rustls::{rustls, webpki::DNSNameRef, TlsConnector};
 use tracing::{error, info};
-use trust_dns_resolver::error::ResolveError;
-use trust_dns_resolver::TokioAsyncResolver;
+use trust_dns_resolver::{error::ResolveError, TokioAsyncResolver};
 use warp::hyper::client::conn;
 use webpki::InvalidDNSNameError;
 

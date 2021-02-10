@@ -1,26 +1,30 @@
-use crate::config_core::catch::{Exception, RescueItem};
-use crate::config_core::methods::MethodMatcher;
-use crate::config_core::path::MatchingPath;
-use crate::config_core::path_modify::PathSegmentsModify;
-use crate::config_core::query::QueryMatcher;
-use crate::config_core::{StatusCode, StatusCodeRange};
-use crate::entities::{ProfileName, StaticResponseName};
+use crate::{
+    config_core::{
+        catch::{Exception, RescueItem},
+        methods::MethodMatcher,
+        path::MatchingPath,
+        path_modify::PathSegmentsModify,
+        query::QueryMatcher,
+        StatusCode, StatusCodeRange,
+    },
+    entities::{ProfileName, StaticResponseName},
+};
 use core::fmt;
-use http::header::HeaderName;
-use http::{HeaderMap, HeaderValue};
+use http::{header::HeaderName, HeaderMap, HeaderValue};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use smol_str::SmolStr;
-use std::collections::BTreeMap;
-use std::hash::{Hash, Hasher};
+use std::{
+    collections::BTreeMap,
+    hash::{Hash, Hasher},
+};
 
 #[derive(Debug, Hash, PartialEq, Clone)]
 pub struct HeaderValueWrapper(HeaderValue);
 
 mod header_value_ser {
     use super::*;
-    use serde::de::Visitor;
-    use serde::{de, Deserializer, Serializer};
+    use serde::{de, de::Visitor, Deserializer, Serializer};
 
     struct HeaderValueWrapperVisitor;
 

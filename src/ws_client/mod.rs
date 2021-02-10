@@ -1,17 +1,13 @@
-use rand::seq::IteratorRandom;
-use rand::thread_rng;
+use rand::{seq::IteratorRandom, thread_rng};
 use rustls::internal::pemfile::{certs, pkcs8_private_keys};
-use std::io;
-use std::io::Cursor;
-use std::net::IpAddr;
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{io, io::Cursor, net::IpAddr, str::FromStr, sync::Arc};
 use tokio::net::TcpStream;
-use tokio_rustls::rustls::ClientConfig;
-use tokio_rustls::webpki::DNSNameRef;
-use tokio_rustls::{client::TlsStream, TlsConnector};
-use tokio_tungstenite::tungstenite::http::{Request, Response};
-use tokio_tungstenite::{client_async, WebSocketStream};
+use tokio_rustls::{client::TlsStream, rustls::ClientConfig, webpki::DNSNameRef, TlsConnector};
+use tokio_tungstenite::{
+    client_async,
+    tungstenite::http::{Request, Response},
+    WebSocketStream,
+};
 use tokio_util::either::Either;
 use trust_dns_resolver::TokioAsyncResolver;
 use url::Url;

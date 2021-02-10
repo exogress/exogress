@@ -1,11 +1,11 @@
-use std::io;
-use std::num::TryFromIntError;
+use std::{io, num::TryFromIntError};
 
 use futures::channel::mpsc;
 
-use crate::entities::{StringIdentifierParseError, Upstream};
-use crate::tunnel::connector::ConnectTargetParseError;
-use crate::tunnel::proto::Slot;
+use crate::{
+    entities::{StringIdentifierParseError, Upstream},
+    tunnel::{connector::ConnectTargetParseError, proto::Slot},
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

@@ -1,13 +1,15 @@
 use futures::{ready, Stream};
 use pin_project::pin_project;
 use rand::{self, Rng};
-use std::cmp;
-use std::convert::TryInto;
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::{Arc, Mutex};
-use std::task::{Context, Poll, Waker};
-use std::time::Duration;
+use std::{
+    cmp,
+    convert::TryInto,
+    future::Future,
+    pin::Pin,
+    sync::{Arc, Mutex},
+    task::{Context, Poll, Waker},
+    time::Duration,
+};
 use tokio::time::{sleep, Sleep};
 
 struct BackoffHandleInner {
@@ -126,8 +128,7 @@ impl Stream for Backoff {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use futures::pin_mut;
-    use futures::stream::StreamExt;
+    use futures::{pin_mut, stream::StreamExt};
     use tokio::time::Instant;
 
     #[tokio::test]
