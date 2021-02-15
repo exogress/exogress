@@ -1,8 +1,9 @@
+use schemars::JsonSchema;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::{fmt, str::FromStr};
 
-#[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
 #[serde(transparent)]
 pub struct ConfigVersion(pub Version);
 

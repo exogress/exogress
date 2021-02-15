@@ -1,4 +1,5 @@
 pub use bytes;
+pub use schemars;
 pub use serde;
 pub use tracing;
 pub use ulid::{self, Ulid, ULID_LEN};

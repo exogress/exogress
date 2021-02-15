@@ -24,7 +24,7 @@ pub enum PathSegmentParseError {
     ZeroByte,
 }
 
-#[derive(Debug, Hash, Eq, Serialize, PartialEq, Clone)]
+#[derive(Debug, Hash, Eq, Serialize, PartialEq, Clone, schemars::JsonSchema)]
 #[serde(transparent)]
 pub struct UrlPathSegment(SmolStr);
 

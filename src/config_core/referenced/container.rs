@@ -1,9 +1,13 @@
 use crate::{
     config_core::{
-        parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema},
-        Exception,
+        referenced::{Parameter, ParameterSchema, ReferencedConfigValue},
+        refinable::{NonExistingSharedEntity, RefinableSet, SharedEntity},
+        Exception, Scope,
     },
-    entities::ParameterName,
+    entities::{
+        schemars::{gen::SchemaGenerator, schema::Schema},
+        ParameterName,
+    },
 };
 use core::fmt;
 use hashbrown::HashMap;
@@ -16,17 +20,34 @@ use smol_str::SmolStr;
 use std::{convert::TryInto, marker::PhantomData};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
-pub enum Container<P>
+pub enum Container<P, R = NonExistingSharedEntity>
 where
-    P: ParameterOrConfigValue,
+    P: ReferencedConfigValue,
+    R: SharedEntity,
 {
+    Shared(R),
     Parameter(ParameterName),
     Value(P),
 }
 
-impl<P> Serialize for Container<P>
+impl<P, R> schemars::JsonSchema for Container<P, R>
 where
-    P: ParameterOrConfigValue,
+    P: ReferencedConfigValue,
+    R: SharedEntity,
+{
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
+}
+
+impl<P, R> Serialize for Container<P, R>
+where
+    P: ReferencedConfigValue,
+    R: SharedEntity,
 {
     fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
     where
@@ -35,12 +56,18 @@ where
         match self {
             Container::Parameter(param) => serializer.serialize_str(format!("@{}", param).as_str()),
             Container::Value(val) => val.serialize(serializer),
+            Container::Shared(reference) => {
+                serializer.serialize_str(format!("{}", reference).as_str())
+            }
         }
     }
 }
 
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
+    #[error("name {_0} is not defined")]
+    NameNotDefined(SmolStr),
+
     #[error("parameter {_0} is not defined")]
     ParamNotDefined(ParameterName),
 
@@ -78,15 +105,30 @@ impl Error {
 
                 ("config-error:schema-mismatch".try_into().unwrap(), data)
             }
+            Error::NameNotDefined(name) => {
+                data.insert("reference-name".into(), name.to_string().into());
+                (
+                    "config-error:reference-name-not-defined"
+                        .try_into()
+                        .unwrap(),
+                    data,
+                )
+            }
         }
     }
 }
 
-impl<P> Container<P>
+impl<P, R> Container<P, R>
 where
-    P: ParameterOrConfigValue,
+    P: ReferencedConfigValue,
+    R: SharedEntity<Value = P>,
 {
-    pub fn resolve(self, params: &HashMap<ParameterName, Parameter>) -> Result<P, Error> {
+    pub fn resolve(
+        self,
+        params: &HashMap<ParameterName, Parameter>,
+        refinable_set: &RefinableSet,
+        scope: &Scope,
+    ) -> Result<P, Error> {
         match self {
             Container::Parameter(param) => {
                 let found = params
@@ -102,25 +144,66 @@ where
                 })
             }
             Container::Value(v) => Ok(v),
+            Container::Shared(ref_name) => Ok(ref_name
+                .get_refined(refinable_set, &scope)
+                .ok_or_else(|| Error::NameNotDefined(ref_name.to_string().into()))?
+                .0),
         }
     }
 }
 
-struct ContainerVisitor<P>
+impl<P, R> Container<P, R>
 where
-    P: ParameterOrConfigValue,
+    P: ReferencedConfigValue,
+    R: SharedEntity,
 {
-    marker: PhantomData<P>,
+    pub fn resolve_non_referenced(
+        self,
+        params: &HashMap<ParameterName, Parameter>,
+    ) -> Result<P, Error> {
+        match self {
+            Container::Parameter(param) => {
+                let found = params
+                    .get(&param)
+                    .ok_or(Error::ParamNotDefined(param))?
+                    .clone();
+
+                let provided_schema = found.schema();
+
+                found.try_into().map_err(|_| Error::SchemaMismatch {
+                    expected: P::schema(),
+                    provided: provided_schema,
+                })
+            }
+            Container::Value(v) => Ok(v),
+            Container::Shared(_) => {
+                unreachable!()
+            }
+        }
+    }
 }
 
-impl<'de, P> Visitor<'de> for ContainerVisitor<P>
+struct ContainerVisitor<P, R>
 where
-    P: ParameterOrConfigValue,
+    P: ReferencedConfigValue,
+    R: SharedEntity,
 {
-    type Value = Container<P>;
+    marker_1: PhantomData<P>,
+    marker_2: PhantomData<R>,
+}
+
+impl<'de, P, R> Visitor<'de> for ContainerVisitor<P, R>
+where
+    P: ReferencedConfigValue,
+    R: SharedEntity,
+{
+    type Value = Container<P, R>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "@param_name or expected value schema",)
+        write!(
+            formatter,
+            "@param_name, entity_name or expected value schema",
+        )
     }
 
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -134,7 +217,11 @@ where
                     .map_err(|_| de::Error::custom("bad parameter name"))?,
             ))
         } else {
-            Err(de::Error::custom("param name should start with '@'"))
+            Ok(Container::Shared(
+                value
+                    .parse()
+                    .map_err(|_| de::Error::custom("bad entity name"))?,
+            ))
         }
     }
 
@@ -157,16 +244,18 @@ where
     }
 }
 
-impl<'de, P> Deserialize<'de> for Container<P>
+impl<'de, P, R> Deserialize<'de> for Container<P, R>
 where
-    P: ParameterOrConfigValue,
+    P: ReferencedConfigValue,
+    R: SharedEntity,
 {
-    fn deserialize<D>(deserializer: D) -> Result<Container<P>, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Container<P, R>, D::Error>
     where
         D: Deserializer<'de>,
     {
         deserializer.deserialize_any(ContainerVisitor {
-            marker: PhantomData::default(),
+            marker_1: PhantomData::default(),
+            marker_2: PhantomData::default(),
         })
     }
 }
@@ -174,18 +263,20 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::config_core::parametrized::acl::{Acl, AclEntry};
+    use crate::config_core::referenced::acl::{Acl, AclEntry};
+
+    pub type NonSharedContainer<P> = Container<P, NonExistingSharedEntity>;
 
     #[test]
     fn test_serialize_param_name() {
-        let p = Container::Parameter::<Acl>("param".parse().unwrap());
+        let p = NonSharedContainer::<Acl>::Parameter("param".parse().unwrap());
         let s = serde_json::to_string(&p).unwrap();
         assert_eq!("\"@param\"", s);
     }
 
     #[test]
     fn test_serialize_value() {
-        let p = Container::Value(Acl(vec![AclEntry::Allow {
+        let p = NonSharedContainer::Value(Acl(vec![AclEntry::Allow {
             identity: "username".into(),
         }]));
         let s = serde_json::to_string(&p).unwrap();
@@ -194,16 +285,20 @@ mod test {
 
     #[test]
     fn test_deserialize_param_name() {
-        let s: Container<Acl> = serde_json::from_str("\"@param\"").unwrap();
-        assert_eq!(s, Container::<Acl>::Parameter("param".parse().unwrap()));
+        let s: NonSharedContainer<Acl> = serde_json::from_str("\"@param\"").unwrap();
+        assert_eq!(
+            s,
+            NonSharedContainer::<Acl>::Parameter("param".parse().unwrap())
+        );
     }
 
     #[test]
     fn test_deserialize_value() {
-        let s: Container<Acl> = serde_json::from_str("[{\"allow\":\"username\"}]").unwrap();
+        let s: NonSharedContainer<Acl> =
+            serde_json::from_str("[{\"allow\":\"username\"}]").unwrap();
         assert_eq!(
             s,
-            Container::<Acl>::Value(Acl(vec![AclEntry::Allow {
+            NonSharedContainer::<Acl>::Value(Acl(vec![AclEntry::Allow {
                 identity: "username".into()
             }]))
         );

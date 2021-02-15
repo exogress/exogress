@@ -1,4 +1,4 @@
-use crate::config_core::parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema};
+use crate::config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue};
 use core::fmt::{self, Formatter};
 use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
@@ -7,7 +7,7 @@ use url::Url;
 
 // https://github.com/durch/rust-s3/blob/45dd3f25a4047186e414e47fcedb4f83e492368e/aws-region/src/region.rs
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, schemars::JsonSchema)]
 pub enum S3Region {
     /// us-east-1
     UsEast1,
@@ -225,14 +225,13 @@ impl<'de> Deserialize<'de> for S3Region {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
 pub struct S3Bucket {
     pub name: SmolStr,
     pub region: S3Region,
 }
 
-impl ParameterOrConfigValue for S3Bucket {
+impl ReferencedConfigValue for S3Bucket {
     fn schema() -> ParameterSchema {
         ParameterSchema::S3Bucket
     }

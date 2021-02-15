@@ -2,8 +2,7 @@ use crate::config_core::{cache::Cache, post_processing::PostProcessing, rebase::
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
 pub enum Wildcard {
     #[serde(rename = "_")]
     Any,
@@ -13,10 +12,14 @@ pub enum Wildcard {
     ClientErrors,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields, untagged)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[serde(untagged)]
 pub enum Error {
-    StatusCode(#[serde(with = "http_serde::status_code")] http::StatusCode),
+    StatusCode(
+        #[schemars(schema_with = "super::unimplemented_schema")]
+        #[serde(with = "http_serde::status_code")]
+        http::StatusCode,
+    ),
     Placeholder(Wildcard),
 }
 
@@ -26,8 +29,7 @@ impl From<http::StatusCode> for Error {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
 pub struct StaticDir {
     pub dir: PathBuf,
 

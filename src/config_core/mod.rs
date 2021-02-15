@@ -25,6 +25,7 @@ pub use rule::{
     Action, Filter, ModifyHeaders, OnResponse, RequestModifications, ResponseModifications, Rule,
     TrailingSlashFilterRule, TrailingSlashModification,
 };
+pub use scope::Scope;
 use semver::{Version, VersionReq};
 pub use static_dir::StaticDir;
 pub use status_code::{StatusCode, StatusCodeRange};
@@ -39,7 +40,6 @@ mod client_config;
 mod config;
 mod gcs;
 mod methods;
-pub mod parametrized;
 mod pass_through;
 mod path;
 mod path_modify;
@@ -51,9 +51,12 @@ mod query;
 // mod query_modify;
 mod rebase;
 mod redirect;
+pub mod referenced;
+pub mod refinable;
 mod response;
 mod rule;
 mod s3;
+mod scope;
 mod static_dir;
 mod status_code;
 mod upstream;
@@ -92,6 +95,12 @@ pub fn is_profile_active(
 
 pub fn is_default<T: Default + PartialEq>(v: &T) -> bool {
     v == &Default::default()
+}
+
+pub(crate) fn unimplemented_schema(
+    _gen: &mut schemars::gen::SchemaGenerator,
+) -> schemars::schema::Schema {
+    unimplemented!()
 }
 
 #[cfg(test)]

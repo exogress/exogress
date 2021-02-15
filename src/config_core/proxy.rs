@@ -5,8 +5,7 @@ use crate::{
     entities::Upstream,
 };
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
 pub struct Proxy {
     pub upstream: Upstream,
 

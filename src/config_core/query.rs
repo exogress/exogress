@@ -10,13 +10,26 @@ use serde::{
     Deserializer, Serializer,
 };
 
-use crate::config_core::path::{ANY_SEGMENTS_MATCH_STR, ANY_STR};
+use crate::{
+    config_core::path::{ANY_SEGMENTS_MATCH_STR, ANY_STR},
+    entities::schemars::{gen::SchemaGenerator, schema::Schema},
+};
 use std::hash::{Hash, Hasher};
 
 #[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Clone)]
 #[serde(transparent)]
 pub struct QueryMatcher {
     pub inner: BTreeMap<SmolStr, Option<MatchQueryValue>>,
+}
+
+impl schemars::JsonSchema for QueryMatcher {
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
 }
 
 impl QueryMatcher {

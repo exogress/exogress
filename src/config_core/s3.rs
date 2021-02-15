@@ -1,16 +1,15 @@
 use crate::config_core::{
     cache::Cache,
-    parametrized::{
+    post_processing::PostProcessing,
+    rebase::Rebase,
+    referenced::{
         aws::{bucket::S3Bucket, credentials::AwsCredentials},
         Container,
     },
-    post_processing::PostProcessing,
-    rebase::Rebase,
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
 pub struct S3BucketAccess {
     pub bucket: Container<S3Bucket>,
     pub credentials: Option<Container<AwsCredentials>>,

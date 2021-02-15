@@ -1,15 +1,14 @@
-use crate::config_core::parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema};
+use crate::config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use std::convert::TryFrom;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
 pub struct GcsBucket {
     pub name: SmolStr,
 }
 
-impl ParameterOrConfigValue for GcsBucket {
+impl ReferencedConfigValue for GcsBucket {
     fn schema() -> ParameterSchema {
         ParameterSchema::GcsBucket
     }

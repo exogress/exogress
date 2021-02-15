@@ -1,3 +1,4 @@
+use crate::entities::schemars::{gen::SchemaGenerator, schema::Schema};
 use core::fmt;
 use http::Method;
 use serde::{
@@ -11,6 +12,16 @@ use serde::{
 pub enum MethodMatcher {
     All,
     Exact(Vec<Method>),
+}
+
+impl schemars::JsonSchema for MethodMatcher {
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
 }
 
 impl MethodMatcher {

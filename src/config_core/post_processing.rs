@@ -1,14 +1,17 @@
-use crate::config_core::parametrized::{mime_types::MimeTypes, Container};
+use crate::config_core::{
+    referenced::{mime_types::MimeTypes, Container},
+    refinable::NonExistingSharedEntity,
+};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ImagePostProcessing {
     #[serde(default)]
     pub webp: WebpPostProcessing,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct WebpPostProcessing {
     #[serde(default = "default_webp")]
@@ -35,7 +38,7 @@ fn default_webp() -> bool {
     true
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Encoding {
     #[serde(default = "default_compression")]
@@ -57,7 +60,7 @@ pub struct Encoding {
     pub min_size: u32,
 }
 
-fn default_compressible_mime_types() -> Container<MimeTypes> {
+fn default_compressible_mime_types() -> Container<MimeTypes, NonExistingSharedEntity> {
     Container::Parameter("compressible-mime-types".parse().unwrap())
 }
 
@@ -69,7 +72,7 @@ fn default_compression_min_size() -> u32 {
     100
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct PostProcessing {
     #[serde(default)]

@@ -1,13 +1,13 @@
-use crate::config_core::parametrized::{Parameter, ParameterOrConfigValue, ParameterSchema};
+use crate::config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use std::convert::TryFrom;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
 #[serde(transparent)]
 pub struct Acl(pub Vec<AclEntry>);
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
 #[serde(untagged)]
 pub enum AclEntry {
     Allow {
@@ -20,7 +20,7 @@ pub enum AclEntry {
     },
 }
 
-impl ParameterOrConfigValue for Acl {
+impl ReferencedConfigValue for Acl {
     fn schema() -> ParameterSchema {
         ParameterSchema::Acl
     }

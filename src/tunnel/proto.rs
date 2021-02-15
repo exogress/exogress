@@ -1249,7 +1249,9 @@ mod test {
     use crate::tunnel::framed::{client_framed, server_framed};
 
     use super::*;
-    use crate::config_core::{ClientConfig, ClientConfigRevision, UpstreamDefinition};
+    use crate::config_core::{
+        refinable::Refinable, ClientConfig, ClientConfigRevision, UpstreamDefinition,
+    };
     use std::collections::BTreeMap;
     use trust_dns_resolver::TokioHandle;
 
@@ -1343,8 +1345,10 @@ mod test {
                 name: "my-config".parse().unwrap(),
                 mount_points: Default::default(),
                 upstreams,
-                static_responses: Default::default(),
-                rescue: vec![],
+                refinable: Refinable {
+                    static_responses: Default::default(),
+                    rescue: vec![],
+                },
             }
             .into(),
         ));
