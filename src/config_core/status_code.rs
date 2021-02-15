@@ -1,3 +1,4 @@
+use crate::entities::schemars::{gen::SchemaGenerator, schema::Schema};
 use core::fmt;
 use http::status::InvalidStatusCode;
 use serde::{
@@ -9,6 +10,16 @@ use std::{convert::TryInto, str::FromStr};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub struct StatusCode(pub http::StatusCode);
+
+impl schemars::JsonSchema for StatusCode {
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
+}
 
 impl Serialize for StatusCode {
     fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
@@ -91,6 +102,16 @@ pub enum StatusCodeRange {
     Single(http::StatusCode),
     Range(http::StatusCode, http::StatusCode),
     List(Vec<http::StatusCode>),
+}
+
+impl schemars::JsonSchema for StatusCodeRange {
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
 }
 
 impl ToString for StatusCodeRange {

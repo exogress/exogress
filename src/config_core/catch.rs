@@ -1,22 +1,26 @@
 use crate::{
     config_core::{
+        referenced::Container,
         status_code::{StatusCode, StatusCodeRangeParseError},
-        StatusCodeRange,
+        StaticResponse, StatusCodeRange,
     },
-    entities::{ExceptionSegment, StaticResponseName, StringIdentifierParseError},
+    entities::{
+        schemars::{gen::SchemaGenerator, schema::Schema},
+        ExceptionSegment, StaticResponseName, StringIdentifierParseError,
+    },
 };
 use core::fmt;
 use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 use std::{collections::BTreeMap, convert::TryFrom, str::FromStr};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-#[serde(tag = "action", deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[serde(tag = "action")]
 pub enum CatchAction {
     #[serde(rename = "respond")]
     StaticResponse {
         #[serde(rename = "static-response")]
-        name: StaticResponseName,
+        static_response: Container<StaticResponse, StaticResponseName>,
 
         #[serde(
             rename = "status-code",
@@ -29,7 +33,7 @@ pub enum CatchAction {
         data: BTreeMap<SmolStr, SmolStr>,
     },
 
-    #[serde(rename = "throw-exception")]
+    #[serde(rename = "throw")]
     Throw {
         #[serde(rename = "exception")]
         exception: Exception,
@@ -46,6 +50,16 @@ pub enum CatchAction {
 pub enum CatchMatcher {
     StatusCode(StatusCodeRange),
     Exception(Exception),
+}
+
+impl schemars::JsonSchema for CatchMatcher {
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
 }
 
 impl ToString for CatchMatcher {
@@ -123,7 +137,7 @@ impl<'de> Visitor<'de> for CatchMatcherVisitor {
     }
 }
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
 pub struct Exception(pub Vec<ExceptionSegment>);
 
 impl fmt::Display for Exception {
@@ -220,7 +234,7 @@ impl<'de> Deserialize<'de> for CatchMatcher {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
 pub struct RescueItem {
     pub catch: CatchMatcher,
 
@@ -267,7 +281,7 @@ action: next-handler
                 r#"
 ---
 catch: exception:proxy:timeout
-action: throw-exception
+action: throw
 exception: proxy:error
 "#
             )

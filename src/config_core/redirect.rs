@@ -1,6 +1,9 @@
 use std::fmt;
 
-use crate::config_core::path_modify::PathSegmentsModify;
+use crate::{
+    config_core::path_modify::PathSegmentsModify,
+    entities::schemars::{gen::SchemaGenerator, schema::Schema},
+};
 use serde::{
     de,
     de::{IntoDeserializer, SeqAccess, Visitor},
@@ -15,6 +18,16 @@ pub enum RedirectTo {
     WithBaseUrl(Url, Vec<PathSegmentsModify>),
     Segments(Vec<PathSegmentsModify>),
     Root,
+}
+
+impl schemars::JsonSchema for RedirectTo {
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
 }
 
 struct RedirectToItemVisitor;
@@ -133,8 +146,7 @@ impl Serialize for RedirectTo {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, schemars::JsonSchema)]
 pub enum RedirectType {
     #[serde(rename = "permanent")]
     Permanent,
@@ -148,8 +160,7 @@ impl Default for RedirectType {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, schemars::JsonSchema)]
 pub struct Redirect {
     #[serde(default)]
     redirect_type: RedirectType,

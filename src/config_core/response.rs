@@ -1,25 +1,20 @@
-use crate::config_core::{
-    redirect::RedirectTo,
-    referenced::{Parameter, ParameterSchema, ReferencedConfigValue},
+use crate::{
+    config_core::redirect::RedirectTo,
+    entities::schemars::{gen::SchemaGenerator, schema::Schema},
 };
 use http::{HeaderMap, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use smol_str::SmolStr;
-use std::{
-    convert::TryFrom,
-    hash::{Hash, Hasher},
-};
+use std::hash::{Hash, Hasher};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy, Eq, PartialEq)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy, Eq, PartialEq, schemars::JsonSchema)]
 pub enum TemplateEngine {
     #[serde(rename = "handlebars")]
     Handlebars,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy, Eq, PartialEq)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy, Eq, PartialEq, schemars::JsonSchema)]
 pub enum RedirectType {
     #[serde(rename = "moved-permanently")]
     MovedPermanently,
@@ -57,8 +52,9 @@ impl RedirectType {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default, schemars::JsonSchema)]
 pub struct HttpHeaders {
+    #[schemars(schema_with = "super::unimplemented_schema")]
     #[serde(
         with = "http_serde::header_map",
         default,
@@ -92,8 +88,7 @@ impl PartialEq for HttpHeaders {
 
 impl Eq for HttpHeaders {}
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
 pub struct RedirectResponse {
     #[serde(rename = "redirect-type")]
     pub redirect_type: RedirectType,
@@ -104,7 +99,6 @@ pub struct RedirectResponse {
 
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-#[serde(deny_unknown_fields)]
 pub struct ResponseBody {
     #[serde_as(as = "DisplayFromStr")]
     #[serde(rename = "content-type")]
@@ -113,8 +107,18 @@ pub struct ResponseBody {
     pub engine: Option<TemplateEngine>,
 }
 
+impl schemars::JsonSchema for ResponseBody {
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
+}
+
+#[serde_as]
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-#[serde(deny_unknown_fields)]
 pub struct RawResponse {
     #[serde(
         rename = "status-code",
@@ -129,12 +133,23 @@ pub struct RawResponse {
         default,
         skip_serializing_if = "Option::is_none"
     )]
-    pub fallback_accept: Option<SmolStr>,
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub fallback_accept: Option<mime::Mime>,
 
     pub body: Vec<ResponseBody>,
 
     #[serde(flatten)]
     pub common: HttpHeaders,
+}
+
+impl schemars::JsonSchema for RawResponse {
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
 }
 
 fn default_status_code() -> StatusCode {
@@ -145,8 +160,8 @@ fn is_default_status_code(code: &StatusCode) -> bool {
     code == &StatusCode::OK
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-#[serde(deny_unknown_fields, tag = "kind")]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[serde(tag = "kind")]
 pub enum StaticResponse {
     #[serde(rename = "redirect")]
     Redirect(RedirectResponse),

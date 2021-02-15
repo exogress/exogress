@@ -23,6 +23,7 @@ macro_rules! ulid_type {
             PartialEq,
             Ord,
             PartialOrd,
+            $crate::entities::schemars::JsonSchema,
         )]
         #[serde(transparent)]
         pub struct $x {

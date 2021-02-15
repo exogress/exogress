@@ -16,7 +16,7 @@ pub mod static_response;
 
 mod container;
 
-use crate::config_core::{CatchAction, RawResponse, RescueItem, ResponseBody, StaticResponse};
+use crate::config_core::{RawResponse, ResponseBody, StaticResponse};
 pub use container::Error;
 use http::StatusCode;
 
@@ -33,8 +33,22 @@ pub trait ReferencedConfigValue:
     fn schema() -> ParameterSchema;
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields, tag = "schema", content = "body")]
+impl ReferencedConfigValue for () {
+    fn schema() -> ParameterSchema {
+        unreachable!()
+    }
+}
+
+impl TryFrom<Parameter> for () {
+    type Error = ();
+
+    fn try_from(_value: Parameter) -> Result<Self, Self::Error> {
+        unimplemented!()
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[serde(tag = "schema", content = "body")]
 pub enum Parameter {
     #[serde(rename = "aws-credentials")]
     AwsCredentials(AwsCredentials),
@@ -103,8 +117,8 @@ pub const ALL_PARAMETER_SCHEMAS: [ParameterSchema; 7] = [
     ParameterSchema::StaticResponse,
 ];
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, Copy)]
-#[serde(deny_unknown_fields, tag = "kind")]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, Copy, schemars::JsonSchema)]
+#[serde(tag = "kind")]
 pub enum ParameterSchema {
     #[serde(rename = "aws-credentials")]
     AwsCredentials,

@@ -2,25 +2,28 @@ use hashbrown::HashSet;
 
 use crate::{
     config_core::{
-        application_firewall::ApplicationFirewall, auth::AuthDefinition, catch::RescueItem,
+        application_firewall::ApplicationFirewall, auth::AuthDefinition,
         client_config::ClientMount, config::default_rules, gcs::GcsBucketAccess,
         is_version_supported, referenced::Container, refinable::Refinable, s3::S3BucketAccess,
         Auth, AuthProvider, ClientHandler, ClientHandlerVariant, Config, ConfigVersion,
-        PassThrough, Rule, StaticResponse, CURRENT_VERSION,
+        PassThrough, Rule, CURRENT_VERSION,
     },
-    entities::{HandlerName, MountPointName, StaticResponseName},
+    entities::{HandlerName, MountPointName},
 };
 use maplit::btreemap;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     hash::{Hash, Hasher},
 };
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
 pub struct ProjectConfig {
+    #[schemars(skip)]
     pub version: ConfigVersion,
 
+    #[schemars(skip)]
     #[serde(
         rename = "mount-points",
         default,
@@ -28,6 +31,7 @@ pub struct ProjectConfig {
     )]
     pub mount_points: BTreeMap<MountPointName, ProjectMount>,
 
+    #[schemars(skip)]
     #[serde(flatten)]
     pub refinable: Refinable,
 }
@@ -151,7 +155,7 @@ impl Config for ProjectConfig {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, schemars::JsonSchema)]
 pub struct ProjectMount {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub handlers: BTreeMap<HandlerName, ProjectHandler>,
@@ -170,8 +174,8 @@ impl From<ProjectMount> for ClientMount {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields, tag = "kind")]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[serde(tag = "kind")]
 pub enum ProjectHandlerVariant {
     #[serde(rename = "auth")]
     Auth(Auth),
@@ -189,9 +193,7 @@ pub enum ProjectHandlerVariant {
     PassThrough(PassThrough),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
-// FIXME: report bug with enabling `deny_unknown_fields` and untagged and/or flatten enums
-// #[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, schemars::JsonSchema)]
 pub struct ProjectHandler {
     #[serde(flatten)]
     pub variant: ProjectHandlerVariant,

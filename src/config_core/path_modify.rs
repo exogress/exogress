@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use std::str::FromStr;
 
-#[derive(Serialize, Deserialize, Debug, Hash, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Hash, Clone, Eq, PartialEq, schemars::JsonSchema)]
 #[serde(transparent)]
 pub struct PathSegmentsModify(pub SmolStr);
 

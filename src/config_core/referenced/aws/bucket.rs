@@ -7,7 +7,7 @@ use url::Url;
 
 // https://github.com/durch/rust-s3/blob/45dd3f25a4047186e414e47fcedb4f83e492368e/aws-region/src/region.rs
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, schemars::JsonSchema)]
 pub enum S3Region {
     /// us-east-1
     UsEast1,
@@ -225,8 +225,7 @@ impl<'de> Deserialize<'de> for S3Region {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
 pub struct S3Bucket {
     pub name: SmolStr,
     pub region: S3Region,

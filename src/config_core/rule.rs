@@ -7,9 +7,12 @@ use crate::{
         path_modify::PathSegmentsModify,
         query::QueryMatcher,
         referenced::Container,
-        StaticResponse, StatusCode, StatusCodeRange, UrlPathSegment,
+        StaticResponse, StatusCode, StatusCodeRange,
     },
-    entities::{ProfileName, StaticResponseName},
+    entities::{
+        schemars::{gen::SchemaGenerator, schema::Schema},
+        ProfileName, StaticResponseName,
+    },
 };
 use core::fmt;
 use http::{header::HeaderName, HeaderMap, HeaderValue};
@@ -71,7 +74,21 @@ mod header_value_ser {
 
 #[derive(Debug, Eq, Clone, Serialize, Deserialize, Default)]
 #[serde(transparent)]
-pub struct HeaderMapWrapper(#[serde(with = "http_serde::header_map")] pub HeaderMap);
+pub struct HeaderMapWrapper(
+    #[serde(with = "http_serde::header_map")]
+    // #[schemars(schema_with = "unimplemented_schema")]
+    pub HeaderMap,
+);
+
+impl schemars::JsonSchema for HeaderMapWrapper {
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
+}
 
 impl From<HeaderMap> for HeaderMapWrapper {
     fn from(map: HeaderMap) -> Self {
@@ -102,7 +119,6 @@ impl HeaderMapWrapper {
 
 #[serde_as]
 #[derive(Debug, Default, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
-#[serde(deny_unknown_fields)]
 pub struct ModifyHeaders {
     #[serde(default, skip_serializing_if = "HeaderMapWrapper::is_empty")]
     pub insert: HeaderMapWrapper,
@@ -115,6 +131,16 @@ pub struct ModifyHeaders {
     pub remove: Vec<HeaderName>,
 }
 
+impl schemars::JsonSchema for ModifyHeaders {
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
+}
+
 impl ModifyHeaders {
     pub fn is_empty(&self) -> bool {
         HeaderMapWrapper::is_empty(&self.insert)
@@ -123,7 +149,7 @@ impl ModifyHeaders {
     }
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, schemars::JsonSchema)]
 pub enum TrailingSlashModification {
     #[serde(rename = "keep")]
     Keep,
@@ -141,8 +167,9 @@ impl Default for TrailingSlashModification {
     }
 }
 
-#[derive(Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(
+    Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, schemars::JsonSchema,
+)]
 pub struct RequestModifications {
     #[serde(default, skip_serializing_if = "ModifyHeaders::is_empty")]
     pub headers: ModifyHeaders,
@@ -157,8 +184,9 @@ pub struct RequestModifications {
     pub query: ModifyQuery,
 }
 
-#[derive(Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(
+    Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, schemars::JsonSchema,
+)]
 pub struct ModifyQuery {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub remove: Vec<SmolStr>,
@@ -170,28 +198,25 @@ impl ModifyQuery {
     }
 }
 
-#[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
 pub struct ResponseModifications {
     #[serde(default, skip_serializing_if = "ModifyHeaders::is_empty")]
     pub headers: ModifyHeaders,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
 pub struct OnResponse {
     pub when: ResponseConditions,
     pub modifications: ResponseModifications,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
 pub struct ResponseConditions {
     #[serde(rename = "status-code")]
     pub status_code: StatusCodeRange,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
 pub struct Rule {
     pub filter: Filter,
     #[serde(flatten)]
@@ -200,7 +225,7 @@ pub struct Rule {
     pub profiles: Option<Vec<ProfileName>>,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, Copy)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, Copy, schemars::JsonSchema)]
 pub enum TrailingSlashFilterRule {
     #[serde(rename = "require")]
     Require,
@@ -225,8 +250,7 @@ impl TrailingSlashFilterRule {
 }
 
 #[serde_as]
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
 pub struct Filter {
     pub path: MatchingPath,
 
@@ -244,8 +268,8 @@ pub struct Filter {
     pub trailing_slash: TrailingSlashFilterRule,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone)]
-#[serde(deny_unknown_fields, tag = "action")]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
+#[serde(tag = "action")]
 pub enum Action {
     /// process by the handler
     #[serde(rename = "invoke")]
@@ -291,7 +315,7 @@ pub enum Action {
     #[serde(rename = "respond")]
     Respond {
         #[serde(rename = "static-response")]
-        name: Container<StaticResponse, StaticResponseName>,
+        static_response: Container<StaticResponse, StaticResponseName>,
 
         #[serde(
             rename = "status-code",

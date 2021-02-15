@@ -60,7 +60,7 @@ macro_rules! string_type {
         }
 
         #[derive(
-            Debug, Clone, $crate::entities::serde::Serialize, Hash, Eq, PartialEq, Ord, PartialOrd,
+            Debug, Clone, $crate::entities::serde::Serialize, Hash, Eq, PartialEq, Ord, PartialOrd, $crate::entities::schemars::JsonSchema
         )]
         #[serde(transparent)]
         pub struct $x {

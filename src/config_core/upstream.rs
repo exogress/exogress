@@ -27,7 +27,7 @@ pub enum UpstreamSocketAddrParseError {
     Malformed,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct UpstreamSocketAddr {
     pub port: u16,
 
@@ -69,8 +69,7 @@ impl FromStr for UpstreamSocketAddr {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, schemars::JsonSchema)]
 pub struct UpstreamDefinition {
     #[serde(flatten)]
     pub addr: UpstreamSocketAddr,
@@ -103,8 +102,8 @@ impl UpstreamDefinition {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
-#[serde(deny_unknown_fields, tag = "kind")]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[serde(tag = "kind")]
 pub enum ProbeDetails {
     #[serde(rename = "liveness")]
     Liveness,
@@ -118,19 +117,22 @@ fn default_status_code_range() -> StatusCodeRange {
     StatusCodeRange::Single(StatusCode::OK)
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
 pub struct Probe {
     #[serde(flatten)]
     pub details: ProbeDetails,
     pub path: SmolStr,
+    #[schemars(schema_with = "super::unimplemented_schema")]
     #[serde(with = "humantime_serde")]
     pub timeout: Duration,
+    #[schemars(schema_with = "super::unimplemented_schema")]
     #[serde(with = "humantime_serde")]
     pub period: Duration,
 
     #[serde(default, skip_serializing_if = "HttpHeaders::is_default")]
     pub headers: HttpHeaders,
 
+    #[schemars(schema_with = "super::unimplemented_schema")]
     #[serde(with = "http_serde::method", default = "default_method")]
     pub method: Method,
 

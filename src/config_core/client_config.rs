@@ -3,33 +3,33 @@ use hashbrown::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 
 use crate::entities::{
-    ConfigName, HandlerName, HealthCheckProbeName, MountPointName, ProfileName, StaticResponseName,
-    Upstream,
+    ConfigName, HandlerName, HealthCheckProbeName, MountPointName, ProfileName, Upstream,
 };
 
 use crate::config_core::{
     application_firewall::ApplicationFirewall,
-    catch::RescueItem,
     config::{default_rules, is_default_rules, Config},
     gcs::GcsBucketAccess,
     is_profile_active, is_version_supported,
     proxy::Proxy,
     rebase::Rebase,
-    referenced::Container,
     refinable::Refinable,
     s3::S3BucketAccess,
     static_dir::StaticDir,
     upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr},
-    Auth, ConfigVersion, PassThrough, Rule, StaticResponse, CURRENT_VERSION,
+    Auth, ConfigVersion, PassThrough, Rule, CURRENT_VERSION,
 };
 use maplit::btreemap;
+use schemars::JsonSchema;
 use std::{
     collections::BTreeMap,
     hash::{Hash, Hasher},
     mem,
 };
 
-#[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone, PartialOrd, Ord, Copy)]
+#[derive(
+    Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone, PartialOrd, Ord, Copy, JsonSchema,
+)]
 #[serde(transparent)]
 pub struct ClientConfigRevision(pub u64);
 
@@ -39,17 +39,24 @@ impl From<u64> for ClientConfigRevision {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
-#[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
 pub struct ClientConfig {
+    #[schemars(skip)]
     pub version: ConfigVersion,
+
     pub revision: ClientConfigRevision,
+
     pub name: ConfigName,
+
+    #[schemars(skip)]
     #[serde(rename = "mount-points")]
     pub mount_points: BTreeMap<MountPointName, ClientMount>,
+
+    #[schemars(skip)]
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub upstreams: BTreeMap<Upstream, UpstreamDefinition>,
 
+    #[schemars(skip)]
     #[serde(flatten)]
     pub refinable: Refinable,
 }
@@ -265,7 +272,7 @@ impl Config for ClientConfig {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, schemars::JsonSchema)]
 pub struct ClientMount {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub handlers: BTreeMap<HandlerName, ClientHandler>,
@@ -277,8 +284,8 @@ pub struct ClientMount {
     pub refinable: Refinable,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
-#[serde(deny_unknown_fields, tag = "kind")]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[serde(tag = "kind")]
 pub enum ClientHandlerVariant {
     #[serde(rename = "proxy")]
     Proxy(Proxy),
@@ -316,9 +323,7 @@ impl ClientHandlerVariant {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
-// FIXME: report bug with enabling `deny_unknown_fields`
-// #[serde(deny_unknown_fields)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, schemars::JsonSchema)]
 pub struct ClientHandler {
     #[serde(flatten)]
     pub variant: ClientHandlerVariant,
@@ -334,6 +339,7 @@ pub struct ClientHandler {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profiles: Option<Vec<ProfileName>>,
 
+    #[schemars(schema_with = "super::unimplemented_schema")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub languages: Option<Vec<langtag::LanguageTagBuf>>,
 }
@@ -369,7 +375,7 @@ mount-points:
                 action: respond
                 static-response: tmpl
               - catch: "status-code:3xx"
-                action: throw-exception
+                action: throw
                 exception: asd
               - catch: "status-code:200-220"
                 action: next-handler

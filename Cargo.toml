@@ -67,12 +67,12 @@ zstd = { optional = true, version = "0.6" }
 tokio-stream = { optional = true, version = "0.1.2" }
 serde_with = { optional = true, version = "1.6.0" }
 never = { optional = true, version = "0.1.0" }
+schemars = { optional = true, git = "https://github.com/glebpom/schemars.git", branch = "exogress", features = ["ulid", "smol_str", "chrono"] }
 
 seahash = { optional = true, version = "4.1.0" }
 tokio-tungstenite = { optional = true, version = "0.13" }
 trust-dns-resolver = { optional = true, version = "0.20" }
 warp = { optional = true, version = "0.3" }
-
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
@@ -192,9 +192,11 @@ config-core = [
     "bytes",
     "entities",
     "hashbrown",
+    "schemars",
     "hashbrown/serde",
     "http",
     "http-serde",
+    "never",
     "humantime",
     "humantime-serde",
     "langtag",
@@ -222,11 +224,11 @@ config-core = [
 ]
 entities = [
     "bytes",
-    "never",
     "paste",
     "serde",
     "serde/derive",
     "shadow-clone",
+    "schemars",
     "smol_str",
     "smol_str/serde",
     "thiserror",
@@ -287,4 +289,10 @@ ws-client = [
     "trust-dns-resolver",
     "url",
     "webpki",
+]
+
+[workspace]
+members = [
+    ".",
+    "./config-schemas"
 ]

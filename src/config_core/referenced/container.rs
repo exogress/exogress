@@ -1,23 +1,23 @@
 use crate::{
     config_core::{
         referenced::{Parameter, ParameterSchema, ReferencedConfigValue},
-        Exception,
+        refinable::{NonExistingSharedEntity, RefinableSet, SharedEntity},
+        Exception, Scope,
     },
-    entities::{NonExistingSharedEntity, ParameterName, SharedEntity},
+    entities::{
+        schemars::{gen::SchemaGenerator, schema::Schema},
+        ParameterName,
+    },
 };
 use core::fmt;
-use futures::never::Never;
 use hashbrown::HashMap;
 use serde::{
     de,
-    de::{DeserializeOwned, MapAccess, SeqAccess, Visitor},
+    de::{MapAccess, SeqAccess, Visitor},
     Deserialize, Deserializer, Serialize, Serializer,
 };
 use smol_str::SmolStr;
-use std::{
-    convert::{TryFrom, TryInto},
-    marker::PhantomData,
-};
+use std::{convert::TryInto, marker::PhantomData};
 
 pub type NonSharedContainer<P> = Container<P, NonExistingSharedEntity>;
 
@@ -30,6 +30,20 @@ where
     Shared(R),
     Parameter(ParameterName),
     Value(P),
+}
+
+impl<P, R> schemars::JsonSchema for Container<P, R>
+where
+    P: ReferencedConfigValue,
+    R: SharedEntity,
+{
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
 }
 
 impl<P, R> Serialize for Container<P, R>
@@ -53,6 +67,9 @@ where
 
 #[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
+    #[error("name {_0} is not defined")]
+    NameNotDefined(SmolStr),
+
     #[error("parameter {_0} is not defined")]
     ParamNotDefined(ParameterName),
 
@@ -90,6 +107,49 @@ impl Error {
 
                 ("config-error:schema-mismatch".try_into().unwrap(), data)
             }
+            Error::NameNotDefined(name) => {
+                data.insert("reference-name".into(), name.to_string().into());
+                (
+                    "config-error:reference-name-not-defined"
+                        .try_into()
+                        .unwrap(),
+                    data,
+                )
+            }
+        }
+    }
+}
+
+impl<P, R> Container<P, R>
+where
+    P: ReferencedConfigValue,
+    R: SharedEntity<Value = P>,
+{
+    pub fn resolve(
+        self,
+        params: &HashMap<ParameterName, Parameter>,
+        refinable_set: &RefinableSet,
+        scope: &Scope,
+    ) -> Result<P, Error> {
+        match self {
+            Container::Parameter(param) => {
+                let found = params
+                    .get(&param)
+                    .ok_or(Error::ParamNotDefined(param))?
+                    .clone();
+
+                let provided_schema = found.schema();
+
+                found.try_into().map_err(|_| Error::SchemaMismatch {
+                    expected: P::schema(),
+                    provided: provided_schema,
+                })
+            }
+            Container::Value(v) => Ok(v),
+            Container::Shared(ref_name) => Ok(ref_name
+                .get_refined(refinable_set, &scope)
+                .ok_or_else(|| Error::NameNotDefined(ref_name.to_string().into()))?
+                .0),
         }
     }
 }
@@ -99,7 +159,10 @@ where
     P: ReferencedConfigValue,
     R: SharedEntity,
 {
-    pub fn resolve(self, params: &HashMap<ParameterName, Parameter>) -> Result<P, Error> {
+    pub fn resolve_non_referenced(
+        self,
+        params: &HashMap<ParameterName, Parameter>,
+    ) -> Result<P, Error> {
         match self {
             Container::Parameter(param) => {
                 let found = params
@@ -116,7 +179,7 @@ where
             }
             Container::Value(v) => Ok(v),
             Container::Shared(_) => {
-                todo!("implement sequence of scoped entities")
+                unreachable!()
             }
         }
     }

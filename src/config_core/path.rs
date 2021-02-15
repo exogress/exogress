@@ -8,7 +8,10 @@ use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
 };
 
-use crate::config_core::path_segment::{UrlPathSegment, UrlPathSegmentVisitor};
+use crate::{
+    config_core::path_segment::{UrlPathSegment, UrlPathSegmentVisitor},
+    entities::schemars::{gen::SchemaGenerator, schema::Schema},
+};
 use std::hash::{Hash, Hasher};
 
 pub const ANY_SEGMENTS_MATCH_STR: &str = "*";
@@ -111,6 +114,16 @@ pub enum MatchingPath {
     LeftWildcard(Vec<MatchPathSegment>),
     // * / Right
     WildcardRight(Vec<MatchPathSegment>),
+}
+
+impl schemars::JsonSchema for MatchingPath {
+    fn schema_name() -> String {
+        unimplemented!()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        unimplemented!()
+    }
 }
 
 impl MatchingPath {
