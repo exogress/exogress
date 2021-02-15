@@ -19,8 +19,6 @@ use serde::{
 use smol_str::SmolStr;
 use std::{convert::TryInto, marker::PhantomData};
 
-pub type NonSharedContainer<P> = Container<P, NonExistingSharedEntity>;
-
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum Container<P, R = NonExistingSharedEntity>
 where
@@ -266,6 +264,8 @@ where
 mod test {
     use super::*;
     use crate::config_core::referenced::acl::{Acl, AclEntry};
+
+    pub type NonSharedContainer<P> = Container<P, NonExistingSharedEntity>;
 
     #[test]
     fn test_serialize_param_name() {

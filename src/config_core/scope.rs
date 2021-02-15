@@ -175,22 +175,6 @@ impl Scope {
         }
     }
 
-    fn client_config(&self) -> Option<(&ConfigName, &ClientConfigRevision)> {
-        match self {
-            Scope::ClientConfig { config, revision }
-            | Scope::ClientMount {
-                config, revision, ..
-            }
-            | Scope::ClientHandler {
-                config, revision, ..
-            }
-            | Scope::ClientRule {
-                config, revision, ..
-            } => Some((config, revision)),
-            _ => None,
-        }
-    }
-
     fn mount_point_name(&self) -> Option<&MountPointName> {
         match self {
             Scope::ClientMount { mount_point, .. }

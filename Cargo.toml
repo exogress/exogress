@@ -67,7 +67,7 @@ zstd = { optional = true, version = "0.6" }
 tokio-stream = { optional = true, version = "0.1.2" }
 serde_with = { optional = true, version = "1.6.0" }
 never = { optional = true, version = "0.1.0" }
-schemars = { optional = true, git = "https://github.com/glebpom/schemars.git", branch = "exogress", features = ["ulid", "smol_str", "chrono"] }
+schemars = { optional = true, git = "https://github.com/glebpom/schemars.git", branch = "exogress", features = ["ulid", "smol_str", "chrono", "semver"] }
 
 seahash = { optional = true, version = "4.1.0" }
 tokio-tungstenite = { optional = true, version = "0.13" }

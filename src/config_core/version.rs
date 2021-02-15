@@ -1,21 +1,11 @@
-use schemars::{gen::SchemaGenerator, schema::Schema, JsonSchema};
+use schemars::JsonSchema;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::{fmt, str::FromStr};
 
-#[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Hash, Eq, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
 #[serde(transparent)]
 pub struct ConfigVersion(pub Version);
-
-impl JsonSchema for ConfigVersion {
-    fn schema_name() -> String {
-        unimplemented!()
-    }
-
-    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
-        unimplemented!()
-    }
-}
 
 impl fmt::Display for ConfigVersion {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

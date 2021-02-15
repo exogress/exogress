@@ -20,7 +20,6 @@ use std::{
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
 pub struct ProjectConfig {
-    #[schemars(skip)]
     pub version: ConfigVersion,
 
     #[schemars(skip)]

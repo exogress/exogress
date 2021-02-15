@@ -41,7 +41,6 @@ impl From<u64> for ClientConfigRevision {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
 pub struct ClientConfig {
-    #[schemars(skip)]
     pub version: ConfigVersion,
 
     pub revision: ClientConfigRevision,
