@@ -281,8 +281,7 @@ mod test {
 
     #[test]
     pub fn test_schema() {
-        let s = serde_json::to_string_pretty(&schemars::schema_for!(CatchMatcher)).unwrap();
-        println!("{}", s);
+        serde_json::to_string_pretty(&schemars::schema_for!(CatchMatcher)).unwrap();
     }
 
     #[test]

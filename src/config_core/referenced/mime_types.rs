@@ -72,9 +72,7 @@ mod test {
 
     #[test]
     pub fn test_schema() {
-        let s = serde_json::to_string_pretty(&schemars::schema_for!(MimeTypes)).unwrap();
-        println!("{}", s);
-        let s = serde_json::to_string_pretty(&schemars::schema_for!(MimeType)).unwrap();
-        println!("{}", s);
+        serde_json::to_string_pretty(&schemars::schema_for!(MimeTypes)).unwrap();
+        serde_json::to_string_pretty(&schemars::schema_for!(MimeType)).unwrap();
     }
 }

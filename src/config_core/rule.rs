@@ -461,20 +461,17 @@ mod test {
 
     #[test]
     pub fn test_method_schema() {
-        let s = serde_json::to_string_pretty(&schemars::schema_for!(MethodWrapper)).unwrap();
-        println!("{}", s);
+        serde_json::to_string_pretty(&schemars::schema_for!(MethodWrapper)).unwrap();
     }
 
     #[test]
     pub fn test_status_code_schema() {
-        let s = serde_json::to_string_pretty(&schemars::schema_for!(HeaderMapWrapper)).unwrap();
-        println!("{}", s);
+        serde_json::to_string_pretty(&schemars::schema_for!(HeaderMapWrapper)).unwrap();
     }
 
     #[test]
     pub fn test_modify_headers_schema() {
-        let s = serde_json::to_string_pretty(&schemars::schema_for!(ModifyHeaders)).unwrap();
-        println!("{}", s);
+        serde_json::to_string_pretty(&schemars::schema_for!(ModifyHeaders)).unwrap();
     }
 
     #[test]

@@ -295,10 +295,8 @@ mod test {
 
     #[test]
     pub fn test_status_code_schema() {
-        let s = serde_json::to_string_pretty(&schemars::schema_for!(StatusCode)).unwrap();
-        println!("{}", s);
-        let s = serde_json::to_string_pretty(&schemars::schema_for!(StatusCodeRange)).unwrap();
-        println!("{}", s);
+        serde_json::to_string_pretty(&schemars::schema_for!(StatusCode)).unwrap();
+        serde_json::to_string_pretty(&schemars::schema_for!(StatusCodeRange)).unwrap();
     }
 
     #[test]
