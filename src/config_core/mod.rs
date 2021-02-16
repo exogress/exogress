@@ -1,8 +1,6 @@
 use crate::entities::ProfileName;
 pub use auth::{Auth, AuthDefinition, AuthProvider};
-pub use catch::{
-    CatchAction, CatchMatcher, CatchMatcherParseError, Exception, ExceptionParseError, RescueItem,
-};
+pub use catch::{CatchAction, CatchMatcher, CatchMatcherParseError, RescueItem};
 pub use client_config::{
     ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant, ClientMount,
 };

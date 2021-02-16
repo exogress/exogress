@@ -1,12 +1,7 @@
 use crate::{
     config_core::{
-        catch::{Exception, RescueItem},
-        is_default,
-        methods::MethodMatcher,
-        path::MatchingPath,
-        path_modify::PathSegmentsModify,
-        query::QueryMatcher,
-        referenced::Container,
+        catch::RescueItem, is_default, methods::MethodMatcher, path::MatchingPath,
+        path_modify::PathSegmentsModify, query::QueryMatcher, referenced::Container,
         StaticResponse, StatusCode, StatusCodeRange,
     },
     entities::{
@@ -16,6 +11,7 @@ use crate::{
 };
 use schemars::JsonSchema;
 
+use crate::entities::Exception;
 use core::fmt;
 use http::{header::HeaderName, HeaderMap, HeaderValue};
 use schemars::{

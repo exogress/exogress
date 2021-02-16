@@ -2,11 +2,12 @@ use crate::{
     config_core::{
         referenced::{Parameter, ParameterSchema, ReferencedConfigValue},
         refinable::{NonExistingSharedEntity, RefinableSet, SharedEntity},
-        Exception, Scope,
+        Scope,
     },
     entities::{
+        exceptions,
         schemars::{gen::SchemaGenerator, schema::Schema},
-        ParameterName, MAX_STRING_IDENTIFIER_LENGTH, MIN_STRING_IDENTIFIER_LENGTH,
+        Exception, ParameterName, MAX_STRING_IDENTIFIER_LENGTH, MIN_STRING_IDENTIFIER_LENGTH,
         STRING_ENTITY_REGEXP_PATTERN_NON_FIXED,
     },
 };
@@ -135,10 +136,7 @@ impl Error {
         match self {
             Error::ParamNotDefined(param) => {
                 data.insert("parameter".into(), param.to_string().into());
-                (
-                    "config-error:parameter-not-defined".try_into().unwrap(),
-                    data,
-                )
+                (exceptions::CONFIG_PARAMETER_NOT_DEFINED.clone(), data)
             }
             Error::SchemaMismatch { expected, provided } => {
                 data.insert(
@@ -150,16 +148,11 @@ impl Error {
                     provided.to_string().into(),
                 );
 
-                ("config-error:schema-mismatch".try_into().unwrap(), data)
+                (exceptions::CONFIG_SCHEMA_MISMATCH.clone(), data)
             }
             Error::NameNotDefined(name) => {
                 data.insert("reference-name".into(), name.to_string().into());
-                (
-                    "config-error:reference-name-not-defined"
-                        .try_into()
-                        .unwrap(),
-                    data,
-                )
+                (exceptions::CONFIG_REFERENCE_NAME_NOT_DEFINED.clone(), data)
             }
         }
     }

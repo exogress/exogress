@@ -19,6 +19,10 @@ mod label_value;
 mod string_macros;
 #[macro_use]
 mod ulid_macro;
+mod exception;
+pub mod exceptions;
+
+pub use exception::{Exception, ExceptionParseError};
 
 ulid_type!(InstanceId);
 ulid_type!(EnvironmentId);
@@ -28,9 +32,7 @@ ulid_type!(AccountUniqueId);
 
 string_type!(ProjectName);
 string_type!(AccountName);
-
 string_type!(Upstream);
-
 string_type!(RateLimiterName);
 string_type!(MountPointName);
 string_type!(HandlerName);
