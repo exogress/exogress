@@ -383,17 +383,6 @@ pub enum Action {
     #[serde(rename = "next-handler")]
     NextHandler,
 
-    /// move on to the next rule. typically, combined with rewrite
-    #[serde(rename = "none")]
-    None {
-        #[serde(
-            default,
-            rename = "modify-request",
-            skip_serializing_if = "Option::is_none"
-        )]
-        modify_request: Option<RequestModifications>,
-    },
-
     /// finish the whole handlers chain and move to finalizer
     #[serde(rename = "throw")]
     Throw {
@@ -428,7 +417,6 @@ impl Action {
         match self {
             Action::Invoke { modify_request, .. } => modify_request.as_ref(),
             Action::NextHandler => None,
-            Action::None { modify_request } => modify_request.as_ref(),
             Action::Throw { .. } => None,
             Action::Respond { .. } => None,
         }
