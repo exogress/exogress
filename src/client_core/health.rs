@@ -52,7 +52,7 @@ pub async fn start_checker(
 ) {
     let locked = probe_inner.lock();
 
-    let mut interval = tokio::time::interval(locked.probe.period);
+    let mut interval = tokio::time::interval(locked.probe.period.0);
     let probe = locked.probe.clone();
     let url = locked.probe_url.clone();
     mem::drop(locked);
@@ -76,16 +76,16 @@ pub async fn start_checker(
                             interval.tick().await;
                             let mut health_request = Request::builder()
                                 .uri(url.as_str())
-                                .method(&probe.method)
+                                .method(&probe.method.0)
                                 .body(Body::empty())
                                 .unwrap();
 
-                            *health_request.headers_mut() = probe.headers.headers.clone();
+                            *health_request.headers_mut() = probe.headers.0.clone();
 
                             let was_status = probe_inner.lock().status.clone();
 
                             let res = tokio::time::timeout(
-                                probe.timeout,
+                                probe.timeout.0,
                                 hyper_client.request(health_request),
                             )
                             .await;

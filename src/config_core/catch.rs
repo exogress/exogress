@@ -10,11 +10,15 @@ use crate::{
     },
 };
 use core::fmt;
+use schemars::{
+    schema::{InstanceType, Metadata, SchemaObject, StringValidation},
+    JsonSchema,
+};
 use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 use std::{collections::BTreeMap, convert::TryFrom, str::FromStr};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 #[serde(tag = "action")]
 pub enum CatchAction {
     #[serde(rename = "respond")]
@@ -52,13 +56,24 @@ pub enum CatchMatcher {
     Exception(Exception),
 }
 
-impl schemars::JsonSchema for CatchMatcher {
+impl JsonSchema for CatchMatcher {
     fn schema_name() -> String {
-        unimplemented!()
+        "CatchMatcher".to_string()
     }
 
-    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
-        unimplemented!()
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            metadata: Some(Box::new(Metadata {
+                title: Some(format!("Matcher for exception catching")),
+                description: Some(format!(
+                    "string starting with 'status-code:' or 'exception:'"
+                )),
+                ..Default::default()
+            })),
+            instance_type: Some(InstanceType::String.into()),
+            ..Default::default()
+        }
+        .into()
     }
 }
 
@@ -137,8 +152,26 @@ impl<'de> Visitor<'de> for CatchMatcherVisitor {
     }
 }
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Exception(pub Vec<ExceptionSegment>);
+
+impl JsonSchema for Exception {
+    fn schema_name() -> String {
+        "Exception".to_string()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            instance_type: Some(InstanceType::String.into()),
+            string: Some(Box::new(StringValidation {
+                min_length: Some(1),
+                ..Default::default()
+            })),
+            ..Default::default()
+        }
+        .into()
+    }
+}
 
 impl fmt::Display for Exception {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -234,7 +267,7 @@ impl<'de> Deserialize<'de> for CatchMatcher {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 pub struct RescueItem {
     pub catch: CatchMatcher,
 
@@ -245,6 +278,12 @@ pub struct RescueItem {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    pub fn test_schema() {
+        let s = serde_json::to_string_pretty(&schemars::schema_for!(CatchMatcher)).unwrap();
+        println!("{}", s);
+    }
 
     #[test]
     pub fn test_deserialize() {

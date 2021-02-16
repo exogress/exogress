@@ -1,6 +1,7 @@
 use std::fmt;
 
 use regex::Regex;
+use schemars::JsonSchema;
 use serde::{
     de,
     de::{IntoDeserializer, SeqAccess, Visitor},
@@ -12,6 +13,10 @@ use crate::{
     config_core::path_segment::{UrlPathSegment, UrlPathSegmentVisitor},
     entities::schemars::{gen::SchemaGenerator, schema::Schema},
 };
+use schemars::schema::{
+    ArrayValidation, InstanceType, Metadata, SchemaObject, StringValidation, SubschemaValidation,
+};
+use smol_str::SmolStr;
 use std::hash::{Hash, Hasher};
 
 pub const ANY_SEGMENTS_MATCH_STR: &str = "*";
@@ -22,6 +27,30 @@ pub const ANY_STR: &str = "?";
 pub enum MatchPathSegment {
     Single(MatchPathSingleSegment),
     Choice(Vec<UrlPathSegment>),
+}
+
+impl JsonSchema for MatchPathSegment {
+    fn schema_name() -> String {
+        "MatchPathSegment".to_string()
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            metadata: Some(Box::new(Metadata {
+                title: Some(String::from(
+                    "Single path segment matcher or multiple choices",
+                )),
+                ..Default::default()
+            })),
+            instance_type: Some(vec![InstanceType::Array, InstanceType::String].into()),
+            // subschemas: Some(Box::new(SubschemaValidation {
+            //     all_of: Some(vec![gen.subschema_for::<UrlPathSegment>()].into()),
+            //     ..Default::default()
+            // })),
+            ..Default::default()
+        }
+        .into()
+    }
 }
 
 impl Serialize for MatchPathSegment {
@@ -47,6 +76,44 @@ pub enum MatchPathSingleSegment {
     Any,
     Exact(UrlPathSegment),
     Regex(Regex),
+}
+
+impl JsonSchema for MatchPathSingleSegment {
+    fn schema_name() -> String {
+        "MatchPathSingleSegment".to_string()
+    }
+
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            metadata: Some(Box::new(Metadata {
+                title: Some(String::from(
+                    "Any segment '?', exact value or regular expression",
+                )),
+                ..Default::default()
+            })),
+            instance_type: Some(InstanceType::String.into()),
+            subschemas: Some(Box::new(SubschemaValidation {
+                any_of: Some(
+                    vec![
+                        gen.subschema_for::<UrlPathSegment>(),
+                        gen.subschema_for::<SmolStr>(),
+                        Schema::Object(SchemaObject {
+                            string: Some(Box::new(StringValidation {
+                                max_length: Some(1),
+                                min_length: Some(1),
+                                pattern: Some(String::from(r"\?")),
+                            })),
+                            ..Default::default()
+                        }),
+                    ]
+                    .into(),
+                ),
+                ..Default::default()
+            })),
+            ..Default::default()
+        }
+        .into()
+    }
 }
 
 impl MatchPathSingleSegment {
@@ -116,13 +183,42 @@ pub enum MatchingPath {
     WildcardRight(Vec<MatchPathSegment>),
 }
 
-impl schemars::JsonSchema for MatchingPath {
+impl JsonSchema for MatchingPath {
     fn schema_name() -> String {
-        unimplemented!()
+        "PathMatcher".to_string()
     }
 
-    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
-        unimplemented!()
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            metadata: Some(Box::new(Metadata {
+                title: Some(String::from(
+                    "Array of path segments matchers, with optionally single '*' symbol",
+                )),
+                ..Default::default()
+            })),
+            instance_type: Some(InstanceType::Array.into()),
+            array: Some(Box::new(ArrayValidation {
+                items: Some(
+                    Schema::Object(SchemaObject {
+                        subschemas: Some(Box::new(SubschemaValidation {
+                            any_of: Some(
+                                vec![
+                                    gen.subschema_for::<MatchPathSegment>(),
+                                    gen.subschema_for::<String>(),
+                                ]
+                                .into(),
+                            ),
+                            ..Default::default()
+                        })),
+                        ..Default::default()
+                    })
+                    .into(),
+                ),
+                ..Default::default()
+            })),
+            ..Default::default()
+        }
+        .into()
     }
 }
 
@@ -459,6 +555,12 @@ impl<'de> Deserialize<'de> for MatchingPath {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    pub fn test_status_code_schema() {
+        let s = serde_json::to_string_pretty(&schemars::schema_for!(MatchingPath)).unwrap();
+        println!("{}", s);
+    }
 
     #[test]
     pub fn test_path_segment_deserialize() {

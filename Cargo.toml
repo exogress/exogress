@@ -65,8 +65,10 @@ urlencoding = { optional = true, version = "1.1.1" }
 webpki = { optional = true, version = "0.21.3" }
 zstd = { optional = true, version = "0.6" }
 tokio-stream = { optional = true, version = "0.1.2" }
-serde_with = { optional = true, version = "1.6.0" }
+valico = { optional = true, git = "https://github.com/agavrilov/valico.git", branch = "PR/update-dependencies" }
+serde_with = { optional = true, version = "=1.6.2" }
 never = { optional = true, version = "0.1.0" }
+include_dir = { optional = true, version = "0.6" }
 schemars = { optional = true, git = "https://github.com/glebpom/schemars.git", branch = "exogress", features = ["ulid", "smol_str", "chrono", "semver"] }
 
 seahash = { optional = true, version = "4.1.0" }
@@ -82,14 +84,15 @@ serde_json = "1.0.60"
 
 [features]
 default = [
-    "ws-client",
-    "tunnel",
-    "signaling",
-    "entities",
-    "config-core",
-    "common-utils",
+    "client-core",
     "client-lib",
-    "client-core"]
+    "common-utils",
+    "config-core",
+    "entities",
+    "signaling",
+    "tunnel",
+    "ws-client",
+]
 client-core = [
     "anyhow",
     "bincode",
@@ -141,7 +144,8 @@ client-core = [
     "urlencoding",
     "warp",
     "webpki",
-    "ws-client"]
+    "ws-client"
+]
 client-lib = [
     "anyhow",
     "client-core",
@@ -175,9 +179,9 @@ common-utils = [
     "stop-handle",
     "thiserror",
     "tokio",
-    "tokio-util",
     "tokio-rustls",
     "tokio-tungstenite",
+    "tokio-util",
     "tokio/net",
     "tokio/signal",
     "tokio/time",
@@ -192,43 +196,45 @@ config-core = [
     "bytes",
     "entities",
     "hashbrown",
-    "schemars",
     "hashbrown/serde",
     "http",
     "http-serde",
-    "never",
     "humantime",
     "humantime-serde",
+    "include_dir",
     "langtag",
     "langtag/serde",
     "lazy_static",
     "maplit",
     "mime",
+    "never",
     "percent-encoding",
     "regex",
     "rusty-s3",
+    "schemars",
     "seahash",
     "semver",
     "semver/serde",
     "serde",
     "serde/derive",
     "serde_json",
-    "serde_yaml",
     "serde_with",
+    "serde_yaml",
     "smol_str",
     "smol_str/serde",
     "thiserror",
     "tracing",
     "url",
     "url/serde",
+    "valico",
 ]
 entities = [
     "bytes",
     "paste",
+    "schemars",
     "serde",
     "serde/derive",
     "shadow-clone",
-    "schemars",
     "smol_str",
     "smol_str/serde",
     "thiserror",
@@ -264,14 +270,14 @@ tunnel = [
     "stop-handle",
     "thiserror",
     "tokio",
+    "tokio-stream",
     "tokio-util",
     "tokio-util/codec",
     "tokio-util/compat",
     "tokio/io-util",
     "tokio/macros",
-    "tokio/sync",
     "tokio/net",
-    "tokio-stream",
+    "tokio/sync",
     "tokio/time",
     "tracing",
     "trust-dns-resolver",
@@ -283,9 +289,9 @@ tunnel = [
 ws-client = [
     "rustls",
     "rustls-native-certs",
-    "tokio-util",
     "tokio-rustls",
     "tokio-tungstenite",
+    "tokio-util",
     "trust-dns-resolver",
     "url",
     "webpki",

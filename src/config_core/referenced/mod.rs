@@ -6,6 +6,7 @@ use crate::config_core::referenced::{
 };
 pub use container::Container;
 use core::{convert::TryFrom, fmt, fmt::Formatter, str::FromStr};
+use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub mod acl;
@@ -16,9 +17,10 @@ pub mod static_response;
 
 mod container;
 
-use crate::config_core::{RawResponse, ResponseBody, StaticResponse};
+use crate::config_core::{
+    referenced::mime_types::MimeType, RawResponse, ResponseBody, StaticResponse, StatusCode,
+};
 pub use container::Error;
-use http::StatusCode;
 
 pub trait ReferencedConfigValue:
     DeserializeOwned
@@ -29,6 +31,7 @@ pub trait ReferencedConfigValue:
     + PartialEq
     + std::hash::Hash
     + TryFrom<Parameter>
+    + JsonSchema
 {
     fn schema() -> ParameterSchema;
 }
@@ -47,7 +50,7 @@ impl TryFrom<Parameter> for () {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(tag = "schema", content = "body")]
 pub enum Parameter {
     #[serde(rename = "aws-credentials")]
@@ -117,7 +120,7 @@ pub const ALL_PARAMETER_SCHEMAS: [ParameterSchema; 7] = [
     ParameterSchema::StaticResponse,
 ];
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, Copy, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, Copy, JsonSchema)]
 #[serde(tag = "kind")]
 pub enum ParameterSchema {
     #[serde(rename = "aws-credentials")]
@@ -184,19 +187,19 @@ impl ParameterSchema {
                 serde_yaml::to_string(&sample).unwrap()
             }
             Self::MimeTypes => {
-                let sample: MimeTypes = MimeTypes(vec!["text/html".parse().unwrap()]);
+                let sample: MimeTypes = MimeTypes(vec![MimeType("text/html".parse().unwrap())]);
                 serde_yaml::to_string(&sample).unwrap()
             }
             Self::StaticResponse => {
                 let sample = StaticResponse::Raw(RawResponse {
-                    status_code: StatusCode::OK,
+                    status_code: StatusCode(http::StatusCode::OK),
                     fallback_accept: None,
                     body: vec![ResponseBody {
-                        content_type: mime::TEXT_HTML,
+                        content_type: mime::TEXT_HTML.into(),
                         content: "<html><body>response</body></html>".into(),
                         engine: None,
                     }],
-                    common: Default::default(),
+                    headers: Default::default(),
                 });
                 serde_yaml::to_string(&sample).unwrap()
             }

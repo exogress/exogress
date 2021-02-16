@@ -7,9 +7,10 @@ use crate::config_core::{
         Container,
     },
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
 pub struct S3BucketAccess {
     pub bucket: Container<S3Bucket>,
     pub credentials: Option<Container<AwsCredentials>>,

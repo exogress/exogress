@@ -1,9 +1,10 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use smol_str::SmolStr;
 use std::str::FromStr;
 
-#[derive(Serialize, Deserialize, Debug, Hash, Clone, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Hash, Clone, Eq, PartialEq, JsonSchema)]
 #[serde(transparent)]
 pub struct PathSegmentsModify(pub SmolStr);
 

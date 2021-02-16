@@ -2,22 +2,24 @@ use hashbrown::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::entities::{
-    ConfigName, HandlerName, HealthCheckProbeName, MountPointName, ProfileName, Upstream,
-};
-
-use crate::config_core::{
-    application_firewall::ApplicationFirewall,
-    config::{default_rules, is_default_rules, Config},
-    gcs::GcsBucketAccess,
-    is_profile_active, is_version_supported,
-    proxy::Proxy,
-    rebase::Rebase,
-    refinable::Refinable,
-    s3::S3BucketAccess,
-    static_dir::StaticDir,
-    upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr},
-    Auth, ConfigVersion, PassThrough, Rule, CURRENT_VERSION,
+use crate::{
+    config_core::{
+        application_firewall::ApplicationFirewall,
+        config::{default_rules, is_default_rules, Config},
+        gcs::GcsBucketAccess,
+        is_profile_active, is_version_supported,
+        proxy::Proxy,
+        rebase::Rebase,
+        refinable::Refinable,
+        s3::S3BucketAccess,
+        schema::validate_schema,
+        static_dir::StaticDir,
+        upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr},
+        Auth, ConfigVersion, PassThrough, Rule, CURRENT_VERSION,
+    },
+    entities::{
+        ConfigName, HandlerName, HealthCheckProbeName, MountPointName, ProfileName, Upstream,
+    },
 };
 use maplit::btreemap;
 use schemars::JsonSchema;
@@ -47,15 +49,12 @@ pub struct ClientConfig {
 
     pub name: ConfigName,
 
-    #[schemars(skip)]
     #[serde(rename = "mount-points")]
     pub mount_points: BTreeMap<MountPointName, ClientMount>,
 
-    #[schemars(skip)]
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub upstreams: BTreeMap<Upstream, UpstreamDefinition>,
 
-    #[schemars(skip)]
     #[serde(flatten)]
     pub refinable: Refinable,
 }
@@ -145,11 +144,20 @@ impl ClientConfig {
         }
     }
 
+    pub fn parse(yaml: impl AsRef<[u8]>) -> anyhow::Result<Self> {
+        serde_yaml::from_slice::<Self>(yaml.as_ref())
+            .map_err(anyhow::Error::from)
+            .and_then(|r| {
+                validate_schema(yaml.as_ref(), "client.json")?;
+                Ok(r)
+            })
+    }
+
     pub fn parse_with_redefined_upstreams(
         yaml: impl AsRef<[u8]>,
         redefined_upstreams: &HashMap<Upstream, UpstreamSocketAddr>,
-    ) -> Result<Self, serde_yaml::Error> {
-        let mut cfg = serde_yaml::from_slice::<ClientConfig>(yaml.as_ref())?;
+    ) -> anyhow::Result<Self> {
+        let mut cfg = Self::parse(yaml.as_ref())?;
 
         for (upstream_name, addr) in redefined_upstreams {
             let upstream = cfg.upstreams.get_mut(upstream_name);
@@ -271,7 +279,7 @@ impl Config for ClientConfig {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
 pub struct ClientMount {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub handlers: BTreeMap<HandlerName, ClientHandler>,
@@ -283,7 +291,7 @@ pub struct ClientMount {
     pub refinable: Refinable,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
 #[serde(tag = "kind")]
 pub enum ClientHandlerVariant {
     #[serde(rename = "proxy")]
@@ -322,7 +330,7 @@ impl ClientHandlerVariant {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
 pub struct ClientHandler {
     #[serde(flatten)]
     pub variant: ClientHandlerVariant,
@@ -338,7 +346,7 @@ pub struct ClientHandler {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profiles: Option<Vec<ProfileName>>,
 
-    #[schemars(schema_with = "super::unimplemented_schema")]
+    #[schemars(skip)]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub languages: Option<Vec<langtag::LanguageTagBuf>>,
 }

@@ -1,5 +1,6 @@
 pub const MIN_STRING_IDENTIFIER_LENGTH: usize = 2;
-pub const MAX_STRING_IDENTIFIER_LENGTH: usize = 46;
+pub const MAX_STRING_IDENTIFIER_LENGTH: usize = 45;
+pub const STRING_ENTITY_REGEXP_PATTERN_NON_FIXED: &str = r"[a-zA-Z][a-zA-Z0-9\-_]+";
 
 #[derive(thiserror::Error, Debug)]
 pub enum StringIdentifierError {
@@ -60,11 +61,31 @@ macro_rules! string_type {
         }
 
         #[derive(
-            Debug, Clone, $crate::entities::serde::Serialize, Hash, Eq, PartialEq, Ord, PartialOrd, $crate::entities::schemars::JsonSchema
+            Debug, Clone, $crate::entities::serde::Serialize, Hash, Eq, PartialEq, Ord, PartialOrd,
         )]
         #[serde(transparent)]
         pub struct $x {
             inner: $crate::entities::SmolStr,
+        }
+
+        impl $crate::entities::schemars::JsonSchema for $x {
+            fn schema_name() -> String {
+                stringify!($x).to_string()
+            }
+
+            fn json_schema(_: &mut $crate::entities::schemars::gen::SchemaGenerator) -> $crate::entities::schemars::schema::Schema {
+                $crate::entities::schemars::schema::SchemaObject {
+                    instance_type: Some($crate::entities::schemars::schema::InstanceType::String.into()),
+                    string: Some(Box::new($crate::entities::schemars::schema::StringValidation {
+                        min_length: Some($crate::entities::MIN_STRING_IDENTIFIER_LENGTH as u32),
+                        max_length: Some($crate::entities::MAX_STRING_IDENTIFIER_LENGTH as u32),
+                        pattern: Some(format!("^{}$", $crate::entities::STRING_ENTITY_REGEXP_PATTERN_NON_FIXED)),
+                        ..Default::default()
+                    })),
+                    ..Default::default()
+                }
+                .into()
+            }
         }
 
         paste::item! {
@@ -179,6 +200,12 @@ mod test {
     use std::{convert::TryFrom, str::FromStr};
 
     string_type!(TestIdentifier);
+
+    #[test]
+    pub fn test_schema() {
+        let s = serde_json::to_string_pretty(&schemars::schema_for!(TestIdentifier)).unwrap();
+        println!("{}", s);
+    }
 
     #[test]
     pub fn test_validation() {

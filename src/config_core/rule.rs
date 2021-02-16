@@ -14,8 +14,14 @@ use crate::{
         ProfileName, StaticResponseName,
     },
 };
+use schemars::JsonSchema;
+
 use core::fmt;
 use http::{header::HeaderName, HeaderMap, HeaderValue};
+use schemars::{
+    _serde_json::Value,
+    schema::{InstanceType, Metadata, SchemaObject},
+};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use smol_str::SmolStr;
@@ -74,19 +80,24 @@ mod header_value_ser {
 
 #[derive(Debug, Eq, Clone, Serialize, Deserialize, Default)]
 #[serde(transparent)]
-pub struct HeaderMapWrapper(
-    #[serde(with = "http_serde::header_map")]
-    // #[schemars(schema_with = "unimplemented_schema")]
-    pub HeaderMap,
-);
+pub struct HeaderMapWrapper(#[serde(with = "http_serde::header_map")] pub HeaderMap);
 
-impl schemars::JsonSchema for HeaderMapWrapper {
+impl JsonSchema for HeaderMapWrapper {
     fn schema_name() -> String {
-        unimplemented!()
+        "HttpHeaderMap".to_string()
     }
 
-    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
-        unimplemented!()
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            metadata: Some(Box::new(Metadata {
+                title: Some(String::from("HTTP Headers")),
+                description: Some(String::from("Map of HTTP headers, where key is the header name. The headers value may be a single string or multiple strings.")),
+                ..Default::default()
+            })),
+            instance_type: Some(InstanceType::Object.into()),
+            ..Default::default()
+        }
+        .into()
     }
 }
 
@@ -112,13 +123,113 @@ impl Hash for HeaderMapWrapper {
 }
 
 impl HeaderMapWrapper {
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Hash, Eq, PartialEq)]
+#[serde(transparent)]
+pub struct MethodWrapper(#[serde(with = "http_serde::method")] pub http::Method);
+
+impl ToString for MethodWrapper {
+    fn to_string(&self) -> String {
+        self.0.to_string()
+    }
+}
+
+impl Default for MethodWrapper {
+    fn default() -> Self {
+        MethodWrapper(http::Method::GET)
+    }
+}
+
+impl JsonSchema for MethodWrapper {
+    fn schema_name() -> String {
+        "HttpMethod".to_string()
+    }
+
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            metadata: Some(Box::new(Metadata {
+                title: Some(String::from("HTTP Method")),
+                ..Default::default()
+            })),
+            enum_values: Some(vec![
+                Value::String(String::from("TRACE")),
+                Value::String(String::from("PATCH")),
+                Value::String(String::from("CONNECT")),
+                Value::String(String::from("OPTIONS")),
+                Value::String(String::from("HEAD")),
+                Value::String(String::from("DELETE")),
+                Value::String(String::from("PUT")),
+                Value::String(String::from("POST")),
+                Value::String(String::from("GET")),
+            ]),
+            instance_type: Some(InstanceType::String.into()),
+            ..Default::default()
+        }
+        .into()
+    }
+}
+
+impl From<http::Method> for MethodWrapper {
+    fn from(map: http::Method) -> Self {
+        MethodWrapper(map)
+    }
+}
+
 #[serde_as]
-#[derive(Debug, Default, Hash, Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, Clone, Serialize, Deserialize, Default)]
+#[serde(transparent)]
+pub struct HeaderNameList(#[serde_as(as = "Vec<DisplayFromStr>")] pub Vec<HeaderName>);
+
+impl JsonSchema for HeaderNameList {
+    fn schema_name() -> String {
+        format!("Array_of_HttpHeaderName")
+    }
+
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            metadata: Some(Box::new(Metadata {
+                title: Some(String::from("Array of HTTP Header Names")),
+                description: Some(String::from("Array of HTTP Header Names")),
+                ..Default::default()
+            })),
+            instance_type: Some(InstanceType::Array.into()),
+            ..Default::default()
+        }
+        .into()
+    }
+}
+
+impl From<Vec<HeaderName>> for HeaderNameList {
+    fn from(map: Vec<HeaderName>) -> Self {
+        HeaderNameList(map)
+    }
+}
+
+impl PartialEq for HeaderNameList {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.eq(&other.0)
+    }
+}
+
+impl Hash for HeaderNameList {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        for k in &self.0 {
+            k.hash(state);
+        }
+    }
+}
+
+impl HeaderNameList {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+#[derive(Debug, Default, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
 pub struct ModifyHeaders {
     #[serde(default, skip_serializing_if = "HeaderMapWrapper::is_empty")]
     pub insert: HeaderMapWrapper,
@@ -126,30 +237,19 @@ pub struct ModifyHeaders {
     #[serde(default, skip_serializing_if = "HeaderMapWrapper::is_empty")]
     pub append: HeaderMapWrapper,
 
-    #[serde_as(as = "Vec<DisplayFromStr>")]
     #[serde(default)]
-    pub remove: Vec<HeaderName>,
-}
-
-impl schemars::JsonSchema for ModifyHeaders {
-    fn schema_name() -> String {
-        unimplemented!()
-    }
-
-    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
-        unimplemented!()
-    }
+    pub remove: HeaderNameList,
 }
 
 impl ModifyHeaders {
     pub fn is_empty(&self) -> bool {
         HeaderMapWrapper::is_empty(&self.insert)
             && HeaderMapWrapper::is_empty(&self.append)
-            && Vec::is_empty(&self.remove)
+            && Vec::is_empty(&self.remove.0)
     }
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, schemars::JsonSchema)]
+#[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
 pub enum TrailingSlashModification {
     #[serde(rename = "keep")]
     Keep,
@@ -167,9 +267,7 @@ impl Default for TrailingSlashModification {
     }
 }
 
-#[derive(
-    Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, schemars::JsonSchema,
-)]
+#[derive(Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
 pub struct RequestModifications {
     #[serde(default, skip_serializing_if = "ModifyHeaders::is_empty")]
     pub headers: ModifyHeaders,
@@ -184,9 +282,7 @@ pub struct RequestModifications {
     pub query: ModifyQuery,
 }
 
-#[derive(
-    Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, schemars::JsonSchema,
-)]
+#[derive(Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
 pub struct ModifyQuery {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub remove: Vec<SmolStr>,
@@ -198,25 +294,25 @@ impl ModifyQuery {
     }
 }
 
-#[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
+#[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
 pub struct ResponseModifications {
     #[serde(default, skip_serializing_if = "ModifyHeaders::is_empty")]
     pub headers: ModifyHeaders,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
 pub struct OnResponse {
     pub when: ResponseConditions,
     pub modifications: ResponseModifications,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
 pub struct ResponseConditions {
     #[serde(rename = "status-code")]
     pub status_code: StatusCodeRange,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
 pub struct Rule {
     pub filter: Filter,
     #[serde(flatten)]
@@ -225,7 +321,7 @@ pub struct Rule {
     pub profiles: Option<Vec<ProfileName>>,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, Copy, schemars::JsonSchema)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, Copy, JsonSchema)]
 pub enum TrailingSlashFilterRule {
     #[serde(rename = "require")]
     Require,
@@ -249,8 +345,7 @@ impl TrailingSlashFilterRule {
     }
 }
 
-#[serde_as]
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
 pub struct Filter {
     pub path: MatchingPath,
 
@@ -268,7 +363,7 @@ pub struct Filter {
     pub trailing_slash: TrailingSlashFilterRule,
 }
 
-#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, schemars::JsonSchema)]
+#[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
 #[serde(tag = "action")]
 pub enum Action {
     /// process by the handler
@@ -365,6 +460,24 @@ mod test {
     use maplit::btreemap;
 
     #[test]
+    pub fn test_method_schema() {
+        let s = serde_json::to_string_pretty(&schemars::schema_for!(MethodWrapper)).unwrap();
+        println!("{}", s);
+    }
+
+    #[test]
+    pub fn test_status_code_schema() {
+        let s = serde_json::to_string_pretty(&schemars::schema_for!(HeaderMapWrapper)).unwrap();
+        println!("{}", s);
+    }
+
+    #[test]
+    pub fn test_modify_headers_schema() {
+        let s = serde_json::to_string_pretty(&schemars::schema_for!(ModifyHeaders)).unwrap();
+        println!("{}", s);
+    }
+
+    #[test]
     pub fn test_modify_headers() {
         let mut insert_headers = HeaderMap::new();
         insert_headers.insert("X-Amz-1", "1".parse().unwrap());
@@ -372,7 +485,7 @@ mod test {
             ModifyHeaders {
                 insert: HeaderMapWrapper(insert_headers),
                 append: Default::default(),
-                remove: vec!["X-Amz-2".parse().unwrap()]
+                remove: vec!["X-Amz-2".parse().unwrap()].into()
             },
             serde_yaml::from_str::<ModifyHeaders>(
                 r#"

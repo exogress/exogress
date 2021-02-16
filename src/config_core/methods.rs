@@ -1,26 +1,46 @@
-use crate::entities::schemars::{gen::SchemaGenerator, schema::Schema};
+use crate::{
+    config_core::rule::MethodWrapper,
+    entities::schemars::{gen::SchemaGenerator, schema::Schema},
+};
+use schemars::JsonSchema;
+
 use core::fmt;
 use http::Method;
+use schemars::schema::{ArrayValidation, InstanceType, SchemaObject, StringValidation};
 use serde::{
     de,
     de::{SeqAccess, Visitor},
     ser::SerializeSeq,
     Deserialize, Deserializer, Serialize, Serializer,
 };
+use std::str::FromStr;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MethodMatcher {
     All,
-    Exact(Vec<Method>),
+    Exact(Vec<MethodWrapper>),
 }
 
-impl schemars::JsonSchema for MethodMatcher {
+impl JsonSchema for MethodMatcher {
     fn schema_name() -> String {
-        unimplemented!()
+        "MethodMatcher".to_string()
     }
 
-    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
-        unimplemented!()
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            instance_type: Some(vec![InstanceType::String, InstanceType::Array].into()),
+            array: Some(Box::new(ArrayValidation {
+                items: Some(gen.subschema_for::<MethodWrapper>().into()),
+                ..Default::default()
+            })),
+            string: Some(Box::new(StringValidation {
+                max_length: Some(1),
+                min_length: Some(1),
+                pattern: Some(String::from(r"\*")),
+            })),
+            ..Default::default()
+        }
+        .into()
     }
 }
 
@@ -33,7 +53,7 @@ impl MethodMatcher {
         match self {
             MethodMatcher::All => true,
             MethodMatcher::Exact(expected_method) => {
-                expected_method.iter().any(|expected| expected == method)
+                expected_method.iter().any(|expected| expected.0 == method)
             }
         }
     }
@@ -76,10 +96,10 @@ impl<'de> Visitor<'de> for MethodMatcherVisitor {
     where
         A: SeqAccess<'de>,
     {
-        let mut v: Vec<Method> = Vec::new();
+        let mut v: Vec<MethodWrapper> = Vec::new();
 
         while let Some(item) = seq.next_element::<String>()? {
-            v.push(item.parse().expect("FIXME"));
+            v.push(Method::from_str(&item).expect("FIXME").into());
         }
 
         Ok(MethodMatcher::Exact(v))
@@ -111,6 +131,12 @@ mod test {
     use super::*;
 
     #[test]
+    pub fn test_schema() {
+        let s = serde_json::to_string_pretty(&schemars::schema_for!(MethodMatcher)).unwrap();
+        println!("{}", s);
+    }
+
+    #[test]
     pub fn test_parsing_list() {
         const YAML: &str = r#"---
 - GET
@@ -120,7 +146,7 @@ mod test {
 
         assert_eq!(
             parsed,
-            MethodMatcher::Exact(vec![Method::GET, Method::HEAD])
+            MethodMatcher::Exact(vec![Method::GET.into(), Method::HEAD.into()])
         );
 
         let s = serde_json::to_string(&parsed).unwrap();

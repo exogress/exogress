@@ -1,3 +1,4 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use std::{collections::BTreeMap, fmt};
@@ -14,22 +15,13 @@ use crate::{
     config_core::path::{ANY_SEGMENTS_MATCH_STR, ANY_STR},
     entities::schemars::{gen::SchemaGenerator, schema::Schema},
 };
+use schemars::schema::{ArrayValidation, InstanceType, SchemaObject, SubschemaValidation};
 use std::hash::{Hash, Hasher};
 
-#[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Hash, Eq, PartialEq, Clone, JsonSchema)]
 #[serde(transparent)]
 pub struct QueryMatcher {
     pub inner: BTreeMap<SmolStr, Option<MatchQueryValue>>,
-}
-
-impl schemars::JsonSchema for QueryMatcher {
-    fn schema_name() -> String {
-        unimplemented!()
-    }
-
-    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
-        unimplemented!()
-    }
 }
 
 impl QueryMatcher {
@@ -50,6 +42,34 @@ impl Default for QueryMatcher {
 pub enum MatchQueryValue {
     Single(MatchQuerySingleValue),
     Choice(Vec<SmolStr>),
+}
+
+impl JsonSchema for MatchQueryValue {
+    fn schema_name() -> String {
+        format!("MatchQueryValue")
+    }
+
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            instance_type: Some(vec![InstanceType::String, InstanceType::Array].into()),
+            array: Some(Box::new(ArrayValidation {
+                items: Some(gen.subschema_for::<SmolStr>().into()),
+                ..Default::default()
+            })),
+            subschemas: Some(Box::new(SubschemaValidation {
+                any_of: Some(
+                    vec![
+                        gen.subschema_for::<MatchQuerySingleValue>(),
+                        gen.subschema_for::<Vec<SmolStr>>(),
+                    ]
+                    .into(),
+                ),
+                ..Default::default()
+            })),
+            ..Default::default()
+        }
+        .into()
+    }
 }
 
 impl Serialize for MatchQueryValue {
@@ -76,6 +96,20 @@ pub enum MatchQuerySingleValue {
     MayBeAnyMultipleSegments,
     Exact(SmolStr),
     Regex(Regex),
+}
+
+impl JsonSchema for MatchQuerySingleValue {
+    fn schema_name() -> String {
+        format!("MatchQuerySingleValue")
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            instance_type: Some(InstanceType::String.into()),
+            ..Default::default()
+        }
+        .into()
+    }
 }
 
 impl MatchQuerySingleValue {

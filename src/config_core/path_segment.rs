@@ -2,6 +2,7 @@ use percent_encoding::percent_decode_str;
 use serde::de::Visitor;
 
 use crate::config_core::path::ANY_SEGMENTS_MATCH_STR;
+use schemars::JsonSchema;
 use serde::{de, Deserialize, Deserializer, Serialize};
 use smol_str::SmolStr;
 use std::{
@@ -24,7 +25,7 @@ pub enum PathSegmentParseError {
     ZeroByte,
 }
 
-#[derive(Debug, Hash, Eq, Serialize, PartialEq, Clone, schemars::JsonSchema)]
+#[derive(Debug, Hash, Eq, Serialize, PartialEq, Clone, JsonSchema)]
 #[serde(transparent)]
 pub struct UrlPathSegment(SmolStr);
 

@@ -6,11 +6,16 @@ use crate::{
     },
     entities::{
         schemars::{gen::SchemaGenerator, schema::Schema},
-        ParameterName,
+        ParameterName, MAX_STRING_IDENTIFIER_LENGTH, MIN_STRING_IDENTIFIER_LENGTH,
+        STRING_ENTITY_REGEXP_PATTERN_NON_FIXED,
     },
 };
 use core::fmt;
 use hashbrown::HashMap;
+use schemars::{
+    schema::{InstanceType, Metadata, SchemaObject, StringValidation, SubschemaValidation},
+    JsonSchema,
+};
 use serde::{
     de,
     de::{MapAccess, SeqAccess, Visitor},
@@ -30,17 +35,59 @@ where
     Value(P),
 }
 
-impl<P, R> schemars::JsonSchema for Container<P, R>
+impl<P, R> JsonSchema for Container<P, R>
 where
     P: ReferencedConfigValue,
     R: SharedEntity,
 {
     fn schema_name() -> String {
-        unimplemented!()
+        format!(
+            "{}_or_ParameterName_or_{}",
+            R::schema_name(),
+            P::schema_name()
+        )
     }
 
-    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
-        unimplemented!()
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            metadata: Some(Box::new(Metadata {
+                title: Some(format!("Either value or parameter name or entity name")),
+                description: Some(format!(
+                    "You may supply the desired object or the parameter name (starting with @)"
+                )),
+                ..Default::default()
+            })),
+            instance_type: Some(
+                vec![
+                    InstanceType::String.into(),
+                    InstanceType::Object.into(),
+                    InstanceType::Array.into(),
+                ]
+                .into(),
+            ),
+            subschemas: Some(Box::new(SubschemaValidation {
+                one_of: Some(vec![
+                    SchemaObject {
+                        instance_type: Some(InstanceType::String.into()),
+                        string: Some(Box::new(StringValidation {
+                            max_length: Some((MAX_STRING_IDENTIFIER_LENGTH + 1) as u32),
+                            min_length: Some((MIN_STRING_IDENTIFIER_LENGTH + 1) as u32),
+                            pattern: Some(String::from(format!(
+                                "^@{}$",
+                                STRING_ENTITY_REGEXP_PATTERN_NON_FIXED
+                            ))),
+                        })),
+                        ..Default::default()
+                    }
+                    .into(),
+                    gen.subschema_for::<P>(),
+                    gen.subschema_for::<R>(),
+                ]),
+                ..Default::default()
+            })),
+            ..Default::default()
+        }
+        .into()
     }
 }
 

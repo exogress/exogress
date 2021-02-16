@@ -4,6 +4,10 @@ use crate::{
     config_core::path_modify::PathSegmentsModify,
     entities::schemars::{gen::SchemaGenerator, schema::Schema},
 };
+use schemars::{
+    schema::{ArrayValidation, InstanceType, Metadata, SchemaObject, StringValidation},
+    JsonSchema,
+};
 use serde::{
     de,
     de::{IntoDeserializer, SeqAccess, Visitor},
@@ -20,13 +24,31 @@ pub enum RedirectTo {
     Root,
 }
 
-impl schemars::JsonSchema for RedirectTo {
+impl JsonSchema for RedirectTo {
     fn schema_name() -> String {
-        unimplemented!()
+        "RedirectTo".to_string()
     }
 
-    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
-        unimplemented!()
+    fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            metadata: Some(Box::new(Metadata {
+                title: Some(String::from(
+                    "URL, or array of path segments, optiionally starting from schema://url",
+                )),
+                description: None,
+                ..Default::default()
+            })),
+            instance_type: Some(vec![InstanceType::String, InstanceType::Array].into()),
+            array: Some(Box::new(ArrayValidation {
+                items: Some(vec![gen.subschema_for::<String>()].into()),
+                ..Default::default()
+            })),
+            string: Some(Box::new(StringValidation {
+                ..Default::default()
+            })),
+            ..Default::default()
+        }
+        .into()
     }
 }
 
@@ -146,7 +168,7 @@ impl Serialize for RedirectTo {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, JsonSchema)]
 pub enum RedirectType {
     #[serde(rename = "permanent")]
     Permanent,
@@ -160,7 +182,7 @@ impl Default for RedirectType {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, JsonSchema)]
 pub struct Redirect {
     #[serde(default)]
     redirect_type: RedirectType,
@@ -170,6 +192,12 @@ pub struct Redirect {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    pub fn test_schema() {
+        let s = serde_json::to_string_pretty(&schemars::schema_for!(RedirectTo)).unwrap();
+        println!("{}", s);
+    }
 
     #[test]
     pub fn test_deserialize() {

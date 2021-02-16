@@ -9,7 +9,7 @@ pub use label_value::LabelValue;
 pub use smol_str::SmolStr;
 pub use string_macros::{
     StringIdentifierError, StringIdentifierParseError, MAX_STRING_IDENTIFIER_LENGTH,
-    MIN_STRING_IDENTIFIER_LENGTH,
+    MIN_STRING_IDENTIFIER_LENGTH, STRING_ENTITY_REGEXP_PATTERN_NON_FIXED,
 };
 pub use ulid_macro::UlidIdentifierParseError;
 

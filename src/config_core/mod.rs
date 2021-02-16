@@ -7,6 +7,8 @@ pub use client_config::{
     ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant, ClientMount,
 };
 pub use config::{default_rules, Config};
+pub use duration::DurationWrapper;
+use include_dir::{include_dir, Dir};
 use lazy_static::lazy_static;
 pub use methods::MethodMatcher;
 pub use pass_through::PassThrough;
@@ -18,9 +20,7 @@ pub use project_config::{ProjectConfig, ProjectHandler, ProjectHandlerVariant};
 pub use proxy::Proxy;
 pub use query::{MatchQuerySingleValue, MatchQueryValue, QueryMatcher};
 pub use rebase::Rebase;
-pub use response::{
-    HttpHeaders, RawResponse, RedirectResponse, ResponseBody, StaticResponse, TemplateEngine,
-};
+pub use response::{RawResponse, RedirectResponse, ResponseBody, StaticResponse, TemplateEngine};
 pub use rule::{
     Action, Filter, ModifyHeaders, OnResponse, RequestModifications, ResponseModifications, Rule,
     TrailingSlashFilterRule, TrailingSlashModification,
@@ -38,6 +38,7 @@ mod cache;
 mod catch;
 mod client_config;
 mod config;
+mod duration;
 mod gcs;
 mod methods;
 mod pass_through;
@@ -56,13 +57,15 @@ pub mod refinable;
 mod response;
 mod rule;
 mod s3;
+mod schema;
 mod scope;
 mod static_dir;
 mod status_code;
 mod upstream;
 mod version;
 
-pub const DEFAULT_CONFIG_FILE: &str = "Exofile";
+pub const DEFAULT_CONFIG_FILE: &str = "Exofile.yml";
+static CONFIG_SCHEMAS: Dir = include_dir!("config-schemas/schemas");
 
 lazy_static! {
     pub static ref MIN_SUPPORTED_VERSION: Version = "1.0.0-pre.1".parse().unwrap();
@@ -97,15 +100,15 @@ pub fn is_default<T: Default + PartialEq>(v: &T) -> bool {
     v == &Default::default()
 }
 
-pub(crate) fn unimplemented_schema(
-    _gen: &mut schemars::gen::SchemaGenerator,
-) -> schemars::schema::Schema {
-    unimplemented!()
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    pub fn test_schema() {
+        let s = serde_json::to_string_pretty(&schemars::schema_for!(ClientConfig)).unwrap();
+        println!("{}", s);
+    }
 
     #[test]
     fn test_version_supported() {

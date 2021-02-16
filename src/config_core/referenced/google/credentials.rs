@@ -1,9 +1,10 @@
 use crate::config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use std::convert::TryFrom;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
 pub struct GoogleCredentials {
     pub json: SmolStr,
 }

@@ -1,23 +1,41 @@
 use crate::entities::schemars::{gen::SchemaGenerator, schema::Schema};
 use core::fmt;
 use http::status::InvalidStatusCode;
+use schemars::{
+    schema::{InstanceType, NumberValidation, SchemaObject, StringValidation},
+    JsonSchema,
+};
 use serde::{
     de,
     de::{Unexpected, Visitor},
     Deserialize, Deserializer, Serialize, Serializer,
 };
+
 use std::{convert::TryInto, str::FromStr};
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub struct StatusCode(pub http::StatusCode);
 
-impl schemars::JsonSchema for StatusCode {
+impl From<http::StatusCode> for StatusCode {
+    fn from(inner: http::StatusCode) -> Self {
+        StatusCode(inner)
+    }
+}
+
+impl JsonSchema for StatusCode {
     fn schema_name() -> String {
-        unimplemented!()
+        "HttpStatusCode".to_string()
     }
 
-    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
-        unimplemented!()
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            instance_type: Some(InstanceType::Integer.into()),
+            number: Some(Box::new(NumberValidation {
+                ..Default::default()
+            })),
+            ..Default::default()
+        }
+        .into()
     }
 }
 
@@ -97,6 +115,8 @@ impl<'de> Deserialize<'de> for StatusCode {
     }
 }
 
+pub const STATUS_CODE_RANGE_PATTERN: &str = r#"^((?:[1-5]\d{2}-[1-5]\d{2})|(?:[1-5]\d{2})|(?:[1-5]xx)|(?:xxx)|(?:[1-5]\d{2})(?:,(?:[1-5]\d{2}))*)$"#;
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub enum StatusCodeRange {
     Single(http::StatusCode),
@@ -104,13 +124,25 @@ pub enum StatusCodeRange {
     List(Vec<http::StatusCode>),
 }
 
-impl schemars::JsonSchema for StatusCodeRange {
+impl JsonSchema for StatusCodeRange {
     fn schema_name() -> String {
-        unimplemented!()
+        "HttpStatusCodeRange".to_string()
     }
 
-    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
-        unimplemented!()
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            instance_type: Some(vec![InstanceType::Integer, InstanceType::String].into()),
+            number: Some(Box::new(NumberValidation {
+                ..Default::default()
+            })),
+            string: Some(Box::new(StringValidation {
+                min_length: Some(3),
+                pattern: Some(String::from(STATUS_CODE_RANGE_PATTERN)),
+                ..Default::default()
+            })),
+            ..Default::default()
+        }
+        .into()
     }
 }
 
@@ -259,6 +291,15 @@ impl<'de> Deserialize<'de> for StatusCodeRange {
 mod test {
     use super::*;
     use crate::config_core::CatchMatcher;
+    use regex::RegexBuilder;
+
+    #[test]
+    pub fn test_status_code_schema() {
+        let s = serde_json::to_string_pretty(&schemars::schema_for!(StatusCode)).unwrap();
+        println!("{}", s);
+        let s = serde_json::to_string_pretty(&schemars::schema_for!(StatusCodeRange)).unwrap();
+        println!("{}", s);
+    }
 
     #[test]
     pub fn test_parsing() {
@@ -268,7 +309,6 @@ mod test {
 - "status-code:500-550"
 - "status-code:500"
 - "status-code:xxx"
-- "status-code:*"
 "#;
         let parsed = serde_yaml::from_str::<Vec<CatchMatcher>>(YAML).unwrap();
         assert_eq!(
@@ -306,12 +346,17 @@ mod test {
                 http::StatusCode::from_u16(599).unwrap(),
             ))
         );
-        assert_eq!(
-            parsed[5],
-            CatchMatcher::StatusCode(StatusCodeRange::Range(
-                http::StatusCode::from_u16(100).unwrap(),
-                http::StatusCode::from_u16(599).unwrap(),
-            ))
-        );
+        let pattern = RegexBuilder::new(STATUS_CODE_RANGE_PATTERN)
+            .build()
+            .unwrap();
+
+        assert!(pattern.is_match("200"));
+        assert!(pattern.is_match("3xx"));
+        assert!(pattern.is_match("200,201,500"));
+        assert!(pattern.is_match("200-300"));
+        assert!(!pattern.is_match("200,300,"));
+        assert!(!pattern.is_match("50"));
+        assert!(!pattern.is_match("asdf"));
+        assert!(!pattern.is_match("2"));
     }
 }

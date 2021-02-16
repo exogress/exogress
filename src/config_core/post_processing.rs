@@ -4,14 +4,15 @@ use crate::config_core::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ImagePostProcessing {
     #[serde(default)]
     pub webp: WebpPostProcessing,
 }
+use schemars::JsonSchema;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct WebpPostProcessing {
     #[serde(default = "default_webp")]
@@ -38,7 +39,7 @@ fn default_webp() -> bool {
     true
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Encoding {
     #[serde(default = "default_compression")]
@@ -72,7 +73,7 @@ fn default_compression_min_size() -> u32 {
     100
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct PostProcessing {
     #[serde(default)]

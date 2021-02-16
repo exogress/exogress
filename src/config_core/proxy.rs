@@ -4,8 +4,9 @@ use crate::{
     config_core::{cache::Cache, post_processing::PostProcessing, rebase::Rebase},
     entities::Upstream,
 };
+use schemars::JsonSchema;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
 pub struct Proxy {
     pub upstream: Upstream,
 

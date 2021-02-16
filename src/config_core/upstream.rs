@@ -1,11 +1,14 @@
 use crate::{
-    config_core::{HttpHeaders, StatusCodeRange},
+    config_core::{rule::HeaderMapWrapper, DurationWrapper, StatusCodeRange},
     entities::{HealthCheckProbeName, ProfileName},
 };
-use http::{Method, StatusCode};
+use http::StatusCode;
 use humantime::format_duration;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
+
+use crate::config_core::rule::MethodWrapper;
 use std::{
     collections::BTreeMap,
     hash::{Hash, Hasher},
@@ -27,7 +30,7 @@ pub enum UpstreamSocketAddrParseError {
     Malformed,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct UpstreamSocketAddr {
     pub port: u16,
 
@@ -69,7 +72,7 @@ impl FromStr for UpstreamSocketAddr {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
 pub struct UpstreamDefinition {
     #[serde(flatten)]
     pub addr: UpstreamSocketAddr,
@@ -102,39 +105,30 @@ impl UpstreamDefinition {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 #[serde(tag = "kind")]
 pub enum ProbeDetails {
     #[serde(rename = "liveness")]
     Liveness,
 }
 
-fn default_method() -> Method {
-    Method::GET
-}
-
 fn default_status_code_range() -> StatusCodeRange {
     StatusCodeRange::Single(StatusCode::OK)
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 pub struct Probe {
     #[serde(flatten)]
     pub details: ProbeDetails,
     pub path: SmolStr,
-    #[schemars(schema_with = "super::unimplemented_schema")]
-    #[serde(with = "humantime_serde")]
-    pub timeout: Duration,
-    #[schemars(schema_with = "super::unimplemented_schema")]
-    #[serde(with = "humantime_serde")]
-    pub period: Duration,
+    pub timeout: DurationWrapper,
+    pub period: DurationWrapper,
 
-    #[serde(default, skip_serializing_if = "HttpHeaders::is_default")]
-    pub headers: HttpHeaders,
+    #[serde(default, skip_serializing_if = "HeaderMapWrapper::is_empty")]
+    pub headers: HeaderMapWrapper,
 
-    #[schemars(schema_with = "super::unimplemented_schema")]
-    #[serde(with = "http_serde::method", default = "default_method")]
-    pub method: Method,
+    #[serde(default = "MethodWrapper::default")]
+    pub method: MethodWrapper,
 
     #[serde(rename = "expected-status-code", default = "default_status_code_range")]
     pub expected_status_code: StatusCodeRange,
@@ -157,12 +151,12 @@ impl Probe {
     const TIMEOUT_THRESHOLD: Duration = Duration::from_secs(1);
 
     pub fn validate(&self) -> Result<(), ProbeError> {
-        if self.period < Probe::PERIOD_THRESHOLD {
+        if self.period.0 < Probe::PERIOD_THRESHOLD {
             return Err(ProbeError::PeriodBelowThreshold {
                 threshold: Probe::PERIOD_THRESHOLD,
             });
         }
-        if self.timeout < Probe::TIMEOUT_THRESHOLD {
+        if self.timeout.0 < Probe::TIMEOUT_THRESHOLD {
             return Err(ProbeError::TimeoutBelowThreshold {
                 threshold: Probe::TIMEOUT_THRESHOLD,
             });

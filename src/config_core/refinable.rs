@@ -4,9 +4,11 @@ use crate::{
 };
 use anyhow::bail;
 use core::fmt;
+use schemars::JsonSchema;
 use serde::{
     de, de::DeserializeOwned, ser::Error, Deserialize, Deserializer, Serialize, Serializer,
 };
+
 use std::{
     collections::{BTreeMap, VecDeque},
     hash::Hash,
@@ -68,9 +70,7 @@ impl RefinableSet {
     }
 }
 
-#[derive(
-    Default, Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, schemars::JsonSchema,
-)]
+#[derive(Default, Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, JsonSchema)]
 pub struct Refinable {
     #[serde(
         default,
@@ -92,13 +92,14 @@ pub trait SharedEntity:
     + std::hash::Hash
     + core::fmt::Display
     + FromStr
+    + JsonSchema
 {
     type Value: ReferencedConfigValue;
 
     fn get_refined(&self, refined: &RefinableSet, scope: &Scope) -> Option<(Self::Value, Scope)>;
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, JsonSchema)]
 pub struct NonExistingSharedEntity(());
 
 impl SharedEntity for NonExistingSharedEntity {

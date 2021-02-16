@@ -6,6 +6,8 @@ fn main() {
 
     let mut base_path = PathBuf::new();
     base_path.push("schemas");
+    base_path.push(CURRENT_VERSION.major_base_version());
+    base_path.push(CURRENT_VERSION.minor_base_version());
     base_path.push(version);
 
     let mut client_path = base_path.clone();
@@ -18,7 +20,7 @@ fn main() {
 
     match serde_json::to_string_pretty(&schemars::schema_for!(ClientConfig)) {
         Ok(txt) => {
-            std::fs::write(client_path, txt).expect("couldn't write client config schema");
+            std::fs::write(client_path, &txt).expect("couldn't write client config schema");
         }
         Err(e) => {
             println!("Error {}", e);

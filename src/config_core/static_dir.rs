@@ -1,8 +1,11 @@
-use crate::config_core::{cache::Cache, post_processing::PostProcessing, rebase::Rebase};
+use crate::config_core::{
+    cache::Cache, post_processing::PostProcessing, rebase::Rebase, StatusCode,
+};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
 pub enum Wildcard {
     #[serde(rename = "_")]
     Any,
@@ -12,24 +15,20 @@ pub enum Wildcard {
     ClientErrors,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
 #[serde(untagged)]
 pub enum Error {
-    StatusCode(
-        #[schemars(schema_with = "super::unimplemented_schema")]
-        #[serde(with = "http_serde::status_code")]
-        http::StatusCode,
-    ),
+    StatusCode(StatusCode),
     Placeholder(Wildcard),
 }
 
 impl From<http::StatusCode> for Error {
     fn from(s: http::StatusCode) -> Self {
-        Error::StatusCode(s)
+        Error::StatusCode(StatusCode(s))
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, schemars::JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
 pub struct StaticDir {
     pub dir: PathBuf,
 
