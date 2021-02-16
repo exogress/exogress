@@ -1263,31 +1263,6 @@
           }
         },
         {
-          "description": "move on to the next rule. typically, combined with rewrite",
-          "type": "object",
-          "required": [
-            "action"
-          ],
-          "properties": {
-            "action": {
-              "type": "string",
-              "enum": [
-                "none"
-              ]
-            },
-            "modify-request": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/RequestModifications"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          }
-        },
-        {
           "description": "finish the whole handlers chain and move to finalizer",
           "type": "object",
           "required": [

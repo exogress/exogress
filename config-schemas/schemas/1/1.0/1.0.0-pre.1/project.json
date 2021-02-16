@@ -1040,30 +1040,6 @@
               "enum": [
                 "next-handler"
               ]
-            }
-          }
-        },
-        {
-          "description": "move on to the next rule. typically, combined with rewrite",
-          "type": "object",
-          "required": [
-            "action"
-          ],
-          "properties": {
-            "action": {
-              "type": "string",
-              "enum": [
-                "none"
-              ]
-            },
-            "modify-request": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/RequestModifications"
-                },
-                {
-                  "type": "null"
-                }
               ]
             }
           }
