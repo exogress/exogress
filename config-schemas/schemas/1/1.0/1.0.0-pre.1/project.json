@@ -1144,7 +1144,7 @@
       }
     },
     "S3Region": {
-d      "title": "S3 region name",
+      "title": "S3 region name",
       "type": "string"
     },
     "StaticResponse": {

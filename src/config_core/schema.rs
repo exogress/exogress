@@ -25,9 +25,9 @@ pub fn validate_schema(yaml_data: impl AsRef<[u8]>, schema_file_name: &str) -> a
 
     match res {
         Some(schema_file) => {
-            let schema = serde_json::from_slice(schema_file.contents()).unwrap();
+            let schema = serde_json::from_slice(schema_file.contents())?;
             let mut scope = json_schema::Scope::new();
-            let schema = scope.compile_and_return(schema, true).unwrap();
+            let schema = scope.compile_and_return(schema, true)?;
             let validation = schema.validate(&json_cfg_value);
             if validation.is_strictly_valid() {
                 Ok(())
