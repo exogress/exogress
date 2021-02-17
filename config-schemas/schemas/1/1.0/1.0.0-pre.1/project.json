@@ -1144,65 +1144,8 @@
       }
     },
     "S3Region": {
-      "anyOf": [
-        {
-          "type": "string",
-          "enum": [
-            "UsEast1",
-            "UsEast2",
-            "UsWest1",
-            "UsWest2",
-            "CaCentral1",
-            "ApSouth1",
-            "ApNortheast1",
-            "ApNortheast2",
-            "ApNortheast3",
-            "ApSoutheast1",
-            "ApSoutheast2",
-            "CnNorth1",
-            "CnNorthwest1",
-            "EuNorth1",
-            "EuCentral1",
-            "EuWest1",
-            "EuWest2",
-            "EuWest3",
-            "MeSouth1",
-            "SaEast1",
-            "DoNyc3",
-            "DoAms3",
-            "DoSgp1",
-            "Yandex",
-            "WaUsEast1",
-            "WaUsEast2",
-            "WaUsWest1",
-            "WaEuCentral1"
-          ]
-        },
-        {
-          "description": "Custom region",
-          "type": "object",
-          "required": [
-            "Custom"
-          ],
-          "properties": {
-            "Custom": {
-              "type": "object",
-              "required": [
-                "endpoint",
-                "region"
-              ],
-              "properties": {
-                "endpoint": {
-                  "type": "string"
-                },
-                "region": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      ]
+d      "title": "S3 region name",
+      "type": "string"
     },
     "StaticResponse": {
       "anyOf": [

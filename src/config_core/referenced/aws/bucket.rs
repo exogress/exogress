@@ -1,6 +1,12 @@
-use crate::config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue};
+use crate::{
+    config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue},
+    entities::schemars::{gen::SchemaGenerator, schema::Schema},
+};
 use core::fmt::{self, Formatter};
-use schemars::JsonSchema;
+use schemars::{
+    schema::{InstanceType, Metadata, SchemaObject},
+    JsonSchema,
+};
 use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 use std::{convert::TryFrom, hash::Hash, str::FromStr};
@@ -8,7 +14,7 @@ use url::Url;
 
 // https://github.com/durch/rust-s3/blob/45dd3f25a4047186e414e47fcedb4f83e492368e/aws-region/src/region.rs
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash, JsonSchema)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum S3Region {
     /// us-east-1
     UsEast1,
@@ -68,6 +74,24 @@ pub enum S3Region {
     WaEuCentral1,
     /// Custom region
     Custom { region: String, endpoint: String },
+}
+
+impl JsonSchema for S3Region {
+    fn schema_name() -> String {
+        format!("S3Region")
+    }
+
+    fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
+        SchemaObject {
+            metadata: Some(Box::new(Metadata {
+                title: Some(format!("S3 region name")),
+                ..Default::default()
+            })),
+            instance_type: Some(InstanceType::String.into()),
+            ..Default::default()
+        }
+        .into()
+    }
 }
 
 impl fmt::Display for S3Region {
