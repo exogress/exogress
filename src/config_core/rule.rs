@@ -533,7 +533,7 @@ remove:
                 r#"
 ---
 path: []
-query: 
+query-params: 
   q1: "*"
   q2: "?"
   q3: "v1"

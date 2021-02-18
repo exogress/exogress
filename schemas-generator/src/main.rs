@@ -5,7 +5,7 @@ fn main() {
     let version = (*CURRENT_VERSION).0.to_string();
 
     let mut base_path = PathBuf::new();
-    base_path.push("schemas");
+    base_path.push("config-schemas");
     base_path.push(CURRENT_VERSION.major_base_version());
     base_path.push(CURRENT_VERSION.minor_base_version());
     base_path.push(version);
@@ -17,6 +17,9 @@ fn main() {
 
     client_path.push("client.json");
     project_path.push("project.json");
+
+    println!("save to {}", client_path.to_str().unwrap());
+    println!("save to {}", project_path.to_str().unwrap());
 
     match serde_json::to_string_pretty(&schemars::schema_for!(ClientConfig)) {
         Ok(txt) => {

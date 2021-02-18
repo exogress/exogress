@@ -65,11 +65,11 @@ mod upstream;
 mod version;
 
 pub const DEFAULT_CONFIG_FILE: &str = "Exofile.yml";
-static CONFIG_SCHEMAS: Dir = include_dir!("config-schemas/schemas");
+static CONFIG_SCHEMAS: Dir = include_dir!("config-schemas");
 
 lazy_static! {
-    pub static ref MIN_SUPPORTED_VERSION: Version = "1.0.0-pre.1".parse().unwrap();
-    pub static ref CURRENT_VERSION: ConfigVersion = ConfigVersion("1.0.0-pre.1".parse().unwrap());
+    pub static ref MIN_SUPPORTED_VERSION: Version = "1.0.0".parse().unwrap();
+    pub static ref CURRENT_VERSION: ConfigVersion = ConfigVersion("1.0.0".parse().unwrap());
     pub static ref VERSION_REQUIREMENT: VersionReq = format!(
         ">={} <={} <2",
         MIN_SUPPORTED_VERSION.to_string(),
@@ -112,7 +112,7 @@ mod test {
     #[test]
     fn test_version_supported() {
         assert!(!is_version_supported(&"0.2.4".parse().unwrap()));
-        assert!(is_version_supported(&"1.0.0-pre.1".parse().unwrap()));
+        assert!(is_version_supported(&"1.0.0".parse().unwrap()));
         assert!(!is_version_supported(&"1.0.0-pre.2".parse().unwrap()));
         assert!(!is_version_supported(&"1.23.1".parse().unwrap()));
         assert!(!is_version_supported(&"2.0.0".parse().unwrap()));

@@ -222,7 +222,7 @@ impl From<ProjectHandler> for ClientHandler {
             priority: f.priority,
             refinable: f.refinable,
             profiles: None,
-            languages: None,
+            // languages: None,
         }
     }
 }
@@ -234,7 +234,7 @@ mod test {
     #[test]
     pub fn test_parsing() {
         const YAML: &str = r#"---
-version: 1.0.0-pre.1
+version: 1.0.0
 mount-points:
   mount_point:
     handlers:

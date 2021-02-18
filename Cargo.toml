@@ -302,5 +302,5 @@ ws-client = [
 [workspace]
 members = [
     ".",
-    "./config-schemas"
+    "schemas-generator"
 ]
