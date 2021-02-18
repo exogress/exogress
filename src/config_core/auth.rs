@@ -1,46 +1,25 @@
-use crate::config_core::referenced::{acl::Acl, Container};
-use core::fmt;
+use crate::config_core::{
+    is_default,
+    referenced::{acl::Acl, Container},
+};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
 pub struct Auth {
-    pub providers: Vec<AuthDefinition>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub google: Option<GoogleAuthDefinition>,
+
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub github: Option<GithubAuthDefinition>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
-pub struct AuthDefinition {
-    pub name: AuthProvider,
+pub struct GoogleAuthDefinition {
     pub acl: Container<Acl>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
-pub enum AuthProvider {
-    #[serde(rename = "google")]
-    Google,
-
-    #[serde(rename = "github")]
-    Github,
-}
-
-impl FromStr for AuthProvider {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "google" => Ok(AuthProvider::Google),
-            "github" => Ok(AuthProvider::Github),
-            _ => Err(()),
-        }
-    }
-}
-
-impl fmt::Display for AuthProvider {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            AuthProvider::Google => write!(f, "google"),
-            AuthProvider::Github => write!(f, "github"),
-        }
-    }
+pub struct GithubAuthDefinition {
+    pub acl: Container<Acl>,
 }

@@ -79,28 +79,6 @@
       "description": "Array of HTTP Header Names",
       "type": "array"
     },
-    "AuthDefinition": {
-      "type": "object",
-      "required": [
-        "acl",
-        "name"
-      ],
-      "properties": {
-        "acl": {
-          "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_Array_of_AclEntry"
-        },
-        "name": {
-          "$ref": "#/definitions/AuthProvider"
-        }
-      }
-    },
-    "AuthProvider": {
-      "type": "string",
-      "enum": [
-        "google",
-        "github"
-      ]
-    },
     "AwsCredentials": {
       "type": "object",
       "required": [
@@ -269,21 +247,34 @@
         {
           "type": "object",
           "required": [
-            "kind",
-            "providers"
+            "kind"
           ],
           "properties": {
+            "github": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/GithubAuthDefinition"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "google": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/GoogleAuthDefinition"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "kind": {
               "type": "string",
               "enum": [
                 "auth"
               ]
-            },
-            "providers": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/AuthDefinition"
-              }
             }
           }
         },
@@ -595,7 +586,7 @@
         "path": {
           "$ref": "#/definitions/PathMatcher"
         },
-        "query": {
+        "query-params": {
           "type": "object",
           "additionalProperties": {
             "anyOf": [
@@ -621,6 +612,28 @@
       "properties": {
         "name": {
           "type": "string"
+        }
+      }
+    },
+    "GithubAuthDefinition": {
+      "type": "object",
+      "required": [
+        "acl"
+      ],
+      "properties": {
+        "acl": {
+          "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_Array_of_AclEntry"
+        }
+      }
+    },
+    "GoogleAuthDefinition": {
+      "type": "object",
+      "required": [
+        "acl"
+      ],
+      "properties": {
+        "acl": {
+          "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_Array_of_AclEntry"
         }
       }
     },
@@ -751,10 +764,54 @@
     },
     "ModifyQuery": {
       "type": "object",
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "strategy"
+          ],
+          "properties": {
+            "remove": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "keep"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "strategy"
+          ],
+          "properties": {
+            "keep": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "remove"
+              ]
+            }
+          }
+        }
+      ],
       "properties": {
-        "remove": {
-          "type": "array",
-          "items": {
+        "set": {
+          "type": "object",
+          "additionalProperties": {
             "type": "string"
           }
         }
@@ -1032,7 +1089,7 @@
       "pattern": "^[a-zA-Z][a-zA-Z0-9\\-_]+$"
     },
     "RedirectTo": {
-      "title": "URL, or array of path segments, optiionally starting from schema://url",
+      "title": "URL, or array of path segments, optionally starting from schema://url",
       "type": [
         "string",
         "array"
@@ -1070,7 +1127,7 @@
             "type": "string"
           }
         },
-        "query": {
+        "query-params": {
           "$ref": "#/definitions/ModifyQuery"
         },
         "trailing-slash": {
@@ -1387,6 +1444,9 @@
               "enum": [
                 "redirect"
               ]
+            },
+            "query-params": {
+              "$ref": "#/definitions/ModifyQuery"
             },
             "redirect-type": {
               "$ref": "#/definitions/RedirectType"

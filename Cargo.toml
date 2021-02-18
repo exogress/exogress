@@ -48,6 +48,7 @@ serde = { optional = true, version = "1.0.105" }
 serde_json = { optional = true, version = "1.0.48" }
 serde_yaml = { optional = true, version = "0.8.12" }
 shadow-clone = { optional = true, version = "1.2.1" }
+linked-hash-map = { optional = true, version = "0.5.4" }
 shellexpand = { optional = true, version = "2.0.0" }
 smallvec = { optional = true, version = "1.6" }
 smol_str = { optional = true, version = "0.1.17" }
@@ -162,6 +163,7 @@ client-lib = [
 ]
 common-utils = [
     "bs58",
+    "linked-hash-map",
     "clap",
     "entities",
     "futures",

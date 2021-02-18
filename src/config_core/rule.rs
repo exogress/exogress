@@ -274,20 +274,39 @@ pub struct RequestModifications {
     #[serde(rename = "trailing-slash", default, skip_serializing_if = "is_default")]
     pub trailing_slash: TrailingSlashModification,
 
-    #[serde(default, skip_serializing_if = "ModifyQuery::is_empty")]
-    pub query: ModifyQuery,
+    #[serde(default, rename = "query-params", skip_serializing_if = "is_default")]
+    pub query_params: ModifyQuery,
+}
+
+#[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
+#[serde(tag = "strategy")]
+pub enum ModifyQueryStrategy {
+    #[serde(rename = "keep")]
+    Keep {
+        #[serde(default)]
+        remove: Vec<SmolStr>,
+    },
+
+    #[serde(rename = "remove")]
+    Remove {
+        #[serde(default)]
+        keep: Vec<SmolStr>,
+    },
+}
+
+impl Default for ModifyQueryStrategy {
+    fn default() -> Self {
+        ModifyQueryStrategy::Keep { remove: vec![] }
+    }
 }
 
 #[derive(Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
 pub struct ModifyQuery {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub remove: Vec<SmolStr>,
-}
+    #[serde(default, flatten)]
+    pub strategy: ModifyQueryStrategy,
 
-impl ModifyQuery {
-    fn is_empty(&self) -> bool {
-        self.remove.is_empty()
-    }
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub set: BTreeMap<SmolStr, SmolStr>,
 }
 
 #[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
@@ -345,8 +364,12 @@ impl TrailingSlashFilterRule {
 pub struct Filter {
     pub path: MatchingPath,
 
-    #[serde(default, skip_serializing_if = "QueryMatcher::is_empty")]
-    pub query: QueryMatcher,
+    #[serde(
+        default,
+        rename = "query-params",
+        skip_serializing_if = "QueryMatcher::is_empty"
+    )]
+    pub query_params: QueryMatcher,
 
     #[serde(default, skip_serializing_if = "MethodMatcher::is_all")]
     pub methods: MethodMatcher,
@@ -494,7 +517,7 @@ remove:
         assert_eq!(
             Filter {
                 path: MatchingPath::Root,
-                query: matcher,
+                query_params: matcher,
                 methods: Default::default(),
                 trailing_slash: Default::default()
             },

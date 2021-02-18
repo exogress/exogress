@@ -1,15 +1,15 @@
-use hashbrown::HashMap;
+use linked_hash_map::LinkedHashMap;
 use url::Url;
 
 pub trait UriExt {
     fn to_url(&self) -> Url;
     fn path_segments(&self) -> Vec<&str>;
-    fn query_pairs(&self) -> HashMap<String, String>;
+    fn query_pairs(&self) -> LinkedHashMap<String, String>;
     fn set_scheme(&mut self, scheme: &str);
     fn set_hostname(&mut self, hostname: &str);
     fn unset_port(&mut self);
     fn clear_query(&mut self);
-    fn set_query(&mut self, pairs: HashMap<String, String>);
+    fn set_query(&mut self, pairs: LinkedHashMap<String, String>);
     fn clear_segments(&mut self);
     fn push_segment(&mut self, segment: &str);
     fn ensure_trailing_slash(&mut self, set: bool);
@@ -24,9 +24,9 @@ impl UriExt for http::uri::Uri {
         self.path().split("/").skip(1).collect()
     }
 
-    fn query_pairs(&self) -> HashMap<String, String> {
+    fn query_pairs(&self) -> LinkedHashMap<String, String> {
         if let Some(query) = self.query() {
-            let mut res = HashMap::new();
+            let mut res = LinkedHashMap::new();
             for item in query.split("&") {
                 let mut splitted = item.split("=");
                 let maybe_key = splitted.next();
@@ -119,7 +119,7 @@ impl UriExt for http::uri::Uri {
         *self = builder.build().expect("FIXME");
     }
 
-    fn set_query(&mut self, pairs: HashMap<String, String>) {
+    fn set_query(&mut self, pairs: LinkedHashMap<String, String>) {
         let mut new_path = self.path().to_string();
 
         if !pairs.is_empty() {

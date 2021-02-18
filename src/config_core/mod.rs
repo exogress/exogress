@@ -1,5 +1,6 @@
+pub use crate::config_core::rule::ModifyQuery;
 use crate::entities::ProfileName;
-pub use auth::{Auth, AuthDefinition, AuthProvider};
+pub use auth::{Auth, GithubAuthDefinition, GoogleAuthDefinition};
 pub use catch::{CatchAction, CatchMatcher, CatchMatcherParseError, RescueItem};
 pub use client_config::{
     ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant, ClientMount,
@@ -18,10 +19,11 @@ pub use project_config::{ProjectConfig, ProjectHandler, ProjectHandlerVariant};
 pub use proxy::Proxy;
 pub use query::{MatchQuerySingleValue, MatchQueryValue, QueryMatcher};
 pub use rebase::Rebase;
+pub use redirect::RedirectTo;
 pub use response::{RawResponse, RedirectResponse, ResponseBody, StaticResponse, TemplateEngine};
 pub use rule::{
-    Action, Filter, ModifyHeaders, OnResponse, RequestModifications, ResponseModifications, Rule,
-    TrailingSlashFilterRule, TrailingSlashModification,
+    Action, Filter, ModifyHeaders, ModifyQueryStrategy, OnResponse, RequestModifications,
+    ResponseModifications, Rule, TrailingSlashFilterRule, TrailingSlashModification,
 };
 pub use scope::Scope;
 use semver::{Version, VersionReq};

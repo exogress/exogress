@@ -21,7 +21,7 @@ pub fn default_rules() -> Vec<Rule> {
     vec![Rule {
         filter: Filter {
             path: MatchingPath::Wildcard,
-            query: QueryMatcher {
+            query_params: QueryMatcher {
                 inner: Default::default(),
             },
             methods: Default::default(),

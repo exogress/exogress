@@ -1,5 +1,8 @@
 use crate::config_core::{
-    is_default, redirect::RedirectTo, referenced::mime_types::MimeType, rule::HeaderMapWrapper,
+    is_default,
+    redirect::RedirectTo,
+    referenced::mime_types::MimeType,
+    rule::{HeaderMapWrapper, ModifyQuery},
     StatusCode,
 };
 use schemars::JsonSchema;
@@ -57,6 +60,9 @@ pub struct RedirectResponse {
     #[serde(rename = "redirect-type")]
     pub redirect_type: RedirectType,
     pub destination: RedirectTo,
+
+    #[serde(default, rename = "query-params", skip_serializing_if = "is_default")]
+    pub query_params: ModifyQuery,
 
     #[serde(default, skip_serializing_if = "is_default")]
     pub headers: HeaderMapWrapper,
