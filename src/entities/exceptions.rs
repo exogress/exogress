@@ -30,4 +30,6 @@ exceptions! {
     STATIC_RESPONSE_NO_ACCEPT_HEADER => "static-response-error", "no-accept-header"
     STATIC_RESPONSE_RENDER_ERROR => "static-response-error", "render-error"
     STATIC_RESPONSE_REDIRECT_ERROR => "static-response-error", "redirect-error"
+
+    MODIFICATION_ERROR => "modification-error"
 }
