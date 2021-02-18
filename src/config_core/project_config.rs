@@ -2,11 +2,10 @@ use hashbrown::HashSet;
 
 use crate::{
     config_core::{
-        application_firewall::ApplicationFirewall, auth::GoogleAuthDefinition,
-        client_config::ClientMount, config::default_rules, gcs::GcsBucketAccess,
-        is_version_supported, referenced::Container, refinable::Refinable, s3::S3BucketAccess,
-        schema::validate_schema, Auth, ClientHandler, ClientHandlerVariant, Config, ConfigVersion,
-        PassThrough, Rule, CURRENT_VERSION,
+        auth::GoogleAuthDefinition, client_config::ClientMount, config::default_rules,
+        gcs::GcsBucketAccess, is_version_supported, referenced::Container, refinable::Refinable,
+        s3::S3BucketAccess, schema::validate_schema, Auth, ClientHandler, ClientHandlerVariant,
+        Config, ConfigVersion, PassThrough, Rule, CURRENT_VERSION,
     },
     entities::{HandlerName, MountPointName},
 };
@@ -182,9 +181,8 @@ pub enum ProjectHandlerVariant {
     #[serde(rename = "gcs-bucket")]
     GcsBucket(GcsBucketAccess),
 
-    #[serde(rename = "application-firewall")]
-    ApplicationFirewall(ApplicationFirewall),
-
+    // #[serde(rename = "application-firewall")]
+    // ApplicationFirewall(ApplicationFirewall),
     #[serde(rename = "pass-through")]
     PassThrough(PassThrough),
 }
@@ -211,9 +209,9 @@ impl From<ProjectHandler> for ClientHandler {
             ProjectHandlerVariant::GcsBucket(gcs_bucket) => {
                 ClientHandlerVariant::GcsBucket(gcs_bucket)
             }
-            ProjectHandlerVariant::ApplicationFirewall(app_firewall) => {
-                ClientHandlerVariant::ApplicationFirewall(app_firewall)
-            }
+            // ProjectHandlerVariant::ApplicationFirewall(app_firewall) => {
+            //     ClientHandlerVariant::ApplicationFirewall(app_firewall)
+            // }
             ProjectHandlerVariant::PassThrough(pass_through) => {
                 ClientHandlerVariant::PassThrough(pass_through)
             }

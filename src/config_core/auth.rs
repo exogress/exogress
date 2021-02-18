@@ -15,11 +15,13 @@ pub struct Auth {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct GoogleAuthDefinition {
     pub acl: Container<Acl>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct GithubAuthDefinition {
     pub acl: Container<Acl>,
 }

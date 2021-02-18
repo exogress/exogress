@@ -32,7 +32,7 @@ pub use status_code::{StatusCode, StatusCodeRange};
 pub use upstream::{Probe, UpstreamDefinition, UpstreamSocketAddr};
 pub use version::ConfigVersion;
 
-mod application_firewall;
+// mod application_firewall;
 mod auth;
 mod cache;
 mod catch;

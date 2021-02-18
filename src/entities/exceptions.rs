@@ -10,7 +10,7 @@ macro_rules! exceptions {
 }
 
 exceptions! {
-    APPLICATION_FIREWALL_INJECTION_DETECTED => "application-firewall-error", "injection-detected"
+    // APPLICATION_FIREWALL_INJECTION_DETECTED => "application-firewall-error", "injection-detected"
 
     CONFIG_PARAMETER_NOT_DEFINED => "config-error", "parameter-not-defined"
     CONFIG_REFERENCE_NAME_NOT_DEFINED => "config-error", "reference-name-not-defined"

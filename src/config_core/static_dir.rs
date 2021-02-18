@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub enum Wildcard {
     #[serde(rename = "_")]
     Any,

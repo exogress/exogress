@@ -11,12 +11,14 @@ use smol_str::SmolStr;
 use std::hash::Hash;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy, Eq, PartialEq, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub enum TemplateEngine {
     #[serde(rename = "handlebars")]
     Handlebars,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy, Eq, PartialEq, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub enum RedirectType {
     #[serde(rename = "moved-permanently")]
     MovedPermanently,
@@ -56,6 +58,7 @@ impl RedirectType {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct RedirectResponse {
     #[serde(rename = "redirect-type")]
     pub redirect_type: RedirectType,
@@ -69,6 +72,7 @@ pub struct RedirectResponse {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct ResponseBody {
     #[serde(rename = "content-type")]
     pub content_type: MimeType,
@@ -77,6 +81,7 @@ pub struct ResponseBody {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct RawResponse {
     #[serde(
         rename = "status-code",

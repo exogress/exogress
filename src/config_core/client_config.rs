@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     config_core::{
-        application_firewall::ApplicationFirewall,
         config::{default_rules, is_default_rules, Config},
         gcs::GcsBucketAccess,
         is_profile_active, is_version_supported,
@@ -309,9 +308,8 @@ pub enum ClientHandlerVariant {
     #[serde(rename = "gcs-bucket")]
     GcsBucket(GcsBucketAccess),
 
-    #[serde(rename = "application-firewall")]
-    ApplicationFirewall(ApplicationFirewall),
-
+    // #[serde(rename = "application-firewall")]
+    // ApplicationFirewall(ApplicationFirewall),
     #[serde(rename = "pass-through")]
     PassThrough(PassThrough),
 }
@@ -324,7 +322,7 @@ impl ClientHandlerVariant {
             ClientHandlerVariant::Auth(_) => None,
             ClientHandlerVariant::S3Bucket(v) => Some(&v.rebase),
             ClientHandlerVariant::GcsBucket(v) => Some(&v.rebase),
-            ClientHandlerVariant::ApplicationFirewall(_) => None,
+            // ClientHandlerVariant::ApplicationFirewall(_) => None,
             ClientHandlerVariant::PassThrough(_) => None,
         }
     }

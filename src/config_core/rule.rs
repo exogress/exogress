@@ -226,6 +226,7 @@ impl HeaderNameList {
 }
 
 #[derive(Debug, Default, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct ModifyHeaders {
     #[serde(default, skip_serializing_if = "HeaderMapWrapper::is_empty")]
     pub insert: HeaderMapWrapper,
@@ -246,6 +247,7 @@ impl ModifyHeaders {
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub enum TrailingSlashModification {
     #[serde(rename = "keep")]
     Keep,
@@ -264,6 +266,7 @@ impl Default for TrailingSlashModification {
 }
 
 #[derive(Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct RequestModifications {
     #[serde(default, skip_serializing_if = "ModifyHeaders::is_empty")]
     pub headers: ModifyHeaders,
@@ -279,7 +282,7 @@ pub struct RequestModifications {
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
-#[serde(tag = "strategy")]
+#[serde(tag = "strategy", deny_unknown_fields)]
 pub enum ModifyQueryStrategy {
     #[serde(rename = "keep")]
     Keep {
@@ -310,18 +313,21 @@ pub struct ModifyQuery {
 }
 
 #[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct ResponseModifications {
     #[serde(default, skip_serializing_if = "ModifyHeaders::is_empty")]
     pub headers: ModifyHeaders,
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct OnResponse {
     pub when: ResponseConditions,
     pub modifications: ResponseModifications,
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct ResponseConditions {
     #[serde(rename = "status-code")]
     pub status_code: StatusCodeRange,
@@ -337,6 +343,7 @@ pub struct Rule {
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, Copy, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub enum TrailingSlashFilterRule {
     #[serde(rename = "require")]
     Require,
@@ -361,6 +368,7 @@ impl TrailingSlashFilterRule {
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct Filter {
     pub path: MatchingPath,
 

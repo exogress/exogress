@@ -92,7 +92,8 @@
         "secret_access_key": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "Cache": {
       "type": "object",
@@ -103,7 +104,8 @@
         "enabled": {
           "type": "boolean"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "CatchMatcher": {
       "title": "Matcher for exception catching",
@@ -423,28 +425,6 @@
         {
           "type": "object",
           "required": [
-            "kind",
-            "uri-sqli",
-            "uri-xss"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "application-firewall"
-              ]
-            },
-            "uri-sqli": {
-              "type": "boolean"
-            },
-            "uri-xss": {
-              "type": "boolean"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
             "kind"
           ],
           "properties": {
@@ -602,7 +582,8 @@
         "trailing-slash": {
           "$ref": "#/definitions/TrailingSlashFilterRule"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "GcsBucket": {
       "type": "object",
@@ -613,7 +594,8 @@
         "name": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "GithubAuthDefinition": {
       "type": "object",
@@ -624,7 +606,8 @@
         "acl": {
           "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_Array_of_AclEntry"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "GoogleAuthDefinition": {
       "type": "object",
@@ -635,7 +618,8 @@
         "acl": {
           "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_Array_of_AclEntry"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "GoogleCredentials": {
       "type": "object",
@@ -646,7 +630,8 @@
         "json": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "HttpHeaderMap": {
       "title": "HTTP Headers",
@@ -760,7 +745,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ModifyQuery": {
       "type": "object",
@@ -977,7 +963,8 @@
         "when": {
           "$ref": "#/definitions/ResponseConditions"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PathMatcher": {
       "title": "Array of path segments matchers, with optionally single '*' symbol",
@@ -1133,7 +1120,8 @@
         "trailing-slash": {
           "$ref": "#/definitions/TrailingSlashModification"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "RescueItem": {
       "type": "object",
@@ -1243,7 +1231,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ResponseConditions": {
       "type": "object",
@@ -1254,7 +1243,8 @@
         "status-code": {
           "$ref": "#/definitions/HttpStatusCodeRange"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ResponseModifications": {
       "type": "object",
@@ -1262,7 +1252,8 @@
         "headers": {
           "$ref": "#/definitions/ModifyHeaders"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "Rule": {
       "type": "object",
@@ -1417,7 +1408,8 @@
         "region": {
           "$ref": "#/definitions/S3Region"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "S3Region": {
       "title": "S3 region name",
@@ -1451,7 +1443,8 @@
             "redirect-type": {
               "$ref": "#/definitions/RedirectType"
             }
-          }
+          },
+          "additionalProperties": false
         },
         {
           "type": "object",
@@ -1488,7 +1481,8 @@
             "status-code": {
               "$ref": "#/definitions/HttpStatusCode"
             }
-          }
+          },
+          "additionalProperties": false
         }
       ]
     },
