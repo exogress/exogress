@@ -66,7 +66,7 @@ urlencoding = { optional = true, version = "1.1.1" }
 webpki = { optional = true, version = "0.21.3" }
 zstd = { optional = true, version = "0.6" }
 tokio-stream = { optional = true, version = "0.1.2" }
-valico = { optional = true, git = "https://github.com/agavrilov/valico.git", branch = "PR/update-dependencies" }
+valico = { optional = true, varsion = "3.6" }
 serde_with = { optional = true, version = "1.6" }
 never = { optional = true, version = "0.1.0" }
 include_dir = { optional = true, version = "0.6" }
