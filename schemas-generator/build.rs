@@ -5,6 +5,7 @@ fn main() {
     let version = (*CURRENT_VERSION).0.to_string();
 
     let mut base_path = PathBuf::new();
+    base_path.push("..");
     base_path.push("config-schemas");
     base_path.push(CURRENT_VERSION.major_base_version());
     base_path.push(CURRENT_VERSION.minor_base_version());
