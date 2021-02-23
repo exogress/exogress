@@ -80,6 +80,7 @@ pub async fn spawn(
             &url,
             &mut tx,
             &mut rx,
+            &tunnels,
             &upstream_healthcheck,
             maybe_identity.clone(),
             &resolver,
@@ -161,6 +162,7 @@ async fn do_conection(
     url: &Url,
     tx: &mut mpsc::Sender<TunnelRequest>,
     rx: &mut mpsc::Receiver<String>,
+    tunnels: &TunnelsStorage,
     upstream_healthcheck: &UpstreamsHealth,
     maybe_identity: Option<Vec<u8>>,
     resolver: &TokioAsyncResolver,
@@ -455,7 +457,8 @@ async fn do_conection(
         };
 
         *instance_id_storage.lock() = None;
-        // TODO: FIXME: disconnect all tunnels
+
+        tunnels.clear();
 
         info!("Connection to signal server closed. Clear instance_id");
 
