@@ -56,11 +56,8 @@ pub async fn internal_server(
                     shadow_clone!(current_config);
 
                     let r = async {
-                        let authority = authority.expect("FIXME");
-                        let target_handler_name = authority
-                            .host()
-                            .strip_suffix(INT_SUFFIX)
-                            .expect("FIXME: bad authority");
+                        let authority = authority?;
+                        let target_handler_name = authority.host().strip_suffix(INT_SUFFIX)?;
 
                         let locked = current_config.read();
 
