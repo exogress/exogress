@@ -1,6 +1,6 @@
 use crate::{
     config_core::ClientConfig,
-    entities::{HealthCheckProbeName, InstanceId, Upstream},
+    entities::{url_prefix::MountPointBaseUrl, HealthCheckProbeName, InstanceId, Upstream},
 };
 use hashbrown::HashMap;
 use http::StatusCode;
@@ -20,7 +20,10 @@ pub struct TunnelRequestResponse {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum SignalerHandshakeResponse {
-    Ok { instance_id: InstanceId },
+    Ok {
+        instance_id: InstanceId,
+        base_urls: Vec<MountPointBaseUrl>,
+    },
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

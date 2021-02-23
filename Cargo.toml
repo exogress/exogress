@@ -16,6 +16,7 @@ clap = { optional = true, version = "2.33.3" }
 dashmap = { optional = true, version = "4.0.2" }
 derive_builder = { optional = true, version = "0.9.0" }
 futures = { optional = true, version = "0.3" }
+itertools = { optional = true, versio = "0.10.0" }
 hashbrown = { optional = true, version = "0.9" }
 headers = { optional = true, version = "0.3.2" }
 hostname = { optional = true, version = "0.3.1" }
@@ -96,6 +97,7 @@ default = [
 ]
 client-core = [
     "anyhow",
+    "itertools",
     "bincode",
     "byteorder",
     "bytes",

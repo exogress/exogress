@@ -222,7 +222,19 @@ async fn do_conection(
                     Some(Ok(Message::Text(response))) => {
                         match serde_json::from_str::<SignalerHandshakeResponse>(response.as_str())?
                         {
-                            SignalerHandshakeResponse::Ok { instance_id } => instance_id,
+                            SignalerHandshakeResponse::Ok {
+                                instance_id,
+                                base_urls,
+                            } => {
+                                info!(
+                                    "Base URLs served by the client: {}",
+                                    itertools::join(
+                                        base_urls.iter().map(|b| b.to_https_url()),
+                                        ", "
+                                    )
+                                );
+                                instance_id
+                            }
                         }
                     }
                     r => {
