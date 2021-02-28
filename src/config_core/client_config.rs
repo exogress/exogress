@@ -41,7 +41,7 @@ impl From<u64> for ClientConfigRevision {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
-#[schemars(deny_unknown_fields)]
+// #[schemars(deny_unknown_fields)]
 pub struct ClientConfig {
     pub version: ConfigVersion,
 
@@ -280,7 +280,7 @@ impl Config for ClientConfig {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
-#[schemars(deny_unknown_fields)]
+// #[schemars(deny_unknown_fields)]
 pub struct ClientMount {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub handlers: BTreeMap<HandlerName, ClientHandler>,
@@ -293,7 +293,7 @@ pub struct ClientMount {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
-#[schemars(deny_unknown_fields)]
+// #[schemars(deny_unknown_fields)]
 #[serde(tag = "kind")]
 pub enum ClientHandlerVariant {
     #[serde(rename = "proxy")]

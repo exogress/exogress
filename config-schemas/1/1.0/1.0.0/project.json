@@ -30,7 +30,6 @@
       "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
     }
   },
-  "additionalProperties": false,
   "definitions": {
     "AclEntry": {
       "anyOf": [
@@ -792,8 +791,7 @@
                 "pass-through"
               ]
             }
-          },
-          "additionalProperties": false
+          }
         }
       ],
       "required": [
@@ -833,8 +831,7 @@
             "$ref": "#/definitions/StaticResponse"
           }
         }
-      },
-      "additionalProperties": false
+      }
     },
     "ProjectMount": {
       "type": "object",
@@ -857,8 +854,7 @@
             "$ref": "#/definitions/StaticResponse"
           }
         }
-      },
-      "additionalProperties": false
+      }
     },
     "RedirectTo": {
       "title": "URL, or array of path segments, optionally starting from schema://url",
