@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{anyhow, bail};
 use futures::{
     channel::{mpsc, oneshot},
     pin_mut, select_biased, FutureExt, SinkExt, StreamExt,
@@ -131,21 +131,17 @@ impl Client {
             path_segments.push("channel");
         }
 
-        url.set_query(Some(
-            format!(
-                "project={}&account={}&labels={}",
-                self.project,
-                self.account,
-                urlencoding::encode(serde_json::to_string(&self.labels).unwrap().as_str())
-            )
-            .as_str(),
-        ));
+        url.query_pairs_mut()
+            .append_pair("project", self.project.as_ref())
+            .append_pair("account", self.account.as_ref())
+            .append_pair(
+                "labels",
+                serde_json::to_string(&self.labels).unwrap().as_str(),
+            );
 
         if let Some(profile) = &self.profile {
-            url.query_pairs_mut().append_pair(
-                "active_profile",
-                urlencoding::encode(profile.to_string().as_str()).as_str(),
-            );
+            url.query_pairs_mut()
+                .append_pair("active_profile", profile.to_string().as_str());
         }
 
         info!("Will connect signalling channel to {}", url);
@@ -158,16 +154,30 @@ impl Client {
 
         let refined_upstream_addrs = self.refined_upstream_addrs;
 
-        let mut config = Vec::new();
-        File::open(&config_path)
-            .await
-            .unwrap()
-            .read_to_end(&mut config)
-            .await
-            .unwrap();
-        let client_config =
-            ClientConfig::parse_with_redefined_upstreams(&config, &refined_upstream_addrs).unwrap();
-        client_config.validate()?;
+        let open = async {
+            let mut config = Vec::new();
+            File::open(&config_path)
+                .await?
+                .read_to_end(&mut config)
+                .await?;
+            let client_config =
+                ClientConfig::parse_with_redefined_upstreams(&config, &refined_upstream_addrs)?;
+
+            client_config.validate()?;
+
+            Ok::<ClientConfig, anyhow::Error>(client_config)
+        };
+
+        let client_config = match open.await {
+            Ok(cfg) => cfg,
+            Err(e) => {
+                bail!(
+                    "error reading config at {}: {}",
+                    config_path.to_str().unwrap_or_default(),
+                    e
+                );
+            }
+        };
 
         let profile = self.profile;
 
