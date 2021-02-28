@@ -121,6 +121,7 @@ pub const ALL_PARAMETER_SCHEMAS: [ParameterSchema; 7] = [
 ];
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, Copy, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 #[serde(tag = "kind")]
 pub enum ParameterSchema {
     #[serde(rename = "aws-credentials")]

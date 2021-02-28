@@ -31,6 +31,7 @@ pub enum UpstreamSocketAddrParseError {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 pub struct UpstreamSocketAddr {
     pub port: u16,
 
@@ -73,6 +74,7 @@ impl FromStr for UpstreamSocketAddr {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 pub struct UpstreamDefinition {
     #[serde(flatten)]
     pub addr: UpstreamSocketAddr,
@@ -107,6 +109,7 @@ impl UpstreamDefinition {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 #[serde(tag = "kind")]
+// #[schemars(deny_unknown_fields)]
 pub enum ProbeDetails {
     #[serde(rename = "liveness")]
     Liveness,
@@ -117,6 +120,7 @@ fn default_status_code_range() -> StatusCodeRange {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 pub struct Probe {
     #[serde(flatten)]
     pub details: ProbeDetails,

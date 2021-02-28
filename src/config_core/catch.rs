@@ -19,6 +19,7 @@ use smol_str::SmolStr;
 use std::{collections::BTreeMap, str::FromStr};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 #[serde(tag = "action")]
 pub enum CatchAction {
     #[serde(rename = "respond")]
@@ -162,6 +163,7 @@ impl<'de> Deserialize<'de> for CatchMatcher {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 pub struct RescueItem {
     pub catch: CatchMatcher,
 

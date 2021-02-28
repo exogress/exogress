@@ -11,6 +11,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 pub struct S3BucketAccess {
     pub bucket: Container<S3Bucket>,
     pub credentials: Option<Container<AwsCredentials>>,

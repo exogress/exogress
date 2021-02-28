@@ -71,6 +71,7 @@ impl RefinableSet {
 }
 
 #[derive(Default, Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 pub struct Refinable {
     #[serde(
         default,

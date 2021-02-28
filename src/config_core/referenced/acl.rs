@@ -10,6 +10,7 @@ pub struct Acl(pub Vec<AclEntry>);
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
 #[serde(untagged)]
+// #[schemars(deny_unknown_fields)]
 pub enum AclEntry {
     Allow {
         #[serde(rename = "allow")]

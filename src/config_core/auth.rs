@@ -6,6 +6,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 pub struct Auth {
     #[serde(default, skip_serializing_if = "is_default")]
     pub google: Option<GoogleAuthDefinition>,

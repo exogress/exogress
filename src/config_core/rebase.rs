@@ -3,6 +3,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, Default, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 pub struct Rebase {
     #[serde(default, rename = "base-path", skip_serializing_if = "Vec::is_empty")]
     pub base_path: Vec<UrlPathSegment>,

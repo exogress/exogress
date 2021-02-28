@@ -18,6 +18,7 @@ use std::{
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
+#[schemars(deny_unknown_fields)]
 pub struct ProjectConfig {
     pub version: ConfigVersion,
 
@@ -151,6 +152,7 @@ impl Config for ProjectConfig {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
+#[schemars(deny_unknown_fields)]
 pub struct ProjectMount {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub handlers: BTreeMap<HandlerName, ProjectHandler>,

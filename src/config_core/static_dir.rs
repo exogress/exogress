@@ -17,6 +17,7 @@ pub enum Wildcard {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 #[serde(untagged)]
 pub enum Error {
     StatusCode(StatusCode),
@@ -30,6 +31,7 @@ impl From<http::StatusCode> for Error {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
+// #[schemars(deny_unknown_fields)]
 pub struct StaticDir {
     pub dir: PathBuf,
 

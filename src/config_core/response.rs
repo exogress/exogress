@@ -113,6 +113,7 @@ fn is_default_status_code(code: &StatusCode) -> bool {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 #[serde(tag = "kind")]
+// #[schemars(deny_unknown_fields)]
 pub enum StaticResponse {
     #[serde(rename = "redirect")]
     Redirect(RedirectResponse),
