@@ -3,9 +3,8 @@ use futures::{
     channel::{mpsc, oneshot},
     pin_mut, select_biased, FutureExt, SinkExt, StreamExt,
 };
-use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use shadow_clone::shadow_clone;
-use std::{env, io, mem, path::PathBuf, time::Duration};
+use std::{io, mem, path::PathBuf, time::Duration};
 use tokio::{fs::File, io::AsyncReadExt, sync::watch};
 use tracing::{debug, error, info, warn};
 use trust_dns_resolver::TokioAsyncResolver;
@@ -94,7 +93,7 @@ impl Client {
     pub async fn spawn(
         self,
         reload_config_tx: mpsc::UnboundedSender<()>,
-        reload_config_rx: mpsc::UnboundedReceiver<()>,
+        mut reload_config_rx: mpsc::UnboundedReceiver<()>,
         resolver: TokioAsyncResolver,
     ) -> Result<(), anyhow::Error> {
         let project_name: ProjectName = self.project.parse()?;
@@ -105,17 +104,8 @@ impl Client {
 
         let instance_id_storage = Arc::new(Mutex::new(None));
 
-        let mut config_path =
-            PathBuf::from(shellexpand::full(self.config_path.as_str())?.into_owned());
+        let config_path = PathBuf::from(shellexpand::full(self.config_path.as_str())?.into_owned());
         info!("Use config at {}", config_path.as_path().display());
-        let mut config_dir = config_path
-            .parent()
-            .expect("Could not config directory path")
-            .to_owned();
-        if config_dir.is_relative() || !config_dir.has_root() {
-            config_dir = env::current_dir().unwrap().join(config_dir);
-            config_path = env::current_dir().unwrap().join(config_path);
-        }
 
         let mut url = Url::parse(self.cloud_endpoint.as_str()).unwrap();
         if url.scheme() == "https" {
@@ -214,56 +204,49 @@ impl Client {
         config_tx = cfg_tx;
         config_rx = cfg_rx;
 
-        let mut watcher: RecommendedWatcher;
-
         if self.watch_config {
-            shadow_clone!(reload_config_tx, config_path, config_dir);
+            shadow_clone!(reload_config_tx, config_path);
 
             info!("Watching for config changes");
-
-            let (re_add_tx, mut re_add_rx) = mpsc::unbounded();
-
-            watcher = Watcher::new_immediate({
-                shadow_clone!(config_path, config_dir);
-
-                move |event: Result<Event, notify::Error>| {
-                    let event = event.expect("Error watching for file change");
-
-                    debug!("received fs event: {:?}", event);
-
-                    let is_path_updated = event.paths.iter().any(|path| {
-                        let config_path_str = config_path.to_str().unwrap();
-                        let path_str = path.to_str().unwrap().to_string();
-                        if let Some(stripped_symlink_suffix) = path_str.strip_suffix("~") {
-                            stripped_symlink_suffix == config_path_str
-                        } else {
-                            path_str.as_str() == config_path_str
-                        }
-                    });
-
-                    if !is_path_updated {
-                        return;
-                    }
-
-                    re_add_tx.unbounded_send(()).unwrap();
-                }
-            })
-            .unwrap();
-
-            let _ = watcher.watch(config_dir.clone(), RecursiveMode::NonRecursive);
-            let _ = watcher.watch(config_path.clone(), RecursiveMode::NonRecursive);
 
             tokio::spawn({
                 shadow_clone!(config_path);
 
                 async move {
+                    let mut maybe_curent_buf = None;
+                    let mut is_error = false;
+
                     loop {
-                        let _ = re_add_rx.next().await;
-                        let _ = watcher.unwatch(config_dir.clone());
-                        let _ = watcher.unwatch(config_path.clone());
-                        let _ = watcher.watch(config_dir.clone(), RecursiveMode::NonRecursive);
-                        let _ = watcher.watch(config_path.clone(), RecursiveMode::NonRecursive);
-                        reload_config_tx.unbounded_send(()).unwrap();
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+
+                        let file_result = async {
+                            let mut v = String::new();
+                            File::open(&config_path)
+                                .await?
+                                .read_to_string(&mut v)
+                                .await?;
+                            Ok::<_, io::Error>(v)
+                        };
+
+                        match file_result.await {
+                            Ok(r) => {
+                                is_error = false;
+                                if let Some(current_buf) = maybe_curent_buf.clone() {
+                                    if r != current_buf {
+                                        reload_config_tx.unbounded_send(()).unwrap();
+                                        maybe_curent_buf = Some(r);
+                                    }
+                                } else {
+                                    maybe_curent_buf = Some(r);
+                                }
+                            }
+                            Err(e) => {
+                                if is_error {
+                                    warn!("Could not read config file: {}", e);
+                                    is_error = true;
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -280,11 +263,7 @@ impl Client {
             async move {
                 let mut last_config = None;
 
-                let mut joined_events = reload_config_rx.ready_chunks(30);
-                while let Some(event) = joined_events.next().await {
-                    if event.is_empty() {
-                        continue;
-                    }
+                while let Some(()) = reload_config_rx.next().await {
                     let mut config = Vec::new();
                     let read_file = async {
                         tokio::fs::File::open(&config_path)
@@ -310,7 +289,7 @@ impl Client {
                                         upstream_health_checkers.sync_probes(&client_config).await;
                                         *current_config.write() = client_config.clone();
                                         config_tx.send(client_config.clone()).unwrap();
-                                        info!("New config successfully loaded");
+                                        info!("New config applied");
                                         last_config = Some(client_config);
                                     }
                                 }
