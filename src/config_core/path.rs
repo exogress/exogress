@@ -482,7 +482,7 @@ impl<'de> Visitor<'de> for MatchPathVisitor {
     type Value = MatchingPath;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "valid path FIXME")
+        write!(formatter, "valid matching path")
     }
 
     #[allow(clippy::unnecessary_unwrap)]

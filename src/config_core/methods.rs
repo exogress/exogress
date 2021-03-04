@@ -99,7 +99,11 @@ impl<'de> Visitor<'de> for MethodMatcherVisitor {
         let mut v: Vec<MethodWrapper> = Vec::new();
 
         while let Some(item) = seq.next_element::<String>()? {
-            v.push(Method::from_str(&item).expect("FIXME").into());
+            v.push(
+                Method::from_str(&item)
+                    .map_err(|e| serde::de::Error::custom(e.to_string()))?
+                    .into(),
+            );
         }
 
         Ok(MethodMatcher::Exact(v))

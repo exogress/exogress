@@ -53,7 +53,7 @@ impl UriExt for http::uri::Uri {
         if let Some(p_a_q) = self.path_and_query() {
             builder = builder.path_and_query(p_a_q.as_str());
         }
-        *self = builder.build().expect("FIXME");
+        *self = builder.build().unwrap();
     }
 
     fn set_hostname(&mut self, hostname: &str) {
@@ -69,7 +69,7 @@ impl UriExt for http::uri::Uri {
             builder = builder.path_and_query(p_a_q.as_str());
         }
 
-        *self = builder.build().expect("FIXME");
+        *self = builder.build().unwrap();
     }
 
     fn set_scheme(&mut self, scheme: &str) {
@@ -81,7 +81,7 @@ impl UriExt for http::uri::Uri {
             builder = builder.path_and_query(p_a_q.as_str());
         }
 
-        *self = builder.build().expect("FIXME");
+        *self = builder.build().unwrap();
     }
 
     fn clear_query(&mut self) {
@@ -89,7 +89,7 @@ impl UriExt for http::uri::Uri {
             .path_and_query(self.path())
             .scheme(self.scheme_str().unwrap())
             .authority(self.authority().unwrap().as_str());
-        *self = builder.build().expect("FIXME");
+        *self = builder.build().unwrap();
     }
 
     fn ensure_trailing_slash(&mut self, set: bool) {
@@ -116,7 +116,7 @@ impl UriExt for http::uri::Uri {
             .scheme(self.scheme_str().unwrap())
             .authority(self.authority().unwrap().as_str());
 
-        *self = builder.build().expect("FIXME");
+        *self = builder.build().unwrap();
     }
 
     fn set_query(&mut self, pairs: LinkedHashMap<String, String>) {
@@ -137,7 +137,7 @@ impl UriExt for http::uri::Uri {
             .scheme(self.scheme_str().unwrap())
             .authority(self.authority().unwrap().as_str());
 
-        *self = builder.build().expect("FIXME");
+        *self = builder.build().unwrap();
     }
 
     fn clear_segments(&mut self) {
@@ -154,7 +154,7 @@ impl UriExt for http::uri::Uri {
 
         builder = builder.path_and_query(path_and_query);
 
-        *self = builder.build().expect("FIXME");
+        *self = builder.build().unwrap();
     }
 
     fn push_segment(&mut self, segment: &str) {
@@ -177,6 +177,6 @@ impl UriExt for http::uri::Uri {
         }
         builder = builder.path_and_query(path_and_query);
 
-        *self = builder.build().expect("FIXME");
+        *self = builder.build().unwrap();
     }
 }

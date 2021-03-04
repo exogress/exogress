@@ -51,18 +51,17 @@ pub enum UrlPrefixError {
 
 impl MountPointBaseUrl {
     pub fn to_url(&self) -> Url {
-        Url::parse(format!("http://{}", self.inner).as_str()).expect("FIXME")
+        Url::parse(format!("http://{}", self.inner).as_str()).unwrap()
     }
 
     pub fn domain_only(&self) -> MountPointBaseUrl {
         let url = self.to_url();
-        MountPointBaseUrl::from_str(format!("{}/", url.host_str().expect("FIXME")).as_str())
-            .expect("FIXME")
+        MountPointBaseUrl::from_str(format!("{}/", url.host_str().unwrap()).as_str()).unwrap()
     }
 
     pub fn host(&self) -> String {
         let url = self.to_url();
-        url.host_str().expect("FIXME").to_string().into()
+        url.host_str().unwrap().to_string().into()
     }
 
     pub fn path(&self) -> std::string::String {

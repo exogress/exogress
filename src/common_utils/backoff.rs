@@ -16,6 +16,7 @@ struct BackoffHandleInner {
     retry: u64,
     last_sleep: Option<Duration>,
     done: bool,
+    #[allow(dead_code)]
     wake: Option<Waker>,
     min_sleep: Duration,
 }

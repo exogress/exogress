@@ -14,6 +14,9 @@ use url::Url;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("int api identity certificate error")]
+    IntApiIdentityError,
+
     #[error("bad schema")]
     BadSchema,
 
@@ -77,9 +80,12 @@ pub async fn connect_ws(
 
         if let Some(mut identity_pem) = maybe_identity {
             let mut c = Cursor::new(&mut identity_pem);
-            let pkey = pkcs8_private_keys(&mut c).expect("FIXME").pop().unwrap();
+            let pkey = pkcs8_private_keys(&mut c)
+                .map_err(|_| Error::IntApiIdentityError)?
+                .pop()
+                .unwrap();
             let mut c = Cursor::new(&mut identity_pem);
-            let certs = certs(&mut c).expect("FIXME");
+            let certs = certs(&mut c).map_err(|_| Error::IntApiIdentityError)?;
             config.set_single_client_cert(certs, pkey)?;
         }
         config.root_store =
