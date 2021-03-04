@@ -75,6 +75,9 @@ pub struct Client {
 
     #[builder(setter(into), default = "Default::default()")]
     pub refined_upstream_addrs: HashMap<Upstream, UpstreamSocketAddr>,
+
+    #[builder(setter(into), default = "Default::default()")]
+    pub additional_connection_params: HashMap<SmolStr, SmolStr>,
 }
 
 impl Client {
@@ -121,7 +124,12 @@ impl Client {
             path_segments.push("channel");
         }
 
+        for (k, v) in self.additional_connection_params.iter() {
+            url.query_pairs_mut().append_pair(k.as_str(), v.as_str());
+        }
+
         url.query_pairs_mut()
+            .append_pair("exogress_version", crate::client_core::VERSION)
             .append_pair("project", self.project.as_ref())
             .append_pair("account", self.account.as_ref())
             .append_pair(
@@ -346,6 +354,7 @@ impl Client {
             let access_key_id = self.access_key_id;
             let secret_access_key = self.secret_access_key;
             let gw_tunnels_port = self.gw_tunnels_port;
+            let additional_connection_params = self.additional_connection_params;
 
             async move {
                 while let Some(TunnelRequest {
@@ -368,7 +377,7 @@ impl Client {
                                         profile, account_name, project_name, secret_access_key,
                                         gw_tunnels_port, access_key_id, instance_id_storage,
                                         hostname, current_config, tunnels, resolver,
-                                        mut internal_server_connector
+                                        mut internal_server_connector, additional_connection_params
                                     );
 
                                     async move {
@@ -418,6 +427,7 @@ impl Client {
                                                             hostname.clone(),
                                                             gw_tunnels_port,
                                                             &profile,
+                                                            &additional_connection_params,
                                                             internal_server_connector.clone(),
                                                             resolver.clone(),
                                                         )

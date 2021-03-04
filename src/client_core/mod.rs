@@ -12,3 +12,5 @@ use smol_str::SmolStr;
 use std::sync::Arc;
 
 type TunnelsStorage = Arc<DashMap<SmolStr, HashMap<u16, oneshot::Sender<()>>>>;
+
+pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");

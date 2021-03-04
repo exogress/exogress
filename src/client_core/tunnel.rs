@@ -12,6 +12,7 @@ use crate::{
 };
 use core::time::Duration;
 use futures::channel::mpsc;
+use hashbrown::HashMap;
 use parking_lot::RwLock;
 use rand::{seq::IteratorRandom, thread_rng};
 use rustls::ClientConfig as RustlsClientConfig;
@@ -24,6 +25,7 @@ use tokio::{
 use tokio_rustls::{rustls, webpki::DNSNameRef, TlsConnector};
 use tracing::{error, info};
 use trust_dns_resolver::{error::ResolveError, TokioAsyncResolver};
+use url::Url;
 use warp::hyper::client::conn;
 use webpki::InvalidDNSNameError;
 
@@ -72,6 +74,7 @@ pub async fn spawn(
     gw_hostname: SmolStr,
     gw_port: u16,
     active_profile: &Option<ProfileName>,
+    additional_connection_params: &HashMap<SmolStr, SmolStr>,
     internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
     resolver: TokioAsyncResolver,
 ) -> Result<bool, Error> {
@@ -103,8 +106,19 @@ pub async fn spawn(
 
         tokio::spawn(http_connection);
 
+        let mut url: Url = format!("https://{}/exotun", gw_hostname).parse().unwrap();
+
+        url.query_pairs_mut()
+            .append_pair("exogress_version", crate::client_core::VERSION);
+
+        for (k, v) in additional_connection_params.iter() {
+            url.query_pairs_mut().append_pair(k.as_str(), v.as_str());
+        }
+
+        info!("connect to {}", url);
+
         let req = http::Request::builder()
-            .uri(format!("https://{}/exotun", gw_hostname))
+            .uri(url.as_str())
             .header("upgrade", "exotun")
             .header("connection", "upgrade")
             .body(hyper::Body::empty())

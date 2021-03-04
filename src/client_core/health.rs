@@ -41,7 +41,7 @@ pub struct HealthCheckProbe {
     inner: Arc<Mutex<HealthCheckProbeInner>>,
     update_tx: mpsc::Sender<ProbeStatusUpdate>,
     handle: Handle,
-    stop_tx: oneshot::Sender<()>,
+    _stop_tx: oneshot::Sender<()>,
 }
 
 pub async fn start_checker(
@@ -184,7 +184,7 @@ impl HealthCheckProbe {
                 probe_name,
             })),
             update_tx,
-            stop_tx,
+            _stop_tx: stop_tx,
             handle: handle.clone(),
         };
 
@@ -222,7 +222,7 @@ impl HealthCheckProbe {
             locked.probe = probe;
             locked.probe_url = probe_url;
         }
-        self.stop_tx = stop_tx;
+        self._stop_tx = stop_tx;
 
         self.handle.spawn(start_checker(
             self.inner.clone(),
