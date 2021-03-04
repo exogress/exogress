@@ -251,7 +251,6 @@ impl<'de> Deserialize<'de> for S3Region {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
-#[serde(deny_unknown_fields)]
 pub struct S3Bucket {
     pub name: SmolStr,
     pub region: S3Region,

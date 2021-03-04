@@ -73,13 +73,9 @@ impl RefinableSet {
 #[derive(Default, Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq, JsonSchema)]
 // #[schemars(deny_unknown_fields)]
 pub struct Refinable {
-    #[serde(
-        default,
-        skip_serializing_if = "BTreeMap::is_empty",
-        rename = "static-responses"
-    )]
+    #[serde(default, rename = "static-responses")]
     pub static_responses: BTreeMap<StaticResponseName, StaticResponse>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub rescue: Vec<RescueItem>,
 }
 

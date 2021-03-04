@@ -151,7 +151,6 @@ impl Serialize for RedirectTo {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, JsonSchema)]
-#[serde(deny_unknown_fields)]
 pub enum RedirectType {
     #[serde(rename = "permanent")]
     Permanent,

@@ -1,5 +1,4 @@
 use crate::config_core::{
-    is_default,
     redirect::RedirectTo,
     referenced::mime_types::MimeType,
     rule::{HeaderMapWrapper, ModifyQuery},
@@ -11,14 +10,14 @@ use smol_str::SmolStr;
 use std::hash::Hash;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy, Eq, PartialEq, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub enum TemplateEngine {
     #[serde(rename = "handlebars")]
     Handlebars,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Copy, Eq, PartialEq, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub enum RedirectType {
     #[serde(rename = "moved-permanently")]
     MovedPermanently,
@@ -58,21 +57,21 @@ impl RedirectType {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub struct RedirectResponse {
     #[serde(rename = "redirect-type")]
     pub redirect_type: RedirectType,
     pub destination: RedirectTo,
 
-    #[serde(default, rename = "query-params", skip_serializing_if = "is_default")]
+    #[serde(default, rename = "query-params")]
     pub query_params: ModifyQuery,
 
-    #[serde(default, skip_serializing_if = "is_default")]
+    #[serde(default)]
     pub headers: HeaderMapWrapper,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub struct ResponseBody {
     #[serde(rename = "content-type")]
     pub content_type: MimeType,
@@ -81,34 +80,22 @@ pub struct ResponseBody {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub struct RawResponse {
-    #[serde(
-        rename = "status-code",
-        default = "default_status_code",
-        skip_serializing_if = "is_default_status_code"
-    )]
+    #[serde(rename = "status-code", default = "default_status_code")]
     pub status_code: StatusCode,
 
-    #[serde(
-        rename = "fallback-accept",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "fallback-accept", default)]
     pub fallback_accept: Option<MimeType>,
 
     pub body: Vec<ResponseBody>,
 
-    #[serde(default, skip_serializing_if = "is_default")]
+    #[serde(default)]
     pub headers: HeaderMapWrapper,
 }
 
 fn default_status_code() -> StatusCode {
     StatusCode(http::StatusCode::OK)
-}
-
-fn is_default_status_code(code: &StatusCode) -> bool {
-    code == &StatusCode(http::StatusCode::OK)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]

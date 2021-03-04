@@ -1,5 +1,6 @@
 pub use crate::config_core::rule::ModifyQuery;
 use crate::entities::ProfileName;
+use anyhow::bail;
 pub use auth::{Auth, GithubAuthDefinition, GoogleAuthDefinition};
 pub use catch::{CatchAction, CatchMatcher, CatchMatcherParseError, RescueItem};
 pub use client_config::{
@@ -27,8 +28,10 @@ pub use rule::{
 };
 pub use scope::Scope;
 use semver::{Version, VersionReq};
+use serde::{de::DeserializeOwned, Serialize};
 pub use static_dir::StaticDir;
 pub use status_code::{StatusCode, StatusCodeRange};
+use std::collections::BTreeSet;
 pub use upstream::{Probe, UpstreamDefinition, UpstreamSocketAddr};
 pub use version::ConfigVersion;
 
@@ -96,8 +99,64 @@ pub fn is_profile_active(
     }
 }
 
-pub fn is_default<T: Default + PartialEq>(v: &T) -> bool {
-    v == &Default::default()
+pub fn validate_extra_keys<T: Serialize + DeserializeOwned>(
+    deserialized_cfg: &T,
+    yaml: impl AsRef<[u8]>,
+) -> anyhow::Result<()> {
+    let deserialize_schemaless: serde_yaml::Value = serde_yaml::from_slice(yaml.as_ref())?;
+    let flatten_tree_schemaless =
+        serde_value_flatten::to_flatten_maptree(".", None, &deserialize_schemaless)?;
+
+    let serialized_cfg = serde_yaml::to_vec(deserialized_cfg)?;
+    let deserialized_scheme: serde_yaml::Value = serde_yaml::from_slice(serialized_cfg.as_ref())?;
+    let flatten_tree_with_scheme =
+        serde_value_flatten::to_flatten_maptree(".", None, &deserialized_scheme)?;
+
+    let scheme_keys: BTreeSet<_> = flatten_tree_with_scheme.keys().collect();
+    let schemaless_keys: BTreeSet<_> = flatten_tree_schemaless.keys().collect();
+    let extra_fields: Vec<_> = schemaless_keys
+        .difference(&scheme_keys)
+        .map(|v| {
+            if let serde_value::Value::String(s) = v {
+                s.clone()
+            } else {
+                "ERROR".to_string()
+            }
+        })
+        .collect();
+
+    if !extra_fields.is_empty() {
+        eprintln!(
+            "scheme all \n{:?}",
+            serde_value::to_value(&deserialized_scheme).unwrap() // ::to_string(&deserialized_scheme).unwrap()
+        );
+        eprintln!(
+            "scheme keys \n{}",
+            serde_yaml::to_string(&scheme_keys).unwrap()
+        );
+        eprintln!(
+            "schemaless keys \n{}",
+            serde_yaml::to_string(&schemaless_keys).unwrap()
+        );
+
+        eprintln!(
+            "extra_fields \n{}",
+            serde_yaml::to_string(&extra_fields).unwrap()
+        );
+
+        eprintln!(
+            "scheme \n{}",
+            serde_yaml::to_string(&deserialized_scheme).unwrap()
+        );
+        eprintln!(
+            "schemaless \n{}",
+            serde_yaml::to_string(&deserialize_schemaless).unwrap()
+        );
+
+        bail!("extra fields found: {:?}", extra_fields);
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

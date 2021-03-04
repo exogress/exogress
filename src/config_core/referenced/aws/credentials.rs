@@ -5,7 +5,7 @@ use smol_str::SmolStr;
 use std::convert::TryFrom;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub struct AwsCredentials {
     pub access_key_id: SmolStr,
     pub secret_access_key: SmolStr,

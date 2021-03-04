@@ -13,10 +13,6 @@ pub trait Config: Serialize + DeserializeOwned + Debug + Clone + Hash {
     fn validate(&self) -> Result<(), Self::Error>;
 }
 
-pub fn is_default_rules(rules: &Vec<Rule>) -> bool {
-    rules == &default_rules()
-}
-
 pub fn default_rules() -> Vec<Rule> {
     vec![Rule {
         filter: Filter {

@@ -4,8 +4,8 @@ use crate::{
     config_core::{
         auth::GoogleAuthDefinition, client_config::ClientMount, config::default_rules,
         gcs::GcsBucketAccess, is_version_supported, referenced::Container, refinable::Refinable,
-        s3::S3BucketAccess, schema::validate_schema, Auth, ClientHandler, ClientHandlerVariant,
-        Config, ConfigVersion, PassThrough, Rule, CURRENT_VERSION,
+        s3::S3BucketAccess, schema::validate_schema, validate_extra_keys, Auth, ClientHandler,
+        ClientHandlerVariant, Config, ConfigVersion, PassThrough, Rule, CURRENT_VERSION,
     },
     entities::{HandlerName, MountPointName},
 };
@@ -22,11 +22,7 @@ use std::{
 pub struct ProjectConfig {
     pub version: ConfigVersion,
 
-    #[serde(
-        rename = "mount-points",
-        default,
-        skip_serializing_if = "BTreeMap::is_empty"
-    )]
+    #[serde(rename = "mount-points", default)]
     pub mount_points: BTreeMap<MountPointName, ProjectMount>,
 
     #[serde(flatten)]
@@ -35,12 +31,12 @@ pub struct ProjectConfig {
 
 impl ProjectConfig {
     pub fn parse(yaml: impl AsRef<[u8]>) -> anyhow::Result<Self> {
-        serde_yaml::from_slice::<Self>(yaml.as_ref())
-            .map_err(anyhow::Error::from)
-            .and_then(|r| {
-                validate_schema(yaml.as_ref(), "project.json")?;
-                Ok(r)
-            })
+        let deserialized_cfg = serde_yaml::from_slice::<Self>(yaml.as_ref())?;
+
+        validate_extra_keys(&deserialized_cfg, yaml.as_ref())?;
+        validate_schema(yaml.as_ref(), "project.json")?;
+
+        Ok(deserialized_cfg)
     }
 
     /// Project-level config sample
@@ -154,7 +150,7 @@ impl Config for ProjectConfig {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
 // #[schemars(deny_unknown_fields)]
 pub struct ProjectMount {
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default)]
     pub handlers: BTreeMap<HandlerName, ProjectHandler>,
 
     #[serde(flatten)]
@@ -243,9 +239,8 @@ mount-points:
       main:
         kind: auth
         priority: 30
-        providers:
-          - name: github
-            acl: "@my-acl"
+        github:
+          acl: "@my-acl"
     static-responses:
       redirect:
         kind: redirect
@@ -260,13 +255,22 @@ mount-points:
         data:
           custom: info
 "#;
-        serde_yaml::from_str::<ProjectConfig>(YAML).unwrap();
+        ProjectConfig::parse(YAML).unwrap();
     }
 
     #[test]
     pub fn test_sample() {
         let sample = ProjectConfig::sample(None, None);
         let yaml = serde_yaml::to_string(&sample).unwrap();
-        let _: ProjectConfig = serde_yaml::from_str(&yaml).unwrap();
+        ProjectConfig::parse(&yaml).unwrap();
+    }
+
+    #[test]
+    pub fn test_extra_fields() {
+        const YAML: &str = r#"---
+version: 1.0.0
+unknown: "a"
+"#;
+        ProjectConfig::parse(YAML).err().unwrap();
     }
 }

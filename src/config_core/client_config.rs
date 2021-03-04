@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     config_core::{
-        config::{default_rules, is_default_rules, Config},
+        config::{default_rules, Config},
         gcs::GcsBucketAccess,
         is_profile_active, is_version_supported,
         proxy::Proxy,
@@ -14,7 +14,7 @@ use crate::{
         schema::validate_schema,
         static_dir::StaticDir,
         upstream::{ProbeError, UpstreamDefinition, UpstreamSocketAddr},
-        Auth, ConfigVersion, PassThrough, Rule, CURRENT_VERSION,
+        validate_extra_keys, Auth, ConfigVersion, PassThrough, Rule, CURRENT_VERSION,
     },
     entities::{
         ConfigName, HandlerName, HealthCheckProbeName, MountPointName, ProfileName, Upstream,
@@ -52,7 +52,7 @@ pub struct ClientConfig {
     #[serde(rename = "mount-points")]
     pub mount_points: BTreeMap<MountPointName, ClientMount>,
 
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default)]
     pub upstreams: BTreeMap<Upstream, UpstreamDefinition>,
 
     #[serde(flatten)]
@@ -145,12 +145,12 @@ impl ClientConfig {
     }
 
     pub fn parse(yaml: impl AsRef<[u8]>) -> anyhow::Result<Self> {
-        serde_yaml::from_slice::<Self>(yaml.as_ref())
-            .map_err(anyhow::Error::from)
-            .and_then(|r| {
-                validate_schema(yaml.as_ref(), "client.json")?;
-                Ok(r)
-            })
+        let deserialized_cfg = serde_yaml::from_slice::<Self>(yaml.as_ref())?;
+
+        validate_extra_keys(&deserialized_cfg, yaml.as_ref())?;
+        validate_schema(yaml.as_ref(), "client.json")?;
+
+        Ok(deserialized_cfg)
     }
 
     pub fn parse_with_redefined_upstreams(
@@ -282,10 +282,10 @@ impl Config for ClientConfig {
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
 // #[schemars(deny_unknown_fields)]
 pub struct ClientMount {
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default)]
     pub handlers: BTreeMap<HandlerName, ClientHandler>,
 
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub profiles: Option<Vec<ProfileName>>,
 
     #[serde(flatten)]
@@ -336,7 +336,7 @@ pub struct ClientHandler {
     #[serde(flatten)]
     pub variant: ClientHandlerVariant,
 
-    #[serde(default = "default_rules", skip_serializing_if = "is_default_rules")]
+    #[serde(default = "default_rules")]
     pub rules: Vec<Rule>,
 
     pub priority: u16,
@@ -344,10 +344,10 @@ pub struct ClientHandler {
     #[serde(flatten)]
     pub refinable: Refinable,
 
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub profiles: Option<Vec<ProfileName>>,
     // #[schemars(skip)]
-    // #[serde(default, skip_serializing_if = "Option::is_none")]
+    // #[serde(default)]
     // pub languages: Option<Vec<langtag::LanguageTagBuf>>,
 }
 
@@ -367,6 +367,13 @@ upstreams:
 mount-points:
   mount_point:
     handlers:
+      auth:
+        kind: auth
+        priority: 10
+        github:
+          acl:
+            - allow: glebpom
+            - deny: "*"
       main:
         kind: proxy
         priority: 30

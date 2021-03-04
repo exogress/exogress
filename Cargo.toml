@@ -47,6 +47,8 @@ semver = { optional = true, version = "0.11.0" }
 serde = { optional = true, version = "1.0.105" }
 serde_json = { optional = true, version = "1.0.48" }
 serde_yaml = { optional = true, version = "0.8.12" }
+serde-value-flatten = { optional = true, version = "0.1.0" }
+serde-value = { optional = true, version = "0.6" }
 shadow-clone = { optional = true, version = "1.2.1" }
 linked-hash-map = { optional = true, version = "0.5.4" }
 shellexpand = { optional = true, version = "2.0.0" }
@@ -222,6 +224,8 @@ config-core = [
     "serde_json",
     "serde_with",
     "serde_yaml",
+    "serde-value",
+    "serde-value-flatten",
     "smol_str",
     "smol_str/serde",
     "thiserror",

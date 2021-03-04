@@ -20,17 +20,10 @@ pub struct Proxy {
     #[serde(rename = "post-processing", default)]
     pub post_processing: PostProcessing,
 
-    #[serde(
-        default = "default_websockets",
-        skip_serializing_if = "is_default_websockets"
-    )]
+    #[serde(default = "default_websockets")]
     pub websockets: bool,
 }
 
 fn default_websockets() -> bool {
     true
-}
-
-fn is_default_websockets(val: &bool) -> bool {
-    val == &default_websockets()
 }

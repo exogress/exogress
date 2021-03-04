@@ -1,6 +1,6 @@
 use crate::{
     config_core::{
-        catch::RescueItem, is_default, methods::MethodMatcher, path::MatchingPath,
+        catch::RescueItem, methods::MethodMatcher, path::MatchingPath,
         path_modify::PathSegmentsModify, query::QueryMatcher, referenced::Container,
         StaticResponse, StatusCode, StatusCodeRange,
     },
@@ -226,12 +226,12 @@ impl HeaderNameList {
 }
 
 #[derive(Debug, Default, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub struct ModifyHeaders {
-    #[serde(default, skip_serializing_if = "HeaderMapWrapper::is_empty")]
+    #[serde(default)]
     pub insert: HeaderMapWrapper,
 
-    #[serde(default, skip_serializing_if = "HeaderMapWrapper::is_empty")]
+    #[serde(default)]
     pub append: HeaderMapWrapper,
 
     #[serde(default)]
@@ -247,7 +247,7 @@ impl ModifyHeaders {
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub enum TrailingSlashModification {
     #[serde(rename = "keep")]
     Keep,
@@ -266,18 +266,18 @@ impl Default for TrailingSlashModification {
 }
 
 #[derive(Default, Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub struct RequestModifications {
-    #[serde(default, skip_serializing_if = "ModifyHeaders::is_empty")]
+    #[serde(default)]
     pub headers: ModifyHeaders,
 
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub path: Option<Vec<PathSegmentsModify>>,
 
-    #[serde(rename = "trailing-slash", default, skip_serializing_if = "is_default")]
+    #[serde(rename = "trailing-slash", default)]
     pub trailing_slash: TrailingSlashModification,
 
-    #[serde(default, rename = "query-params", skip_serializing_if = "is_default")]
+    #[serde(default, rename = "query-params")]
     pub query_params: ModifyQuery,
 }
 
@@ -308,26 +308,26 @@ pub struct ModifyQuery {
     #[serde(default, flatten)]
     pub strategy: ModifyQueryStrategy,
 
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default)]
     pub set: BTreeMap<SmolStr, SmolStr>,
 }
 
 #[derive(Default, Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub struct ResponseModifications {
-    #[serde(default, skip_serializing_if = "ModifyHeaders::is_empty")]
+    #[serde(default)]
     pub headers: ModifyHeaders,
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub struct OnResponse {
     pub when: ResponseConditions,
     pub modifications: ResponseModifications,
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub struct ResponseConditions {
     #[serde(rename = "status-code")]
     pub status_code: StatusCodeRange,
@@ -338,12 +338,12 @@ pub struct Rule {
     pub filter: Filter,
     #[serde(flatten)]
     pub action: Action,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub profiles: Option<Vec<ProfileName>>,
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, Copy, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub enum TrailingSlashFilterRule {
     #[serde(rename = "require")]
     Require,
@@ -361,32 +361,18 @@ impl Default for TrailingSlashFilterRule {
     }
 }
 
-impl TrailingSlashFilterRule {
-    fn is_default(&self) -> bool {
-        self == &Default::default()
-    }
-}
-
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
-#[serde(deny_unknown_fields)]
+
 pub struct Filter {
     pub path: MatchingPath,
 
-    #[serde(
-        default,
-        rename = "query-params",
-        skip_serializing_if = "QueryMatcher::is_empty"
-    )]
+    #[serde(default, rename = "query-params")]
     pub query_params: QueryMatcher,
 
-    #[serde(default, skip_serializing_if = "MethodMatcher::is_all")]
+    #[serde(default)]
     pub methods: MethodMatcher,
 
-    #[serde(
-        rename = "trailing-slash",
-        default,
-        skip_serializing_if = "TrailingSlashFilterRule::is_default"
-    )]
+    #[serde(rename = "trailing-slash", default)]
     pub trailing_slash: TrailingSlashFilterRule,
 }
 
@@ -396,17 +382,13 @@ pub enum Action {
     /// process by the handler
     #[serde(rename = "invoke")]
     Invoke {
-        #[serde(
-            default,
-            rename = "modify-request",
-            skip_serializing_if = "Option::is_none"
-        )]
+        #[serde(default, rename = "modify-request")]
         modify_request: Option<RequestModifications>,
 
-        #[serde(default, rename = "on-response", skip_serializing_if = "Vec::is_empty")]
+        #[serde(default, rename = "on-response")]
         on_response: Vec<OnResponse>,
 
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(default)]
         rescue: Vec<RescueItem>,
     },
 
@@ -418,7 +400,7 @@ pub enum Action {
     #[serde(rename = "throw")]
     Throw {
         exception: Exception,
-        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+        #[serde(default)]
         data: BTreeMap<SmolStr, SmolStr>,
     },
 
@@ -428,17 +410,13 @@ pub enum Action {
         #[serde(rename = "static-response")]
         static_response: Container<StaticResponse, StaticResponseName>,
 
-        #[serde(
-            rename = "status-code",
-            default,
-            skip_serializing_if = "Option::is_none"
-        )]
+        #[serde(rename = "status-code", default)]
         status_code: Option<StatusCode>,
 
-        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+        #[serde(default)]
         data: BTreeMap<SmolStr, SmolStr>,
 
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(default)]
         rescue: Vec<RescueItem>,
     },
 }

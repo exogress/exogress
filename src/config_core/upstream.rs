@@ -34,8 +34,6 @@ pub enum UpstreamSocketAddrParseError {
 // #[schemars(deny_unknown_fields)]
 pub struct UpstreamSocketAddr {
     pub port: u16,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub host: Option<String>,
 }
 
@@ -79,14 +77,10 @@ pub struct UpstreamDefinition {
     #[serde(flatten)]
     pub addr: UpstreamSocketAddr,
 
-    #[serde(
-        rename = "health-checks",
-        default,
-        skip_serializing_if = "BTreeMap::is_empty"
-    )]
+    #[serde(rename = "health-checks", default)]
     pub health_checks: BTreeMap<HealthCheckProbeName, Probe>,
 
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     pub profiles: Option<Vec<ProfileName>>,
 }
 
@@ -128,7 +122,7 @@ pub struct Probe {
     pub timeout: DurationWrapper,
     pub period: DurationWrapper,
 
-    #[serde(default, skip_serializing_if = "HeaderMapWrapper::is_empty")]
+    #[serde(default)]
     pub headers: HeaderMapWrapper,
 
     #[serde(default = "MethodWrapper::default")]
