@@ -61,10 +61,10 @@ impl JsonSchema for CatchMatcher {
     fn json_schema(_: &mut SchemaGenerator) -> Schema {
         SchemaObject {
             metadata: Some(Box::new(Metadata {
-                title: Some(format!("Matcher for exception catching")),
-                description: Some(format!(
-                    "string starting with 'status-code:' or 'exception:'"
-                )),
+                title: Some("Matcher for exception catching".to_string()),
+                description: Some(
+                    "string starting with 'status-code:' or 'exception:'".to_string(),
+                ),
                 ..Default::default()
             })),
             instance_type: Some(InstanceType::String.into()),

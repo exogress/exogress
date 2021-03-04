@@ -9,7 +9,7 @@ impl TryFrom<Parameter> for StaticResponse {
 
     fn try_from(value: Parameter) -> Result<Self, Self::Error> {
         match value {
-            Parameter::StaticResponse(resp) => Ok(resp),
+            Parameter::StaticResponse(resp) => Ok(*resp),
             _ => Err(()),
         }
     }

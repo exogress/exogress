@@ -52,17 +52,18 @@ where
     fn json_schema(gen: &mut SchemaGenerator) -> Schema {
         SchemaObject {
             metadata: Some(Box::new(Metadata {
-                title: Some(format!("Either value or parameter name or entity name")),
-                description: Some(format!(
+                title: Some("Either value or parameter name or entity name".to_string()),
+                description: Some(
                     "You may supply the desired object or the parameter name (starting with @)"
-                )),
+                        .to_string(),
+                ),
                 ..Default::default()
             })),
             instance_type: Some(
                 vec![
-                    InstanceType::String.into(),
-                    InstanceType::Object.into(),
-                    InstanceType::Array.into(),
+                    InstanceType::String,
+                    InstanceType::Object,
+                    InstanceType::Array,
                 ]
                 .into(),
             ),
@@ -73,10 +74,7 @@ where
                         string: Some(Box::new(StringValidation {
                             max_length: Some((MAX_STRING_IDENTIFIER_LENGTH + 1) as u32),
                             min_length: Some((MIN_STRING_IDENTIFIER_LENGTH + 1) as u32),
-                            pattern: Some(String::from(format!(
-                                "^@{}$",
-                                STRING_ENTITY_REGEXP_PATTERN_NON_FIXED
-                            ))),
+                            pattern: Some(format!("^@{}$", STRING_ENTITY_REGEXP_PATTERN_NON_FIXED)),
                         })),
                         ..Default::default()
                     }

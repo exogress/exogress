@@ -21,14 +21,14 @@ impl UriExt for http::uri::Uri {
     }
 
     fn path_segments(&self) -> Vec<&str> {
-        self.path().split("/").skip(1).collect()
+        self.path().split('/').skip(1).collect()
     }
 
     fn query_pairs(&self) -> LinkedHashMap<String, String> {
         if let Some(query) = self.query() {
             let mut res = LinkedHashMap::new();
-            for item in query.split("&") {
-                let mut splitted = item.split("=");
+            for item in query.split('&') {
+                let mut splitted = item.split('=');
                 let maybe_key = splitted.next();
                 let maybe_value = splitted.next();
                 if splitted.next().is_some() {
@@ -97,17 +97,15 @@ impl UriExt for http::uri::Uri {
         let query = self.query();
 
         if set {
-            if !new_path_and_query.ends_with("/") {
-                new_path_and_query.push_str("/");
+            if !new_path_and_query.ends_with('/') {
+                new_path_and_query.push('/');
             }
-        } else {
-            if new_path_and_query.ends_with("/") {
-                new_path_and_query.pop();
-            }
+        } else if new_path_and_query.ends_with('/') {
+            new_path_and_query.pop();
         }
 
         if let Some(q) = query {
-            new_path_and_query.push_str("?");
+            new_path_and_query.push('?');
             new_path_and_query.push_str(q);
         }
 
@@ -123,7 +121,7 @@ impl UriExt for http::uri::Uri {
         let mut new_path = self.path().to_string();
 
         if !pairs.is_empty() {
-            new_path.push_str("?");
+            new_path.push('?');
             let new_query_string = pairs
                 .into_iter()
                 .map(|(k, v)| format!("{}={}", k, v))

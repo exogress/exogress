@@ -61,7 +61,7 @@ impl MountPointBaseUrl {
 
     pub fn host(&self) -> String {
         let url = self.to_url();
-        url.host_str().unwrap().to_string().into()
+        url.host_str().unwrap().to_string()
     }
 
     pub fn path(&self) -> std::string::String {
@@ -119,7 +119,7 @@ impl FromStr for MountPointBaseUrl {
             return Err(UrlPrefixError::AuthFound);
         }
 
-        if url.path() == "/" && s.chars().last() != Some('/') {
+        if url.path() == "/" && !s.ends_with('/') {
             return Err(UrlPrefixError::PathRootNotSet);
         }
 
@@ -128,7 +128,7 @@ impl FromStr for MountPointBaseUrl {
             return Err(UrlPrefixError::Malformed);
         }
 
-        let mut inner: String = restored.into();
+        let mut inner: String = restored;
 
         if url.path().is_empty() {
             inner.push('/');

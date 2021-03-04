@@ -59,7 +59,7 @@ impl Scope {
                 if let Some((config, revision)) = client_config_info {
                     Some(Scope::ClientConfig {
                         config: config.clone(),
-                        revision: revision.clone(),
+                        revision: *revision,
                     })
                 } else {
                     Some(Scope::ProjectConfig)
@@ -72,7 +72,7 @@ impl Scope {
                 if let Some((config, revision)) = client_config_info {
                     Some(Scope::ClientMount {
                         config: config.clone(),
-                        revision: revision.clone(),
+                        revision: *revision,
                         mount_point: mount_point.clone(),
                     })
                 } else {
@@ -97,7 +97,7 @@ impl Scope {
                 if let Some((config, revision)) = client_config_info {
                     Some(Scope::ClientHandler {
                         config: config.clone(),
-                        revision: revision.clone(),
+                        revision: *revision,
                         mount_point: mount_point.clone(),
                         handler: handler.clone(),
                     })
@@ -116,7 +116,7 @@ impl Scope {
             } => Some(Scope::ProjectRule {
                 mount_point: mount_point.clone(),
                 handler: handler.clone(),
-                rule_num: rule_num.clone(),
+                rule_num: *rule_num,
             }),
         }
     }
@@ -132,8 +132,8 @@ impl Scope {
                 handler: handler_name.clone(),
             },
             Some((config_name, revision)) => Scope::ClientHandler {
-                config: config_name.clone(),
-                revision: revision.clone(),
+                config: config_name,
+                revision,
                 mount_point: mount_point.clone(),
                 handler: handler_name.clone(),
             },
@@ -153,8 +153,8 @@ impl Scope {
                 rule_num,
             },
             Some((config_name, revision)) => Scope::ClientRule {
-                config: config_name.clone(),
-                revision: revision.clone(),
+                config: config_name,
+                revision,
                 mount_point: mount_point.clone(),
                 handler: handler_name.clone(),
                 rule_num,

@@ -80,7 +80,6 @@ macro_rules! string_type {
                         min_length: Some($crate::entities::MIN_STRING_IDENTIFIER_LENGTH as u32),
                         max_length: Some($crate::entities::MAX_STRING_IDENTIFIER_LENGTH as u32),
                         pattern: Some(format!("^{}$", $crate::entities::STRING_ENTITY_REGEXP_PATTERN_NON_FIXED)),
-                        ..Default::default()
                     })),
                     ..Default::default()
                 }

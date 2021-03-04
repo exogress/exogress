@@ -78,13 +78,13 @@ pub enum S3Region {
 
 impl JsonSchema for S3Region {
     fn schema_name() -> String {
-        format!("S3Region")
+        "S3Region".to_string()
     }
 
     fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
         SchemaObject {
             metadata: Some(Box::new(Metadata {
-                title: Some(format!("S3 region name")),
+                title: Some("S3 region name".to_string()),
                 ..Default::default()
             })),
             instance_type: Some(InstanceType::String.into()),

@@ -75,7 +75,7 @@ impl Serialize for MatchPathSegment {
 pub enum MatchPathSingleSegment {
     Any,
     Exact(UrlPathSegment),
-    Regex(Regex),
+    Regex(Box<Regex>),
 }
 
 impl JsonSchema for MatchPathSingleSegment {
@@ -93,21 +93,18 @@ impl JsonSchema for MatchPathSingleSegment {
             })),
             instance_type: Some(InstanceType::String.into()),
             subschemas: Some(Box::new(SubschemaValidation {
-                any_of: Some(
-                    vec![
-                        gen.subschema_for::<UrlPathSegment>(),
-                        gen.subschema_for::<SmolStr>(),
-                        Schema::Object(SchemaObject {
-                            string: Some(Box::new(StringValidation {
-                                max_length: Some(1),
-                                min_length: Some(1),
-                                pattern: Some(String::from(r"\?")),
-                            })),
-                            ..Default::default()
-                        }),
-                    ]
-                    .into(),
-                ),
+                any_of: Some(vec![
+                    gen.subschema_for::<UrlPathSegment>(),
+                    gen.subschema_for::<SmolStr>(),
+                    Schema::Object(SchemaObject {
+                        string: Some(Box::new(StringValidation {
+                            max_length: Some(1),
+                            min_length: Some(1),
+                            pattern: Some(String::from(r"\?")),
+                        })),
+                        ..Default::default()
+                    }),
+                ]),
                 ..Default::default()
             })),
             ..Default::default()
@@ -201,13 +198,10 @@ impl JsonSchema for MatchingPath {
                 items: Some(
                     Schema::Object(SchemaObject {
                         subschemas: Some(Box::new(SubschemaValidation {
-                            any_of: Some(
-                                vec![
-                                    gen.subschema_for::<MatchPathSegment>(),
-                                    gen.subschema_for::<String>(),
-                                ]
-                                .into(),
-                            ),
+                            any_of: Some(vec![
+                                gen.subschema_for::<MatchPathSegment>(),
+                                gen.subschema_for::<String>(),
+                            ]),
                             ..Default::default()
                         })),
                         ..Default::default()
@@ -353,7 +347,7 @@ impl<'de> Visitor<'de> for MatchPathSingleSegmentVisitor {
             let trimmed = value.get(1..value.len() - 1).unwrap();
             // regex
             match trimmed.parse() {
-                Ok(r) => Ok(MatchPathSingleSegment::Regex(r)),
+                Ok(r) => Ok(MatchPathSingleSegment::Regex(Box::new(r))),
                 Err(e) => Err(de::Error::custom(e)),
             }
         } else {

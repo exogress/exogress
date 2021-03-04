@@ -182,7 +182,7 @@ pub struct HeaderNameList(#[serde_as(as = "Vec<DisplayFromStr>")] pub Vec<Header
 
 impl JsonSchema for HeaderNameList {
     fn schema_name() -> String {
-        format!("Array_of_HttpHeaderName")
+        "Array_of_HttpHeaderName".to_string()
     }
 
     fn json_schema(_: &mut SchemaGenerator) -> Schema {

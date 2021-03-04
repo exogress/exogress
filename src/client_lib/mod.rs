@@ -27,21 +27,19 @@ pub fn spawn(
         rt.block_on(async move {
             let resolver = TokioAsyncResolver::from_system_conf(TokioHandle)?;
 
-            Ok::<_, anyhow::Error>(
-                Client::builder()
-                    .access_key_id(
-                        access_key_id
-                            .parse::<AccessKeyId>()
-                            .map_err(|e| anyhow::Error::msg(e.to_string()))?,
-                    )
-                    .secret_access_key(secret_access_key)
-                    .account(account)
-                    .project(project)
-                    .build()
-                    .map_err(anyhow::Error::msg)?
-                    .spawn(reload_config_tx, reload_config_rx, resolver)
-                    .await?,
-            )
+            Client::builder()
+                .access_key_id(
+                    access_key_id
+                        .parse::<AccessKeyId>()
+                        .map_err(|e| anyhow::Error::msg(e.to_string()))?,
+                )
+                .secret_access_key(secret_access_key)
+                .account(account)
+                .project(project)
+                .build()
+                .map_err(anyhow::Error::msg)?
+                .spawn(reload_config_tx, reload_config_rx, resolver)
+                .await
         })
     })
     .join();

@@ -46,7 +46,7 @@ pub enum MatchQueryValue {
 
 impl JsonSchema for MatchQueryValue {
     fn schema_name() -> String {
-        format!("MatchQueryValue")
+        "MatchQueryValue".to_string()
     }
 
     fn json_schema(gen: &mut SchemaGenerator) -> Schema {
@@ -57,13 +57,10 @@ impl JsonSchema for MatchQueryValue {
                 ..Default::default()
             })),
             subschemas: Some(Box::new(SubschemaValidation {
-                any_of: Some(
-                    vec![
-                        gen.subschema_for::<MatchQuerySingleValue>(),
-                        gen.subschema_for::<Vec<SmolStr>>(),
-                    ]
-                    .into(),
-                ),
+                any_of: Some(vec![
+                    gen.subschema_for::<MatchQuerySingleValue>(),
+                    gen.subschema_for::<Vec<SmolStr>>(),
+                ]),
                 ..Default::default()
             })),
             ..Default::default()
@@ -95,12 +92,12 @@ pub enum MatchQuerySingleValue {
     AnySingleSegment,
     MayBeAnyMultipleSegments,
     Exact(SmolStr),
-    Regex(Regex),
+    Regex(Box<Regex>),
 }
 
 impl JsonSchema for MatchQuerySingleValue {
     fn schema_name() -> String {
-        format!("MatchQuerySingleValue")
+        "MatchQuerySingleValue".to_string()
     }
 
     fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
@@ -215,7 +212,7 @@ impl<'de> Visitor<'de> for MatchQuerySingleValueVisitor {
             let trimmed = value.get(1..value.len() - 1).unwrap();
             // regex
             match trimmed.parse() {
-                Ok(r) => Ok(MatchQuerySingleValue::Regex(r)),
+                Ok(r) => Ok(MatchQuerySingleValue::Regex(Box::new(r))),
                 Err(e) => Err(de::Error::custom(e)),
             }
         } else {

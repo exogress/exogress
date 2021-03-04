@@ -28,7 +28,7 @@ impl From<mime::Mime> for MimeType {
 
 impl JsonSchema for MimeType {
     fn schema_name() -> String {
-        format!("MimeType")
+        "MimeType".to_string()
     }
 
     fn json_schema(_: &mut SchemaGenerator) -> Schema {

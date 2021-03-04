@@ -70,7 +70,7 @@ pub enum Parameter {
     MimeTypes(MimeTypes),
 
     #[serde(rename = "static-response")]
-    StaticResponse(StaticResponse),
+    StaticResponse(Box<StaticResponse>),
 }
 
 impl Parameter {

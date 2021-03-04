@@ -15,7 +15,7 @@ use std::{
     str::FromStr,
 };
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct RefinableSet {
     inner: BTreeMap<Scope, Refinable>,
 }
@@ -28,9 +28,7 @@ pub struct Refined {
 
 impl RefinableSet {
     pub fn new() -> Self {
-        RefinableSet {
-            inner: Default::default(),
-        }
+        RefinableSet::default()
     }
 
     pub fn add(&mut self, scope: Scope, refinable: &Refinable) -> anyhow::Result<()> {
