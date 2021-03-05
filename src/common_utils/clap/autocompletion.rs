@@ -21,6 +21,8 @@ fn autodetect_shell() -> Option<&'static str> {
         Some("bash")
     } else if shell_var.contains("zsh") {
         Some("zsh")
+    } else if shell_var.contains("powershell") {
+        Some("powershell")
     } else {
         None
     }
