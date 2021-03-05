@@ -1040,7 +1040,7 @@ pub fn server_connection(
                                     ClientHeader::Rejected => {
                                         let error = bincode::deserialize::<RejectionReason>(&payload)?;
 
-                                        info!("connection rejected with reason: {}", error);
+                                        info!("slot connection in tunnel rejected by client with reason: {}", error);
 
                                         match storage
                                             .lock()
