@@ -497,7 +497,7 @@ remove:
                 "q1".into() => Some(MatchQueryValue::Single(MatchQuerySingleValue::MayBeAnyMultipleSegments)),
                 "q2".into() => Some(MatchQueryValue::Single(MatchQuerySingleValue::AnySingleSegment)),
                 "q3".into() => Some(MatchQueryValue::Single(MatchQuerySingleValue::Exact("v1".into()))),
-                "q4".into() => Some(MatchQueryValue::Single(MatchQuerySingleValue::Regex(".+".parse().unwrap())))
+                "q4".into() => Some(MatchQueryValue::Single(MatchQuerySingleValue::Regex(Box::new(".+".parse().unwrap()))))
             },
         };
         assert_eq!(

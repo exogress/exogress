@@ -578,7 +578,9 @@ mod test {
             parsed.next().unwrap()
         );
         assert_eq!(
-            MatchPathSegment::Single(MatchPathSingleSegment::Regex(r".+".parse().unwrap())),
+            MatchPathSegment::Single(MatchPathSingleSegment::Regex(Box::new(
+                r".+".parse().unwrap()
+            ))),
             parsed.next().unwrap()
         );
 
@@ -604,7 +606,7 @@ mod test {
         assert_eq!(
             "---\n\"/[a-z]{1,}/\"\n",
             serde_yaml::to_string(&MatchPathSegment::Single(MatchPathSingleSegment::Regex(
-                "[a-z]{1,}".parse().unwrap()
+                Box::new("[a-z]{1,}".parse().unwrap())
             )))
             .unwrap()
         );
@@ -676,7 +678,7 @@ mod test {
                     MatchPathSegment::Single(MatchPathSingleSegment::Exact("b".parse().unwrap()))
                 ],
                 vec![MatchPathSegment::Single(MatchPathSingleSegment::Regex(
-                    r#".+\.(jpg|gif|png)"#.parse().unwrap()
+                    Box::new(r#".+\.(jpg|gif|png)"#.parse().unwrap())
                 ))],
             ),
             parsed.next().unwrap()

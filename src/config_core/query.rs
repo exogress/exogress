@@ -307,7 +307,7 @@ p9: ["a", "b", "c"]
                     SmolStr::from("p5") =>  Some(MatchQueryValue::Single(MatchQuerySingleValue::Exact("".into()))),
                     SmolStr::from("p6") =>  None,
                     SmolStr::from("p7") =>  None,
-                    SmolStr::from("p8") =>  Some(MatchQueryValue::Single(MatchQuerySingleValue::Regex(".+".parse().unwrap()))),
+                    SmolStr::from("p8") =>  Some(MatchQueryValue::Single(MatchQuerySingleValue::Regex(Box::new(".+".parse().unwrap())))),
                     SmolStr::from("p9") =>  Some(MatchQueryValue::Choice(vec!["a".into(), "b".into(), "c".into()]))
                 }
             }
