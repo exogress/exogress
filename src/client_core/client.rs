@@ -472,8 +472,6 @@ impl Client {
                                     }
                                 });
                             }
-                        } else {
-                            warn!("skip request to connect to {}: already connected", hostname);
                         }
                     }
                 }
