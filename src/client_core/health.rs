@@ -37,6 +37,19 @@ pub struct ProbeStatusUpdate {
     pub status: Option<ProbeHealthStatus>,
 }
 
+impl ProbeStatusUpdate {
+    pub fn status_desc(&self) -> String {
+        match &self.status {
+            None => "initializing".to_string(),
+            Some(ProbeHealthStatus::Unknown) => "unknown".to_string(),
+            Some(ProbeHealthStatus::Healthy) => "healthy".to_string(),
+            Some(ProbeHealthStatus::Unhealthy { reason }) => {
+                format!("unhealthy ({})", reason)
+            }
+        }
+    }
+}
+
 pub struct HealthCheckProbe {
     inner: Arc<Mutex<HealthCheckProbeInner>>,
     update_tx: mpsc::Sender<ProbeStatusUpdate>,
@@ -149,7 +162,7 @@ pub async fn start_checker(
             }
         }
         .instrument(tracing::info_span!(
-            "healthcheck",
+            "health_check",
             upstream = upstream.as_str(),
             probe_name = probe_name.as_str()
         )),

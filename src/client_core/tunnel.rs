@@ -1,7 +1,6 @@
 use std::io;
 
-use std::net::SocketAddr;
-
+use crate::{
 use crate::{
     config_core::ClientConfig,
     entities::{AccessKeyId, AccountName, InstanceId, ProfileName, ProjectName, SmolStr},
@@ -17,13 +16,13 @@ use parking_lot::RwLock;
 use rand::{seq::IteratorRandom, thread_rng};
 use rustls::ClientConfig as RustlsClientConfig;
 use rw_stream_sink::RwStreamSink;
-use std::{convert::TryInto, sync::Arc};
+use std::{convert::TryInto, net::SocketAddr, sync::Arc};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
 };
 use tokio_rustls::{rustls, webpki::DNSNameRef, TlsConnector};
-use tracing::{error, info};
+use tracing::{error, field, info, info_span};
 use trust_dns_resolver::{error::ResolveError, TokioAsyncResolver};
 use url::Url;
 use warp::hyper::client::conn;
@@ -78,8 +77,8 @@ pub async fn spawn(
     internal_server_connector: mpsc::Sender<RwStreamSink<MixedChannel>>,
     resolver: TokioAsyncResolver,
 ) -> Result<bool, Error> {
+    let span = info_span!("spawn", tunnel_id = field::Empty);
     let (tunnel_id, stream) = tokio::time::timeout(Duration::from_secs(5), async {
-        info!("connecting tunnel to server");
         let gw_addrs = resolver.lookup_ip(gw_hostname.to_string()).await?;
         let gw_addr = gw_addrs
             .iter()
@@ -94,8 +93,6 @@ pub async fn spawn(
             rustls_native_certs::load_native_certs().expect("could not load platform certs");
         let config = TlsConnector::from(Arc::new(config));
         let dnsname = DNSNameRef::try_from_ascii_str(&gw_hostname)?;
-
-        info!("connect to {}, addr={}", gw_hostname, gw_addr);
 
         let tls_stream = config.connect(dnsname, socket).await?;
 
@@ -114,8 +111,6 @@ pub async fn spawn(
         for (k, v) in additional_connection_params.iter() {
             url.query_pairs_mut().append_pair(k.as_str(), v.as_str());
         }
-
-        info!("connect to {}", url);
 
         let req = http::Request::builder()
             .uri(url.as_str())
@@ -161,7 +156,9 @@ pub async fn spawn(
     .await
     .map_err(|_| Error::EstablishTimeout)??;
 
-    info!("tunnel established. tunnel_id = {}", tunnel_id);
+    span.record("tunnel_id", &tunnel_id.to_string().as_str());
+
+    info!(parent: &span, "connected");
 
     let r = client_listener(
         client_framed(stream),
@@ -171,6 +168,8 @@ pub async fn spawn(
         resolver.clone(),
     )
     .await?;
+
+    info!(parent: &span, "closed successfully");
 
     Ok(r)
 }

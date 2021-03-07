@@ -2,15 +2,28 @@ use crate::{
     config_core::ClientConfig,
     entities::{url_prefix::MountPointBaseUrl, HealthCheckProbeName, InstanceId, Upstream},
 };
+use core::fmt;
 use hashbrown::HashMap;
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum WsCloudToInstanceMessage {
+    TunnelRequest(TunnelRequest),
+    ConfigUpdateResult(ConfigUpdateResult),
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TunnelRequest {
     pub hostname: SmolStr,
     pub max_tunnels_count: u16,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum ConfigUpdateResult {
+    Error { msg: String },
+    Ok { base_urls: Vec<MountPointBaseUrl> },
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -49,6 +62,22 @@ pub enum UnhealthyReason {
     },
     #[serde(rename = "request-error")]
     RequestError { err: String },
+}
+
+impl fmt::Display for UnhealthyReason {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            UnhealthyReason::Timeout => {
+                write!(f, "timeout")
+            }
+            UnhealthyReason::BadStatus { status } => {
+                write!(f, "bad status {}", status)
+            }
+            UnhealthyReason::RequestError { err } => {
+                write!(f, "request error: `{}`", err)
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]

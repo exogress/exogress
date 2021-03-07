@@ -20,7 +20,9 @@ use crate::{
 
 use crate::client_core::{signal_client, tunnel};
 
-use crate::signaling::{TunnelRequest, WsInstanceToCloudMessage};
+use crate::signaling::{
+    ConfigUpdateResult, TunnelRequest, WsCloudToInstanceMessage, WsInstanceToCloudMessage,
+};
 use parking_lot::{Mutex, RwLock};
 use std::sync::Arc;
 use tracing_futures::Instrument;
@@ -142,7 +144,7 @@ impl Client {
                 .append_pair("active_profile", profile.to_string().as_str());
         }
 
-        info!("Will connect signalling channel to {}", url);
+        info!("Cloud endpoint is {}", self.cloud_endpoint);
 
         let (send_tx, mut send_rx) = mpsc::channel(1);
         let (recv_tx, recv_rx) = mpsc::channel(1);
@@ -192,7 +194,13 @@ impl Client {
             async move {
                 while let Some(status) = health_update_rx.next().await {
                     let health = upstream_health_checkers.dump_health().await;
-                    info!("updated health status = {:?}", status);
+                    info!(
+                        upstream = %status.upstream,
+                        probe = %status.probe,
+                        status = %status.status_desc(),
+                        "health status updated"
+                    );
+
                     recv_tx
                         .send(
                             serde_json::to_string(&WsInstanceToCloudMessage::HealthState(health))
@@ -203,6 +211,7 @@ impl Client {
 
                 Ok::<_, anyhow::Error>(())
             }
+            .instrument(tracing::info_span!("health_check"))
         });
 
         let current_config = Arc::new(RwLock::new(client_config.clone()));
@@ -297,7 +306,6 @@ impl Client {
                                         upstream_health_checkers.sync_probes(&client_config).await;
                                         *current_config.write() = client_config.clone();
                                         config_tx.send(client_config.clone()).unwrap();
-                                        info!("New config applied");
                                         last_config = Some(client_config);
                                     }
                                 }
@@ -342,7 +350,7 @@ impl Client {
                 maybe_identity,
                 resolver,
             )
-            .instrument(tracing::info_span!("cloud connector"))
+            .instrument(tracing::info_span!("cloud_connector"))
         })
         .fuse();
 
@@ -350,133 +358,163 @@ impl Client {
 
         tokio::spawn(internal_server(new_conn_rx, current_config.clone()));
 
-        let tunnel_requests_processor = tokio::spawn({
-            let access_key_id = self.access_key_id;
-            let secret_access_key = self.secret_access_key;
-            let gw_tunnels_port = self.gw_tunnels_port;
-            let additional_connection_params = self.additional_connection_params;
+        let tunnel_requests_processor =
+            tokio::spawn({
+                let access_key_id = self.access_key_id;
+                let secret_access_key = self.secret_access_key;
+                let gw_tunnels_port = self.gw_tunnels_port;
+                let additional_connection_params = self.additional_connection_params;
 
-            async move {
-                while let Some(TunnelRequest {
-                                   hostname,
-                                   max_tunnels_count,
-                               }) = send_rx.next().await
-                {
-                    {
-                        if !tunnels.contains_key(&hostname) {
-                            for tunnel_index in 0..max_tunnels_count {
-                                let (stop_tunnel_tx, stop_tunnel_rx) = oneshot::channel();
+                async move {
+                    while let Some(incoming_msg) = send_rx.next().await {
+                        match incoming_msg {
+                            WsCloudToInstanceMessage::TunnelRequest(TunnelRequest {
+                                                                        hostname,
+                                                                        max_tunnels_count,
+                                                                    }) => {
+                                if !tunnels.contains_key(&hostname) {
+                                    for tunnel_index in 0..max_tunnels_count {
+                                        let (stop_tunnel_tx, stop_tunnel_rx) = oneshot::channel();
 
-                                tunnels
-                                    .entry(hostname.clone())
-                                    .or_default()
-                                    .insert(tunnel_index, stop_tunnel_tx);
+                                        tunnels
+                                            .entry(hostname.clone())
+                                            .or_default()
+                                            .insert(tunnel_index, stop_tunnel_tx);
 
-                                tokio::spawn({
-                                    shadow_clone!(
-                                        profile, account_name, project_name, secret_access_key,
-                                        gw_tunnels_port, access_key_id, instance_id_storage,
-                                        hostname, current_config, tunnels, resolver,
-                                        mut internal_server_connector, additional_connection_params
-                                    );
+                                        tokio::spawn({
+                                            shadow_clone!(
+                                            profile,
+                                            account_name,
+                                            project_name,
+                                            secret_access_key,
+                                            gw_tunnels_port,
+                                            access_key_id,
+                                            instance_id_storage,
+                                            hostname,
+                                            current_config,
+                                            tunnels,
+                                            resolver,
+                                            mut internal_server_connector,
+                                            additional_connection_params
+                                        );
 
-                                    async move {
-                                        let connector = async {
-                                            let backoff = Backoff::new(
-                                                Duration::from_millis(100),
-                                                Duration::from_secs(20),
-                                            );
+                                            {
+                                                shadow_clone!(hostname);
 
-                                            pin_mut!(backoff);
+                                                async move {
+                                                    let connector = async {
+                                                        let backoff = Backoff::new(
+                                                            Duration::from_millis(100),
+                                                            Duration::from_secs(20),
+                                                        );
 
-                                            let retry = Arc::new(AtomicUsize::new(0));
+                                                        pin_mut!(backoff);
 
-                                            loop {
-                                                info!(
-                                                    "try to establish tunnel {} attempt {}",
-                                                    tunnel_index,
-                                                    retry.load(Ordering::SeqCst)
-                                                );
-                                                let backoff_handle = backoff.next().await.unwrap();
+                                                        let retry = Arc::new(AtomicUsize::new(0));
 
-                                                let existence = Arc::new(Mutex::new(()));
-                                                let weak = Arc::downgrade(&existence);
-                                                tokio::spawn({
-                                                    let retry = retry.clone();
+                                                        loop {
+                                                            let backoff_handle = backoff.next().await.unwrap();
 
-                                                    async move {
-                                                        sleep(Duration::from_secs(10)).await;
-                                                        if weak.upgrade().is_some() {
-                                                            debug!("Tunnel is ok. Reset backoff");
-                                                            backoff_handle.reset();
-                                                            retry.store(0, Ordering::SeqCst);
+                                                            let existence = Arc::new(Mutex::new(()));
+                                                            let weak = Arc::downgrade(&existence);
+                                                            tokio::spawn({
+                                                                let retry = retry.clone();
+
+                                                                async move {
+                                                                    sleep(Duration::from_secs(10)).await;
+                                                                    if weak.upgrade().is_some() {
+                                                                        debug!("Tunnel is ok. Reset backoff");
+                                                                        backoff_handle.reset();
+                                                                        retry.store(0, Ordering::SeqCst);
+                                                                    }
+                                                                }
+                                                            });
+                                                            {
+                                                                let maybe_instance_id =
+                                                                    *instance_id_storage.lock();
+                                                                if let Some(instance_id) = maybe_instance_id {
+                                                                    let tunnel_spawn_result = tunnel::spawn(
+                                                                        current_config.clone(),
+                                                                        account_name.clone(),
+                                                                        project_name.clone(),
+                                                                        instance_id,
+                                                                        access_key_id,
+                                                                        secret_access_key.clone(),
+                                                                        hostname.clone(),
+                                                                        gw_tunnels_port,
+                                                                        &profile,
+                                                                        &additional_connection_params,
+                                                                        internal_server_connector.clone(),
+                                                                        resolver.clone(),
+                                                                    )
+                                                                        .await;
+                                                                    match tunnel_spawn_result {
+                                                                        Ok(true) => {
+                                                                            // should retry
+                                                                        }
+                                                                        Ok(false) => {
+                                                                            // stop retrying
+                                                                            break;
+                                                                        }
+                                                                        Err(e) => {
+                                                                            error!("tunnel error: {}", e);
+                                                                        }
+                                                                    }
+                                                                }
+                                                                mem::drop(existence);
+                                                            }
+
+                                                            retry.fetch_add(1, Ordering::SeqCst);
                                                         }
-                                                    }
-                                                });
-                                                {
-                                                    let maybe_instance_id =
-                                                        *instance_id_storage.lock();
-                                                    if let Some(instance_id) = maybe_instance_id {
-                                                        let tunnel_spawn_result = tunnel::spawn(
-                                                            current_config.clone(),
-                                                            account_name.clone(),
-                                                            project_name.clone(),
-                                                            instance_id,
-                                                            access_key_id,
-                                                            secret_access_key.clone(),
-                                                            hostname.clone(),
-                                                            gw_tunnels_port,
-                                                            &profile,
-                                                            &additional_connection_params,
-                                                            internal_server_connector.clone(),
-                                                            resolver.clone(),
-                                                        )
-                                                            .await;
-                                                        match tunnel_spawn_result {
-                                                            Ok(true) => {
-                                                                // should retry
-                                                            }
-                                                            Ok(false) => {
-                                                                // stop retrying
-                                                                break;
-                                                            }
-                                                            Err(e) => {
-                                                                error!("error in tunnel {}. will re-connect", e);
-                                                            }
-                                                        }
-                                                    }
-                                                    mem::drop(existence);
-                                                }
+                                                    };
 
-                                                retry.fetch_add(1, Ordering::SeqCst);
-                                            }
-                                        };
-
-                                        tokio::select! {
+                                                    tokio::select! {
                                         _ = connector => {},
                                         _ = stop_tunnel_rx => {},
                                         }
 
-                                        if let dashmap::mapref::entry::Entry::Occupied(mut tunnel_entry) = tunnels.entry(hostname.clone())
-                                        {
-                                            info!("tunnel index {} closed", tunnel_index);
-                                            tunnel_entry.get_mut().remove(&tunnel_index);
+                                                    if let dashmap::mapref::entry::Entry::Occupied(
+                                                        mut tunnel_entry,
+                                                    ) = tunnels.entry(hostname.clone())
+                                                    {
+                                                        tunnel_entry.get_mut().remove(&tunnel_index);
 
-                                            if tunnel_entry.get().is_empty() {
-                                                info!(
-                                                    "tunnels finally empty. remove whole entry"
-                                                );
-                                                tunnel_entry.remove_entry();
-                                            }
-                                        }
+                                                        if tunnel_entry.get().is_empty() {
+                                                            tunnel_entry.remove_entry();
+                                                        }
+                                                    }
+                                                }
+                                            }.instrument(
+                                                tracing::info_span!(
+                                            "tunnels",
+                                            gw = %hostname
+                                        ),
+                                            )
+                                        });
                                     }
-                                });
+                                }
+                            }
+                            WsCloudToInstanceMessage::ConfigUpdateResult(config_update_result) => {
+                                match config_update_result {
+                                    ConfigUpdateResult::Error { msg } => {
+                                        error!("error updating config: {}. Previous version is still active", msg);
+                                    }
+                                    ConfigUpdateResult::Ok { base_urls } => {
+                                        info!("updated config is now active.");
+                                        info!(
+                                            "Base URLs now served by the client: {}",
+                                            itertools::join(
+                                                base_urls.iter().map(|b| b.to_https_url()),
+                                                ", "
+                                            )
+                                        );
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
-        })
+            })
             .fuse();
 
         pin_mut!(connector_result);

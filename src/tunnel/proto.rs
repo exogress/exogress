@@ -768,7 +768,14 @@ pub async fn client_listener(
         _r = periodic_pinger => Ok::<bool, crate::tunnel::error::Error>(true),
     };
 
-    info!("tunnel closed with result {:?}", res);
+    match &res {
+        Ok(r) => {
+            info!(will_reconnect = %r, "tunnel closed");
+        }
+        Err(e) => {
+            info!("tunnel closed with error `{}`", e);
+        }
+    }
 
     Ok(res?)
 }

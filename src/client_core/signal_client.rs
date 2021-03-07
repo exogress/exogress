@@ -17,15 +17,14 @@ use url::Url;
 use crate::{
     common_utils::backoff::{Backoff, BackoffHandle},
     config_core::ClientConfig,
-    signaling::{
-        InstanceConfigMessage, SignalerHandshakeResponse, TunnelRequest, WsInstanceToCloudMessage,
-    },
+    signaling::{InstanceConfigMessage, SignalerHandshakeResponse, WsInstanceToCloudMessage},
 };
 
 use crate::{
     client_core::{health::UpstreamsHealth, TunnelsStorage},
     common_utils::jwt::JwtError,
     entities::{InstanceId, SmolStr},
+    signaling::WsCloudToInstanceMessage,
     ws_client,
     ws_client::connect_ws,
 };
@@ -56,7 +55,7 @@ pub async fn spawn(
     mut config_rx: Receiver<ClientConfig>,
     tunnels: TunnelsStorage,
     url: Url,
-    mut tx: mpsc::Sender<TunnelRequest>,
+    mut tx: mpsc::Sender<WsCloudToInstanceMessage>,
     mut rx: mpsc::Receiver<String>,
     upstream_healthcheck: UpstreamsHealth,
     authorization: SmolStr,
@@ -70,7 +69,6 @@ pub async fn spawn(
     pin_mut!(backoff);
 
     while let Some(backoff_handle) = backoff.next().await {
-        info!("trying to establish connection to a signaler server");
         match do_conection(
             &instance_id_storage,
             &mut config_rx,
@@ -91,15 +89,12 @@ pub async fn spawn(
                 info!("Signal server connection closed. Will retry..");
             }
             Err(Error::Unauthorized) => {
-                error!("Bad credentials");
                 return Err(CloudConnectError::Unauthorized);
             }
             Err(Error::Forbidden) => {
-                error!("access forbidden");
                 return Err(CloudConnectError::Forbidden);
             }
             Err(Error::Conflict) => {
-                error!("config conflict");
                 return Err(CloudConnectError::Conflict);
             }
             Err(e) => {
@@ -160,7 +155,7 @@ async fn do_conection(
     authorization: &str,
     backoff_handle: BackoffHandle,
     url: &Url,
-    tx: &mut mpsc::Sender<TunnelRequest>,
+    tx: &mut mpsc::Sender<WsCloudToInstanceMessage>,
     rx: &mut mpsc::Receiver<String>,
     tunnels: &TunnelsStorage,
     upstream_healthcheck: &UpstreamsHealth,
@@ -254,7 +249,12 @@ async fn do_conection(
                                 Err(e) => Some(e.to_string()),
                             })
                             .unwrap_or_else(|| "no error provided".to_string());
-                        return Err(Error::HandshakeError(msg));
+
+                        return if msg == "conflict" {
+                            Err(Error::Conflict)
+                        } else {
+                            Err(Error::HandshakeError(msg))
+                        };
                     }
                 };
 
@@ -272,14 +272,12 @@ async fn do_conection(
 
         let (mut incoming_pongs_tx, mut incoming_pongs_rx) = mpsc::channel(2);
 
-        info!("Connection to signal server established");
-
         let mut send_tx2 = send_tx.clone();
 
         let send_updated_config = async {
             while let Ok(()) = config_rx.changed().await {
                 let config = config_rx.borrow().clone();
-                info!("The new config uploaded");
+                info!("Updated config upload to the cloud");
                 send_tx2
                     .send(Message::Text(
                         serde_json::to_string(&WsInstanceToCloudMessage::InstanceConfig(
@@ -337,7 +335,6 @@ async fn do_conection(
         let accept_connection_with_delay = {
             async move {
                 sleep(Duration::from_secs(5)).await;
-                info!("mark connection as successful. reset backoff");
                 backoff_handle.reset();
                 pending::<()>().await
             }
@@ -429,7 +426,7 @@ async fn do_conection(
         pin_mut!(forward_received_messages);
         pin_mut!(send_updated_config);
 
-        info!("set instance_id to {}", instance_id);
+        info!(instance_id = %instance_id, "client is online");
         *instance_id_storage.lock() = Some(instance_id);
 
         let r = select_biased! {

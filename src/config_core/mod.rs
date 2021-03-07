@@ -126,33 +126,6 @@ pub fn validate_extra_keys<T: Serialize + DeserializeOwned>(
         .collect();
 
     if !extra_fields.is_empty() {
-        eprintln!(
-            "scheme all \n{:?}",
-            serde_value::to_value(&deserialized_scheme).unwrap() // ::to_string(&deserialized_scheme).unwrap()
-        );
-        eprintln!(
-            "scheme keys \n{}",
-            serde_yaml::to_string(&scheme_keys).unwrap()
-        );
-        eprintln!(
-            "schemaless keys \n{}",
-            serde_yaml::to_string(&schemaless_keys).unwrap()
-        );
-
-        eprintln!(
-            "extra_fields \n{}",
-            serde_yaml::to_string(&extra_fields).unwrap()
-        );
-
-        eprintln!(
-            "scheme \n{}",
-            serde_yaml::to_string(&deserialized_scheme).unwrap()
-        );
-        eprintln!(
-            "schemaless \n{}",
-            serde_yaml::to_string(&deserialize_schemaless).unwrap()
-        );
-
         bail!("extra fields found: {:?}", extra_fields);
     }
 
