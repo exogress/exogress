@@ -1,0 +1,221 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "StaticResponse",
+  "anyOf": [
+    {
+      "type": "object",
+      "required": [
+        "destination",
+        "kind",
+        "redirect-type"
+      ],
+      "properties": {
+        "destination": {
+          "$ref": "#/definitions/RedirectTo"
+        },
+        "headers": {
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/HttpHeaderMap"
+            }
+          ]
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "redirect"
+          ]
+        },
+        "query-params": {
+          "default": {
+            "remove": [],
+            "set": {},
+            "strategy": "keep"
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/ModifyQuery"
+            }
+          ]
+        },
+        "redirect-type": {
+          "$ref": "#/definitions/RedirectType"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "body",
+        "kind"
+      ],
+      "properties": {
+        "body": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ResponseBody"
+          }
+        },
+        "fallback-accept": {
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/MimeType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "headers": {
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/HttpHeaderMap"
+            }
+          ]
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "raw"
+          ]
+        },
+        "status-code": {
+          "default": 200,
+          "allOf": [
+            {
+              "$ref": "#/definitions/HttpStatusCode"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "HttpHeaderMap": {
+      "title": "HTTP Headers",
+      "description": "Map of HTTP headers, where key is the header name. The headers value may be a single string or multiple strings.",
+      "type": "object"
+    },
+    "HttpStatusCode": {
+      "type": "integer"
+    },
+    "MimeType": {
+      "title": "mime-type",
+      "type": "string"
+    },
+    "ModifyQuery": {
+      "type": "object",
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "strategy"
+          ],
+          "properties": {
+            "remove": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "keep"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "strategy"
+          ],
+          "properties": {
+            "keep": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "remove"
+              ]
+            }
+          }
+        }
+      ],
+      "properties": {
+        "set": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "RedirectTo": {
+      "title": "URL, or array of path segments, optionally starting from schema://url",
+      "type": [
+        "string",
+        "array"
+      ],
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "RedirectType": {
+      "type": "string",
+      "enum": [
+        "moved-permanently",
+        "permanent-redirect",
+        "found",
+        "see-other",
+        "temporary-redirect",
+        "multiple-choices",
+        "not-modified"
+      ]
+    },
+    "ResponseBody": {
+      "type": "object",
+      "required": [
+        "content",
+        "content-type"
+      ],
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "content-type": {
+          "$ref": "#/definitions/MimeType"
+        },
+        "engine": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TemplateEngine"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "TemplateEngine": {
+      "type": "string",
+      "enum": [
+        "handlebars"
+      ]
+    }
+  }
+}

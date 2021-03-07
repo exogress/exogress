@@ -1,27 +1,47 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ProjectConfig",
+  "title": "ClientConfig",
   "type": "object",
   "required": [
+    "mount-points",
+    "name",
+    "revision",
     "version"
   ],
   "properties": {
     "mount-points": {
       "type": "object",
       "additionalProperties": {
-        "$ref": "#/definitions/ProjectMount"
+        "$ref": "#/definitions/ClientMount"
       }
     },
+    "name": {
+      "$ref": "#/definitions/ConfigName"
+    },
     "rescue": {
+      "default": [],
       "type": "array",
       "items": {
         "$ref": "#/definitions/RescueItem"
       }
     },
+    "revision": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
     "static-responses": {
+      "default": {},
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/StaticResponse"
+      }
+    },
+    "upstreams": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/UpstreamDefinition"
       }
     },
     "version": {
@@ -75,8 +95,7 @@
         "secret_access_key": {
           "type": "string"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "Cache": {
       "type": "object",
@@ -87,12 +106,450 @@
         "enabled": {
           "type": "boolean"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "CatchMatcher": {
       "title": "Matcher for exception catching",
       "description": "string starting with 'status-code:' or 'exception:'",
+      "type": "string"
+    },
+    "ClientHandler": {
+      "type": "object",
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "upstream"
+          ],
+          "properties": {
+            "base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cache": {
+              "default": {
+                "enabled": false
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/Cache"
+                }
+              ]
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "proxy"
+              ]
+            },
+            "post-processing": {
+              "default": {
+                "encoding": {
+                  "brotli": true,
+                  "deflate": true,
+                  "enabled": true,
+                  "gzip": true,
+                  "mime-types": "@compressible-mime-types",
+                  "min-size": 100
+                },
+                "image": {
+                  "webp": {
+                    "enabled": true,
+                    "jpeg": true,
+                    "png": true
+                  }
+                }
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/PostProcessing"
+                }
+              ]
+            },
+            "replace-base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "upstream": {
+              "$ref": "#/definitions/Upstream"
+            },
+            "websockets": {
+              "default": true,
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "dir",
+            "kind"
+          ],
+          "properties": {
+            "base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cache": {
+              "default": {
+                "enabled": false
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/Cache"
+                }
+              ]
+            },
+            "dir": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "static-dir"
+              ]
+            },
+            "post-processing": {
+              "default": {
+                "encoding": {
+                  "brotli": true,
+                  "deflate": true,
+                  "enabled": true,
+                  "gzip": true,
+                  "mime-types": "@compressible-mime-types",
+                  "min-size": 100
+                },
+                "image": {
+                  "webp": {
+                    "enabled": true,
+                    "jpeg": true,
+                    "png": true
+                  }
+                }
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/PostProcessing"
+                }
+              ]
+            },
+            "replace-base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "github": {
+              "default": null,
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/GithubAuthDefinition"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "google": {
+              "default": null,
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/GoogleAuthDefinition"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "auth"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "bucket",
+            "kind"
+          ],
+          "properties": {
+            "base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "bucket": {
+              "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_S3Bucket"
+            },
+            "cache": {
+              "default": {
+                "enabled": false
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/Cache"
+                }
+              ]
+            },
+            "credentials": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_AwsCredentials"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "s3-bucket"
+              ]
+            },
+            "post-processing": {
+              "default": {
+                "encoding": {
+                  "brotli": true,
+                  "deflate": true,
+                  "enabled": true,
+                  "gzip": true,
+                  "mime-types": "@compressible-mime-types",
+                  "min-size": 100
+                },
+                "image": {
+                  "webp": {
+                    "enabled": true,
+                    "jpeg": true,
+                    "png": true
+                  }
+                }
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/PostProcessing"
+                }
+              ]
+            },
+            "replace-base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "bucket",
+            "credentials",
+            "kind"
+          ],
+          "properties": {
+            "base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "bucket": {
+              "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_GcsBucket"
+            },
+            "cache": {
+              "default": {
+                "enabled": false
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/Cache"
+                }
+              ]
+            },
+            "credentials": {
+              "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_GoogleCredentials"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "gcs-bucket"
+              ]
+            },
+            "post-processing": {
+              "default": {
+                "encoding": {
+                  "brotli": true,
+                  "deflate": true,
+                  "enabled": true,
+                  "gzip": true,
+                  "mime-types": "@compressible-mime-types",
+                  "min-size": 100
+                },
+                "image": {
+                  "webp": {
+                    "enabled": true,
+                    "jpeg": true,
+                    "png": true
+                  }
+                }
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/PostProcessing"
+                }
+              ]
+            },
+            "replace-base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "pass-through"
+              ]
+            }
+          }
+        }
+      ],
+      "required": [
+        "priority"
+      ],
+      "properties": {
+        "priority": {
+          "type": "integer",
+          "format": "uint16",
+          "minimum": 0.0
+        },
+        "profiles": {
+          "default": null,
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/ProfileName"
+          }
+        },
+        "rescue": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RescueItem"
+          }
+        },
+        "rules": {
+          "default": [
+            {
+              "action": "invoke",
+              "filter": {
+                "methods": "*",
+                "path": [
+                  "*"
+                ],
+                "query-params": {},
+                "trailing-slash": "allow"
+              },
+              "modify-request": null,
+              "on-response": [],
+              "profiles": null,
+              "rescue": []
+            }
+          ],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Rule"
+          }
+        },
+        "static-responses": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/StaticResponse"
+          }
+        }
+      }
+    },
+    "ClientMount": {
+      "type": "object",
+      "properties": {
+        "handlers": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ClientHandler"
+          }
+        },
+        "profiles": {
+          "default": null,
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/ProfileName"
+          }
+        },
+        "rescue": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RescueItem"
+          }
+        },
+        "static-responses": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/StaticResponse"
+          }
+        }
+      }
+    },
+    "ConfigName": {
+      "type": "string",
+      "maxLength": 45,
+      "minLength": 2,
+      "pattern": "^[a-zA-Z][a-zA-Z0-9\\-_]+$"
+    },
+    "Duration": {
       "type": "string"
     },
     "Encoding": {
@@ -126,8 +583,7 @@
           "format": "uint32",
           "minimum": 0.0
         }
-      },
-      "additionalProperties": false
+      }
     },
     "Exception": {
       "type": "string",
@@ -140,12 +596,18 @@
       ],
       "properties": {
         "methods": {
-          "$ref": "#/definitions/MethodMatcher"
+          "default": "*",
+          "allOf": [
+            {
+              "$ref": "#/definitions/MethodMatcher"
+            }
+          ]
         },
         "path": {
           "$ref": "#/definitions/PathMatcher"
         },
         "query-params": {
+          "default": {},
           "type": "object",
           "additionalProperties": {
             "anyOf": [
@@ -159,10 +621,14 @@
           }
         },
         "trailing-slash": {
-          "$ref": "#/definitions/TrailingSlashFilterRule"
+          "default": "allow",
+          "allOf": [
+            {
+              "$ref": "#/definitions/TrailingSlashFilterRule"
+            }
+          ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "GcsBucket": {
       "type": "object",
@@ -173,8 +639,7 @@
         "name": {
           "type": "string"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "GithubAuthDefinition": {
       "type": "object",
@@ -185,8 +650,7 @@
         "acl": {
           "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_Array_of_AclEntry"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "GoogleAuthDefinition": {
       "type": "object",
@@ -197,8 +661,7 @@
         "acl": {
           "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_Array_of_AclEntry"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "GoogleCredentials": {
       "type": "object",
@@ -209,8 +672,7 @@
         "json": {
           "type": "string"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "HttpHeaderMap": {
       "title": "HTTP Headers",
@@ -258,8 +720,7 @@
             }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "MatchPathSegment": {
       "title": "Single path segment matcher or multiple choices",
@@ -311,10 +772,20 @@
       "type": "object",
       "properties": {
         "append": {
-          "$ref": "#/definitions/HttpHeaderMap"
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/HttpHeaderMap"
+            }
+          ]
         },
         "insert": {
-          "$ref": "#/definitions/HttpHeaderMap"
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/HttpHeaderMap"
+            }
+          ]
         },
         "remove": {
           "default": [],
@@ -324,8 +795,7 @@
             }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "ModifyQuery": {
       "type": "object",
@@ -375,6 +845,7 @@
       ],
       "properties": {
         "set": {
+          "default": {},
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -542,8 +1013,7 @@
         "when": {
           "$ref": "#/definitions/ResponseConditions"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "PathMatcher": {
       "title": "Array of path segments matchers, with optionally single '*' symbol",
@@ -591,16 +1061,9 @@
             }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
-    "ProfileName": {
-      "type": "string",
-      "maxLength": 45,
-      "minLength": 2,
-      "pattern": "^[a-zA-Z][a-zA-Z0-9\\-_]+$"
-    },
-    "ProjectHandler": {
+    "Probe": {
       "type": "object",
       "anyOf": [
         {
@@ -609,252 +1072,61 @@
             "kind"
           ],
           "properties": {
-            "github": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/GithubAuthDefinition"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "google": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/GoogleAuthDefinition"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
             "kind": {
               "type": "string",
               "enum": [
-                "auth"
-              ]
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "bucket",
-            "kind"
-          ],
-          "properties": {
-            "base-path": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "bucket": {
-              "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_S3Bucket"
-            },
-            "cache": {
-              "default": {
-                "enabled": false
-              },
-              "allOf": [
-                {
-                  "$ref": "#/definitions/Cache"
-                }
-              ]
-            },
-            "credentials": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_AwsCredentials"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "kind": {
-              "type": "string",
-              "enum": [
-                "s3-bucket"
-              ]
-            },
-            "post-processing": {
-              "default": {
-                "encoding": {
-                  "brotli": true,
-                  "deflate": true,
-                  "enabled": true,
-                  "gzip": true,
-                  "mime-types": "@compressible-mime-types",
-                  "min-size": 100
-                },
-                "image": {
-                  "webp": {
-                    "enabled": true,
-                    "jpeg": true,
-                    "png": true
-                  }
-                }
-              },
-              "allOf": [
-                {
-                  "$ref": "#/definitions/PostProcessing"
-                }
-              ]
-            },
-            "replace-base-path": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "bucket",
-            "credentials",
-            "kind"
-          ],
-          "properties": {
-            "base-path": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "bucket": {
-              "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_GcsBucket"
-            },
-            "cache": {
-              "default": {
-                "enabled": false
-              },
-              "allOf": [
-                {
-                  "$ref": "#/definitions/Cache"
-                }
-              ]
-            },
-            "credentials": {
-              "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_GoogleCredentials"
-            },
-            "kind": {
-              "type": "string",
-              "enum": [
-                "gcs-bucket"
-              ]
-            },
-            "post-processing": {
-              "default": {
-                "encoding": {
-                  "brotli": true,
-                  "deflate": true,
-                  "enabled": true,
-                  "gzip": true,
-                  "mime-types": "@compressible-mime-types",
-                  "min-size": 100
-                },
-                "image": {
-                  "webp": {
-                    "enabled": true,
-                    "jpeg": true,
-                    "png": true
-                  }
-                }
-              },
-              "allOf": [
-                {
-                  "$ref": "#/definitions/PostProcessing"
-                }
-              ]
-            },
-            "replace-base-path": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "kind"
-          ],
-          "properties": {
-            "kind": {
-              "type": "string",
-              "enum": [
-                "pass-through"
+                "liveness"
               ]
             }
           }
         }
       ],
       "required": [
-        "priority"
+        "path",
+        "period",
+        "timeout"
       ],
       "properties": {
-        "priority": {
-          "type": "integer",
-          "format": "uint16",
-          "minimum": 0.0
-        },
-        "rescue": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/RescueItem"
-          }
-        },
-        "rules": {
-          "default": [
+        "expected-status-code": {
+          "default": "200",
+          "allOf": [
             {
-              "action": "invoke",
-              "filter": {
-                "path": [
-                  "*"
-                ]
-              }
+              "$ref": "#/definitions/HttpStatusCodeRange"
             }
-          ],
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Rule"
-          }
+          ]
         },
-        "static-responses": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/StaticResponse"
-          }
+        "headers": {
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/HttpHeaderMap"
+            }
+          ]
+        },
+        "method": {
+          "default": "GET",
+          "allOf": [
+            {
+              "$ref": "#/definitions/HttpMethod"
+            }
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "period": {
+          "$ref": "#/definitions/Duration"
+        },
+        "timeout": {
+          "$ref": "#/definitions/Duration"
         }
       }
     },
-    "ProjectMount": {
-      "type": "object",
-      "properties": {
-        "handlers": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ProjectHandler"
-          }
-        },
-        "rescue": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/RescueItem"
-          }
-        },
-        "static-responses": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/StaticResponse"
-          }
-        }
-      }
+    "ProfileName": {
+      "type": "string",
+      "maxLength": 45,
+      "minLength": 2,
+      "pattern": "^[a-zA-Z][a-zA-Z0-9\\-_]+$"
     },
     "RedirectTo": {
       "title": "URL, or array of path segments, optionally starting from schema://url",
@@ -884,9 +1156,19 @@
       "type": "object",
       "properties": {
         "headers": {
-          "$ref": "#/definitions/ModifyHeaders"
+          "default": {
+            "append": {},
+            "insert": {},
+            "remove": []
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/ModifyHeaders"
+            }
+          ]
         },
         "path": {
+          "default": null,
           "type": [
             "array",
             "null"
@@ -896,13 +1178,26 @@
           }
         },
         "query-params": {
-          "$ref": "#/definitions/ModifyQuery"
+          "default": {
+            "remove": [],
+            "set": {},
+            "strategy": "keep"
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/ModifyQuery"
+            }
+          ]
         },
         "trailing-slash": {
-          "$ref": "#/definitions/TrailingSlashModification"
+          "default": "keep",
+          "allOf": [
+            {
+              "$ref": "#/definitions/TrailingSlashModification"
+            }
+          ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "RescueItem": {
       "type": "object",
@@ -921,6 +1216,7 @@
               ]
             },
             "data": {
+              "default": {},
               "type": "object",
               "additionalProperties": {
                 "type": "string"
@@ -930,6 +1226,7 @@
               "$ref": "#/definitions/StaticResponseName_or_ParameterName_or_StaticResponse"
             },
             "status-code": {
+              "default": null,
               "anyOf": [
                 {
                   "$ref": "#/definitions/HttpStatusCode"
@@ -955,6 +1252,7 @@
               ]
             },
             "data": {
+              "default": {},
               "type": "object",
               "additionalProperties": {
                 "type": "string"
@@ -1012,8 +1310,7 @@
             }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "ResponseConditions": {
       "type": "object",
@@ -1024,17 +1321,24 @@
         "status-code": {
           "$ref": "#/definitions/HttpStatusCodeRange"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "ResponseModifications": {
       "type": "object",
       "properties": {
         "headers": {
-          "$ref": "#/definitions/ModifyHeaders"
+          "default": {
+            "append": {},
+            "insert": {},
+            "remove": []
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/ModifyHeaders"
+            }
+          ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "Rule": {
       "type": "object",
@@ -1053,6 +1357,7 @@
               ]
             },
             "modify-request": {
+              "default": null,
               "anyOf": [
                 {
                   "$ref": "#/definitions/RequestModifications"
@@ -1063,12 +1368,14 @@
               ]
             },
             "on-response": {
+              "default": [],
               "type": "array",
               "items": {
                 "$ref": "#/definitions/OnResponse"
               }
             },
             "rescue": {
+              "default": [],
               "type": "array",
               "items": {
                 "$ref": "#/definitions/RescueItem"
@@ -1106,6 +1413,7 @@
               ]
             },
             "data": {
+              "default": {},
               "type": "object",
               "additionalProperties": {
                 "type": "string"
@@ -1131,12 +1439,14 @@
               ]
             },
             "data": {
+              "default": {},
               "type": "object",
               "additionalProperties": {
                 "type": "string"
               }
             },
             "rescue": {
+              "default": [],
               "type": "array",
               "items": {
                 "$ref": "#/definitions/RescueItem"
@@ -1146,6 +1456,7 @@
               "$ref": "#/definitions/StaticResponseName_or_ParameterName_or_StaticResponse"
             },
             "status-code": {
+              "default": null,
               "anyOf": [
                 {
                   "$ref": "#/definitions/HttpStatusCode"
@@ -1166,6 +1477,7 @@
           "$ref": "#/definitions/Filter"
         },
         "profiles": {
+          "default": null,
           "type": [
             "array",
             "null"
@@ -1189,8 +1501,7 @@
         "region": {
           "$ref": "#/definitions/S3Region"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "S3Region": {
       "title": "S3 region name",
@@ -1210,7 +1521,12 @@
               "$ref": "#/definitions/RedirectTo"
             },
             "headers": {
-              "$ref": "#/definitions/HttpHeaderMap"
+              "default": {},
+              "allOf": [
+                {
+                  "$ref": "#/definitions/HttpHeaderMap"
+                }
+              ]
             },
             "kind": {
               "type": "string",
@@ -1219,13 +1535,21 @@
               ]
             },
             "query-params": {
-              "$ref": "#/definitions/ModifyQuery"
+              "default": {
+                "remove": [],
+                "set": {},
+                "strategy": "keep"
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ModifyQuery"
+                }
+              ]
             },
             "redirect-type": {
               "$ref": "#/definitions/RedirectType"
             }
-          },
-          "additionalProperties": false
+          }
         },
         {
           "type": "object",
@@ -1241,6 +1565,7 @@
               }
             },
             "fallback-accept": {
+              "default": null,
               "anyOf": [
                 {
                   "$ref": "#/definitions/MimeType"
@@ -1251,7 +1576,12 @@
               ]
             },
             "headers": {
-              "$ref": "#/definitions/HttpHeaderMap"
+              "default": {},
+              "allOf": [
+                {
+                  "$ref": "#/definitions/HttpHeaderMap"
+                }
+              ]
             },
             "kind": {
               "type": "string",
@@ -1260,10 +1590,14 @@
               ]
             },
             "status-code": {
-              "$ref": "#/definitions/HttpStatusCode"
+              "default": 200,
+              "allOf": [
+                {
+                  "$ref": "#/definitions/HttpStatusCode"
+                }
+              ]
             }
-          },
-          "additionalProperties": false
+          }
         }
       ]
     },
@@ -1318,6 +1652,48 @@
         "unset"
       ]
     },
+    "Upstream": {
+      "type": "string",
+      "maxLength": 45,
+      "minLength": 2,
+      "pattern": "^[a-zA-Z][a-zA-Z0-9\\-_]+$"
+    },
+    "UpstreamDefinition": {
+      "type": "object",
+      "required": [
+        "port"
+      ],
+      "properties": {
+        "health-checks": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Probe"
+          }
+        },
+        "host": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "port": {
+          "type": "integer",
+          "format": "uint16",
+          "minimum": 0.0
+        },
+        "profiles": {
+          "default": null,
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/ProfileName"
+          }
+        }
+      }
+    },
     "WebpPostProcessing": {
       "type": "object",
       "properties": {
@@ -1333,8 +1709,7 @@
           "default": true,
           "type": "boolean"
         }
-      },
-      "additionalProperties": false
+      }
     }
   }
 }

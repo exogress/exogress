@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "S3Bucket",
+  "type": "object",
+  "required": [
+    "name",
+    "region"
+  ],
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "region": {
+      "$ref": "#/definitions/S3Region"
+    }
+  },
+  "definitions": {
+    "S3Region": {
+      "title": "S3 region name",
+      "type": "string"
+    }
+  }
+}

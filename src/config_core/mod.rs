@@ -68,7 +68,7 @@ mod upstream;
 mod version;
 
 pub const DEFAULT_CONFIG_FILE: &str = "Exofile.yml";
-static CONFIG_SCHEMAS: Dir = include_dir!("config-schemas");
+static CONFIG_SCHEMAS: Dir = include_dir!("schemas/config");
 
 lazy_static! {
     pub static ref MIN_SUPPORTED_VERSION: Version = "1.0.0".parse().unwrap();

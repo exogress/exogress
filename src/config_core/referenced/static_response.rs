@@ -1,7 +1,5 @@
-use crate::config_core::{
-    referenced::{Parameter, ParameterSchema, ReferencedConfigValue},
-    StaticResponse,
-};
+use crate::config_core::referenced::{Parameter, ParameterSchema, ReferencedConfigValue};
+pub use crate::config_core::StaticResponse;
 use std::convert::TryFrom;
 
 impl TryFrom<Parameter> for StaticResponse {

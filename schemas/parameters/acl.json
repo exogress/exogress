@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Array_of_AclEntry",
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/AclEntry"
+  },
+  "definitions": {
+    "AclEntry": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "allow"
+          ],
+          "properties": {
+            "allow": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "deny"
+          ],
+          "properties": {
+            "deny": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
