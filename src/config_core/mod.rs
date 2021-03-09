@@ -26,6 +26,7 @@ pub use rule::{
     Action, Filter, ModifyHeaders, ModifyQueryStrategy, OnResponse, RequestModifications,
     ResponseModifications, Rule, TrailingSlashFilterRule, TrailingSlashModification,
 };
+pub use schema::get_schema;
 pub use scope::Scope;
 use semver::{Version, VersionReq};
 use serde::{de::DeserializeOwned, Serialize};
@@ -69,6 +70,7 @@ mod version;
 
 pub const DEFAULT_CONFIG_FILE: &str = "Exofile.yml";
 static CONFIG_SCHEMAS: Dir = include_dir!("schemas/config");
+static PARAMETERS_SCHEMAS: Dir = include_dir!("schemas/parameters");
 
 lazy_static! {
     pub static ref MIN_SUPPORTED_VERSION: Version = "1.0.0".parse().unwrap();

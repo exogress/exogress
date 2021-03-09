@@ -1,7 +1,32 @@
-use crate::config_core::{ConfigVersion, CONFIG_SCHEMAS};
+use crate::config_core::{ConfigVersion, CONFIG_SCHEMAS, CURRENT_VERSION, PARAMETERS_SCHEMAS};
 use anyhow::{anyhow, bail};
 use std::str::FromStr;
 use valico::json_schema;
+
+pub fn get_schema<'a, 'b>(kind: &'a str, schema_name: &'b str) -> Option<&'static str> {
+    match (kind, schema_name) {
+        ("config", "client") => CONFIG_SCHEMAS
+            .get_file(&format!(
+                "{}/{}/{}/{}",
+                CURRENT_VERSION.major_base_version(),
+                CURRENT_VERSION.minor_base_version(),
+                CURRENT_VERSION.0.to_string(),
+                "client.json"
+            ))?
+            .contents_utf8(),
+        ("config", "project") => CONFIG_SCHEMAS
+            .get_file(&format!(
+                "{}/{}/{}/{}",
+                CURRENT_VERSION.major_base_version(),
+                CURRENT_VERSION.minor_base_version(),
+                CURRENT_VERSION.0.to_string(),
+                "project.json"
+            ))?
+            .contents_utf8(),
+        ("parameter", p) => None,
+        _ => None,
+    }
+}
 
 pub fn validate_schema(yaml_data: impl AsRef<[u8]>, schema_file_name: &str) -> anyhow::Result<()> {
     let cfg: serde_yaml::Value = serde_yaml::from_slice(yaml_data.as_ref())?;
