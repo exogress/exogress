@@ -11,6 +11,7 @@ pub trait Config: Serialize + DeserializeOwned + Debug + Clone + Hash {
     fn checksum(&self) -> u64;
     fn check_mount_points(&self, existing: &[MountPointName]) -> Result<(), Self::Error>;
     fn validate(&self) -> Result<(), Self::Error>;
+    fn parse(yaml: impl AsRef<[u8]>) -> anyhow::Result<Self>;
 }
 
 pub fn default_rules() -> Vec<Rule> {

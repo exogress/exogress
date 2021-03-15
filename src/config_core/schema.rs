@@ -23,7 +23,9 @@ pub fn get_schema<'a, 'b>(kind: &'a str, schema_name: &'b str) -> Option<&'stati
                 "project.json"
             ))?
             .contents_utf8(),
-        ("parameter", p) => None,
+        ("parameter", p) => PARAMETERS_SCHEMAS
+            .get_file(&format!("{}.json", p))?
+            .contents_utf8(),
         _ => None,
     }
 }

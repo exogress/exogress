@@ -144,15 +144,6 @@ impl ClientConfig {
         }
     }
 
-    pub fn parse(yaml: impl AsRef<[u8]>) -> anyhow::Result<Self> {
-        let deserialized_cfg = serde_yaml::from_slice::<Self>(yaml.as_ref())?;
-
-        validate_extra_keys(&deserialized_cfg, yaml.as_ref())?;
-        validate_schema(yaml.as_ref(), "client.json")?;
-
-        Ok(deserialized_cfg)
-    }
-
     pub fn parse_with_redefined_upstreams(
         yaml: impl AsRef<[u8]>,
         redefined_upstreams: &HashMap<Upstream, UpstreamSocketAddr>,
@@ -276,6 +267,15 @@ impl Config for ClientConfig {
         }
 
         Ok(())
+    }
+
+    fn parse(yaml: impl AsRef<[u8]>) -> anyhow::Result<Self> {
+        let deserialized_cfg = serde_yaml::from_slice::<Self>(yaml.as_ref())?;
+
+        validate_extra_keys(&deserialized_cfg, yaml.as_ref())?;
+        validate_schema(yaml.as_ref(), "client.json")?;
+
+        Ok(deserialized_cfg)
     }
 }
 

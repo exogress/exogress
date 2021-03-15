@@ -30,15 +30,6 @@ pub struct ProjectConfig {
 }
 
 impl ProjectConfig {
-    pub fn parse(yaml: impl AsRef<[u8]>) -> anyhow::Result<Self> {
-        let deserialized_cfg = serde_yaml::from_slice::<Self>(yaml.as_ref())?;
-
-        validate_extra_keys(&deserialized_cfg, yaml.as_ref())?;
-        validate_schema(yaml.as_ref(), "project.json")?;
-
-        Ok(deserialized_cfg)
-    }
-
     /// Project-level config sample
     pub fn sample(
         handler_name: Option<HandlerName>,
@@ -144,6 +135,15 @@ impl Config for ProjectConfig {
         }
 
         Ok(())
+    }
+
+    fn parse(yaml: impl AsRef<[u8]>) -> anyhow::Result<Self> {
+        let deserialized_cfg = serde_yaml::from_slice::<Self>(yaml.as_ref())?;
+
+        validate_extra_keys(&deserialized_cfg, yaml.as_ref())?;
+        validate_schema(yaml.as_ref(), "project.json")?;
+
+        Ok(deserialized_cfg)
     }
 }
 

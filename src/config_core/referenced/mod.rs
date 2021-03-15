@@ -145,11 +145,11 @@ pub enum ParameterSchema {
 }
 
 impl ParameterSchema {
-    pub fn help(&self) -> String {
+    pub fn sample(&self) -> String {
         match self {
             Self::AwsCredentials => {
                 let sample = AwsCredentials {
-                    access_key_id: "AKIA2Q9SUGVTPX21NLLN".into(),
+                    access_key_id: "<ACCESS_KEY_ID>".into(),
                     secret_access_key: "<SECRET_ACCESS_KEY>".into(),
                 };
                 serde_yaml::to_string(&sample).unwrap()
