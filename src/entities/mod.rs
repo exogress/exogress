@@ -30,6 +30,7 @@ ulid_type!(EnvironmentId);
 ulid_type!(AccessKeyId);
 ulid_type!(TunnelId);
 ulid_type!(AccountUniqueId);
+ulid_type!(ProjectUniqueId);
 
 string_type!(ProjectName);
 string_type!(AccountName);
