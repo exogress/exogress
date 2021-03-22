@@ -77,6 +77,25 @@ impl ProjectConfig {
             },
         }
     }
+
+    pub fn default_with_mount_point(mount_point_name: &MountPointName) -> Self {
+        ProjectConfig {
+            version: CURRENT_VERSION.clone(),
+            mount_points: btreemap! {
+                mount_point_name.clone() => ProjectMount {
+                    handlers: Default::default(),
+                    refinable: Refinable {
+                        static_responses: Default::default(),
+                        rescue: Default::default(),
+                    }
+                }
+            },
+            refinable: Refinable {
+                rescue: Default::default(),
+                static_responses: Default::default(),
+            },
+        }
+    }
 }
 
 impl Default for ProjectConfig {
