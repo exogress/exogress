@@ -54,6 +54,31 @@ pub async fn connect_ws(
     Error,
 > {
     let url = Url::parse(req.uri().to_string().as_str())?;
+    let host = url.host_str().ok_or(Error::NoHost)?;
+
+    let ip = if let Ok(ip) = IpAddr::from_str(host) {
+        ip
+    } else {
+        let ips = resolver.lookup_ip(host).await?;
+        let mut rng = thread_rng();
+        ips.iter().choose(&mut rng).ok_or(Error::NotResolved)?
+    };
+
+    connect_ws_resolved(req, ip, maybe_identity).await
+}
+
+pub async fn connect_ws_resolved(
+    req: Request<()>,
+    ip: IpAddr,
+    maybe_identity: Option<Vec<u8>>,
+) -> Result<
+    (
+        WebSocketStream<Either<TlsStream<TcpStream>, TcpStream>>,
+        Response<()>,
+    ),
+    Error,
+> {
+    let url = Url::parse(req.uri().to_string().as_str())?;
     let schema = url.scheme();
     let is_tls = if schema == "ws" {
         false
@@ -61,15 +86,6 @@ pub async fn connect_ws(
         true
     } else {
         return Err(Error::BadSchema);
-    };
-
-    let host = url.host_str().ok_or(Error::NoHost)?;
-    let ip = if let Ok(ip) = IpAddr::from_str(host) {
-        ip
-    } else {
-        let ips = resolver.lookup_ip(host).await?;
-        let mut rng = thread_rng();
-        ips.iter().choose(&mut rng).ok_or(Error::NotResolved)?
     };
 
     let stream = TcpStream::connect((ip, url.port_or_known_default().unwrap())).await?;
