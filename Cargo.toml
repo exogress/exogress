@@ -73,6 +73,7 @@ serde_with = { optional = true, version = "1.6" }
 never = { optional = true, version = "0.1.0" }
 include_dir = { optional = true, version = "0.6" }
 schemars = { optional = true, git = "https://github.com/glebpom/schemars.git", branch = "exogress", features = ["ulid", "smol_str", "chrono", "semver"] }
+ledb-types = { version = "0.4.0", optional = true }
 
 seahash = { optional = true, version = "4.1.0" }
 tokio-tungstenite = { optional = true, version = "0.13" }
@@ -301,6 +302,9 @@ ws-client = [
     "trust-dns-resolver",
     "url",
     "webpki",
+]
+ledb = [
+    "ledb-types"
 ]
 
 [workspace]

@@ -45,3 +45,10 @@ string_type!(ExceptionSegment);
 string_type!(HealthCheckProbeName);
 string_type!(ParameterName);
 string_type!(ProfileName);
+
+#[cfg(feature = "ledb")]
+impl ledb_types::DocumentKeyType for AccountUniqueId {
+    fn key_type() -> ledb_types::KeyType {
+        ledb_types::KeyType::String
+    }
+}

@@ -1,3 +1,5 @@
+use crate::entities::AccountUniqueId;
+
 pub const MIN_STRING_IDENTIFIER_LENGTH: usize = 2;
 pub const MAX_STRING_IDENTIFIER_LENGTH: usize = 45;
 pub const STRING_ENTITY_REGEXP_PATTERN_NON_FIXED: &str = r"[a-zA-Z][a-zA-Z0-9\-_]+";
