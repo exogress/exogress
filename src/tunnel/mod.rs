@@ -2,7 +2,8 @@ pub use connector::{Compression, ConnectTarget, Connector, ConnectorRequest, INT
 pub use error::Error;
 pub use framed::{client_framed, server_framed};
 pub use proto::{
-    client_listener, server_connection, Conn, TunnelHello, TunnelHelloResponse, TunneledConnection,
+    client_listener, server_connection, Conn, ServerPacket, TunnelHello, TunnelHelloResponse,
+    TunneledConnection,
 };
 
 mod connector;

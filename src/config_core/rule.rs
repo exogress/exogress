@@ -362,7 +362,6 @@ impl Default for TrailingSlashFilterRule {
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
-
 pub struct Filter {
     pub path: MatchingPath,
 

@@ -144,6 +144,15 @@ pub struct ServerPacket {
     pub(crate) slot: Slot,
 }
 
+impl ServerPacket {
+    pub fn close_no_reconnect() -> Self {
+        ServerPacket {
+            header: ServerHeader::TunnelClose,
+            slot: Slot(0),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ClientHeader {
     Accepted,
