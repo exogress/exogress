@@ -12,6 +12,9 @@ macro_rules! exceptions {
 exceptions! {
     // APPLICATION_FIREWALL_INJECTION_DETECTED => "application-firewall-error", "injection-detected"
 
+    AUTH_UNKNOWN_PROVIDER => "auth-error", "unknown-provider"
+    AUTH_INTERNAL_ERROR => "auth-error", "internal-error"
+
     CONFIG_PARAMETER_NOT_DEFINED => "config-error", "parameter-not-defined"
     CONFIG_REFERENCE_NAME_NOT_DEFINED => "config-error", "reference-name-not-defined"
     CONFIG_SCHEMA_MISMATCH => "config-error", "schema-mismatch"
