@@ -226,7 +226,7 @@ async fn do_conection(
                                 info!(
                                     "Base URLs served by the client: {}",
                                     itertools::join(
-                                        base_urls.iter().map(|b| b.to_https_url()),
+                                        base_urls.iter().map(|b| format!("https://{}", b)),
                                         ", "
                                     )
                                 );

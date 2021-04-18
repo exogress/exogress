@@ -1,6 +1,6 @@
 use crate::{
     config_core::ClientConfig,
-    entities::{url_prefix::MountPointBaseUrl, HealthCheckProbeName, InstanceId, Upstream},
+    entities::{HealthCheckProbeName, InstanceId, Upstream},
 };
 use core::fmt;
 use hashbrown::HashMap;
@@ -23,7 +23,7 @@ pub struct TunnelRequest {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum ConfigUpdateResult {
     Error { msg: String },
-    Ok { base_urls: Vec<MountPointBaseUrl> },
+    Ok { base_urls: Vec<String> },
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -35,7 +35,7 @@ pub struct TunnelRequestResponse {
 pub enum SignalerHandshakeResponse {
     Ok {
         instance_id: InstanceId,
-        base_urls: Vec<MountPointBaseUrl>,
+        base_urls: Vec<String>,
     },
 }
 

@@ -21,7 +21,6 @@ mod string_macros;
 mod ulid_macro;
 mod exception;
 pub mod exceptions;
-pub mod url_prefix;
 
 pub use exception::{Exception, ExceptionParseError};
 
