@@ -156,12 +156,10 @@
                   "mime-types": "@compressible-mime-types",
                   "min-size": 100
                 },
-                "image": {
-                  "webp": {
-                    "enabled": true,
-                    "jpeg": true,
-                    "png": true
-                  }
+                "image-optimization": {
+                  "enabled": true,
+                  "jpeg": true,
+                  "png": true
                 }
               },
               "allOf": [
@@ -229,12 +227,10 @@
                   "mime-types": "@compressible-mime-types",
                   "min-size": 100
                 },
-                "image": {
-                  "webp": {
-                    "enabled": true,
-                    "jpeg": true,
-                    "png": true
-                  }
+                "image-optimization": {
+                  "enabled": true,
+                  "jpeg": true,
+                  "png": true
                 }
               },
               "allOf": [
@@ -341,12 +337,10 @@
                   "mime-types": "@compressible-mime-types",
                   "min-size": 100
                 },
-                "image": {
-                  "webp": {
-                    "enabled": true,
-                    "jpeg": true,
-                    "png": true
-                  }
+                "image-optimization": {
+                  "enabled": true,
+                  "jpeg": true,
+                  "png": true
                 }
               },
               "allOf": [
@@ -411,12 +405,10 @@
                   "mime-types": "@compressible-mime-types",
                   "min-size": 100
                 },
-                "image": {
-                  "webp": {
-                    "enabled": true,
-                    "jpeg": true,
-                    "png": true
-                  }
+                "image-optimization": {
+                  "enabled": true,
+                  "jpeg": true,
+                  "png": true
                 }
               },
               "allOf": [
@@ -708,17 +700,17 @@
     "ImagePostProcessing": {
       "type": "object",
       "properties": {
-        "webp": {
-          "default": {
-            "enabled": true,
-            "jpeg": true,
-            "png": true
-          },
-          "allOf": [
-            {
-              "$ref": "#/definitions/WebpPostProcessing"
-            }
-          ]
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "jpeg": {
+          "default": true,
+          "type": "boolean"
+        },
+        "png": {
+          "default": true,
+          "type": "boolean"
         }
       }
     },
@@ -1047,13 +1039,11 @@
             }
           ]
         },
-        "image": {
+        "image-optimization": {
           "default": {
-            "webp": {
-              "enabled": true,
-              "jpeg": true,
-              "png": true
-            }
+            "enabled": true,
+            "jpeg": true,
+            "png": true
           },
           "allOf": [
             {
@@ -1691,23 +1681,6 @@
           "items": {
             "$ref": "#/definitions/ProfileName"
           }
-        }
-      }
-    },
-    "WebpPostProcessing": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "default": true,
-          "type": "boolean"
-        },
-        "jpeg": {
-          "default": true,
-          "type": "boolean"
-        },
-        "png": {
-          "default": true,
-          "type": "boolean"
         }
       }
     }

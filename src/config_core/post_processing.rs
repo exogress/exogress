@@ -5,13 +5,26 @@ use crate::config_core::{
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, Default, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 pub struct ImagePostProcessing {
+    #[serde(default = "default_image_optimizations")]
+    pub enabled: bool,
+
     #[serde(default = "default_image_optimizations")]
     pub png: bool,
 
     #[serde(default = "default_image_optimizations")]
     pub jpeg: bool,
+}
+
+impl Default for ImagePostProcessing {
+    fn default() -> Self {
+        Self {
+            enabled: default_image_optimizations(),
+            png: default_image_optimizations(),
+            jpeg: default_image_optimizations(),
+        }
+    }
 }
 
 fn default_image_optimizations() -> bool {
@@ -53,8 +66,8 @@ fn default_compression_min_size() -> u32 {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
 pub struct PostProcessing {
-    #[serde(default)]
-    pub image: ImagePostProcessing,
+    #[serde(default, rename = "image-optimization")]
+    pub image_optimization: ImagePostProcessing,
 
     #[serde(default)]
     pub encoding: Encoding,
@@ -76,7 +89,7 @@ impl Default for Encoding {
 impl Default for PostProcessing {
     fn default() -> Self {
         Self {
-            image: Default::default(),
+            image_optimization: Default::default(),
             encoding: Default::default(),
         }
     }

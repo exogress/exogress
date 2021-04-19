@@ -1,4 +1,3 @@
-use crate::referenced::Parameter;
 use exogress_common::config_core::{
     referenced, referenced::ReferencedConfigValue, ClientConfig, ProjectConfig, CURRENT_VERSION,
 };
