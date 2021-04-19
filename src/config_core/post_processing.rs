@@ -2,38 +2,19 @@ use crate::config_core::{
     referenced::{mime_types::MimeTypes, Container},
     refinable::NonExistingSharedEntity,
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, Default, JsonSchema)]
 pub struct ImagePostProcessing {
-    #[serde(default)]
-    pub webp: WebpPostProcessing,
-}
-use schemars::JsonSchema;
-
-#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
-pub struct WebpPostProcessing {
-    #[serde(default = "default_webp")]
-    pub enabled: bool,
-
-    #[serde(default = "default_webp")]
+    #[serde(default = "default_image_optimizations")]
     pub png: bool,
 
-    #[serde(default = "default_webp")]
+    #[serde(default = "default_image_optimizations")]
     pub jpeg: bool,
 }
 
-impl Default for WebpPostProcessing {
-    fn default() -> Self {
-        WebpPostProcessing {
-            enabled: default_webp(),
-            png: default_webp(),
-            jpeg: default_webp(),
-        }
-    }
-}
-
-fn default_webp() -> bool {
+fn default_image_optimizations() -> bool {
     true
 }
 
@@ -77,18 +58,6 @@ pub struct PostProcessing {
 
     #[serde(default)]
     pub encoding: Encoding,
-}
-
-impl Default for ImagePostProcessing {
-    fn default() -> Self {
-        Self {
-            webp: WebpPostProcessing {
-                enabled: default_webp(),
-                png: default_webp(),
-                jpeg: default_webp(),
-            },
-        }
-    }
 }
 
 impl Default for Encoding {
