@@ -1,6 +1,7 @@
 use std::io;
 
 use crate::{
+    common_utils::tls::load_native_certs_safe,
     config_core::ClientConfig,
     entities::{AccessKeyId, AccountName, InstanceId, ProfileName, ProjectName, SmolStr},
     tunnel::{
@@ -88,8 +89,7 @@ pub async fn spawn(
         let _ = socket.set_nodelay(true);
         let mut config = RustlsClientConfig::new();
         config.alpn_protocols = vec![ALPN_PROTOCOL.to_vec(), b"http/1.1".to_vec()];
-        config.root_store =
-            rustls_native_certs::load_native_certs().expect("could not load platform certs");
+        load_native_certs_safe(&mut config);
         let config = TlsConnector::from(Arc::new(config));
         let dnsname = DNSNameRef::try_from_ascii_str(&gw_hostname)?;
 

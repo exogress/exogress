@@ -1,3 +1,4 @@
+use crate::common_utils::tls::load_native_certs_safe;
 use rand::{seq::IteratorRandom, thread_rng};
 use rustls::internal::pemfile::{certs, pkcs8_private_keys};
 use std::{io, io::Cursor, net::IpAddr, str::FromStr, sync::Arc};
@@ -79,8 +80,7 @@ pub async fn connect_ws(
             let certs = certs(&mut c)?;
             config.set_single_client_cert(certs, pkey)?;
         }
-        config.root_store =
-            rustls_native_certs::load_native_certs().expect("could not load platform certs");
+        load_native_certs_safe(&mut config);
         let config = TlsConnector::from(Arc::new(config));
         let host = url.host().unwrap().to_string();
         let dnsname = DNSNameRef::try_from_ascii_str(&host).unwrap();
