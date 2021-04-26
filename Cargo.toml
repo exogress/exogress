@@ -76,7 +76,7 @@ schemars = { optional = true, git = "https://github.com/glebpom/schemars.git", b
 ledb-types = { version = "0.4.0", optional = true }
 
 seahash = { optional = true, version = "4.1.0" }
-tokio-tungstenite = { optional = true, version = "0.13" }
+tokio-tungstenite = { optional = true, version = "0.14" }
 trust-dns-resolver = { optional = true, version = "0.20" }
 warp = { optional = true, version = "0.3" }
 
