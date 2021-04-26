@@ -14,10 +14,10 @@ byteorder = { optional = true, version = "1.3" }
 bytes = { optional = true, version = "1.0" }
 clap = { optional = true, version = "2.33.3" }
 dashmap = { optional = true, version = "4.0.2" }
-derive_builder = { optional = true, version = "0.9.0" }
+derive_builder = { optional = true, version = "0.10" }
 futures = { optional = true, version = "0.3" }
 itertools = { optional = true, version = "0.10.0" }
-hashbrown = { optional = true, version = "0.9" }
+hashbrown = { optional = true, version = "0.11" }
 headers = { optional = true, version = "0.3.2" }
 hostname = { optional = true, version = "0.3.1" }
 http = { optional = true, version = "0.2.1" }
