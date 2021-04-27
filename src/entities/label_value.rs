@@ -1,6 +1,8 @@
 use std::{fmt, str::FromStr};
 
-#[derive(Debug, Clone, serde::Serialize, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(
+    Debug, Clone, serde::Serialize, serde::Deserialize, Hash, Eq, PartialEq, Ord, PartialOrd,
+)]
 #[serde(transparent)]
 pub struct LabelValue {
     inner: String,
