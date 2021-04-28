@@ -74,6 +74,10 @@ never = { optional = true, version = "0.1.0" }
 include_dir = { optional = true, version = "0.6" }
 schemars = { optional = true, git = "https://github.com/glebpom/schemars.git", branch = "exogress", features = ["ulid", "smol_str", "chrono", "semver"] }
 ledb-types = { version = "0.4.0", optional = true }
+p256 = {version = "0.7.3", features = ["pem"], optional = true }
+simple_asn1 = {version =  "0.5.2", optional = true }
+pem = {version =  "0.8", optional = true }
+hex = {version =  "0.4", optional = true }
 
 seahash = { optional = true, version = "4.1.0" }
 tokio-tungstenite = { optional = true, version = "0.14" }
@@ -148,7 +152,8 @@ client-core = [
     "urlencoding",
     "warp",
     "webpki",
-    "ws-client"
+    "ws-client",
+    "access-tokens"
 ]
 client-lib = [
     "anyhow",
@@ -172,7 +177,6 @@ common-utils = [
     "futures",
     "hostname",
     "http",
-    "jsonwebtoken",
     "lazy_static",
     "num_cpus",
     "pin-project",
@@ -305,6 +309,16 @@ ws-client = [
 ]
 ledb = [
     "ledb-types"
+]
+access-tokens = [
+    "p256",
+    "jsonwebtoken",
+    "entities",
+    "thiserror",
+    "serde",
+    "simple_asn1",
+    "pem",
+    "hex"
 ]
 
 [workspace]

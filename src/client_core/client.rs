@@ -28,8 +28,9 @@ use std::sync::Arc;
 use tracing_futures::Instrument;
 
 use crate::{
+    access_tokens::generate_jwt_token,
     client_core::{health::UpstreamsHealth, internal_server::internal_server},
-    common_utils::{backoff::Backoff, jwt::jwt_token},
+    common_utils::backoff::Backoff,
     config_core::DEFAULT_CONFIG_FILE,
 };
 use dashmap::DashMap;
@@ -324,7 +325,10 @@ impl Client {
 
         let tunnels = Arc::new(DashMap::new());
 
-        let authorization = jwt_token(&self.access_key_id, self.secret_access_key.as_str())?.into();
+        let authorization =
+            generate_jwt_token(self.secret_access_key.as_str(), &self.access_key_id)?.into();
+
+        error!("authorization = {:?}", authorization);
 
         let connector_result = tokio::spawn({
             shadow_clone!(

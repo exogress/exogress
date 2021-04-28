@@ -21,8 +21,8 @@ use crate::{
 };
 
 use crate::{
+    access_tokens::JwtError,
     client_core::{health::UpstreamsHealth, TunnelsStorage},
-    common_utils::jwt::JwtError,
     entities::{InstanceId, SmolStr},
     signaling::WsCloudToInstanceMessage,
     ws_client,

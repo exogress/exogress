@@ -1,3 +1,5 @@
+#[cfg(feature = "access-tokens")]
+pub mod access_tokens;
 #[cfg(feature = "client-core")]
 pub mod client_core;
 #[cfg(feature = "client-lib")]
