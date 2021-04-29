@@ -1,6 +1,7 @@
 use std::io;
 
 use crate::{
+    access_tokens::{generate_jwt_token, JwtError},
     common_utils::tls::load_native_certs_safe,
     config_core::ClientConfig,
     entities::{AccessKeyId, AccountName, InstanceId, ProfileName, ProjectName, SmolStr},
@@ -59,6 +60,9 @@ pub enum Error {
 
     #[error("bad http status code: `{_0}`")]
     BadHttpStatus(http::StatusCode),
+
+    #[error("jwt error: `{_0}`")]
+    Jwt(#[from] JwtError),
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -131,8 +135,12 @@ pub async fn spawn(
             account_name,
             project_name,
             instance_id,
-            access_key_id,
-            secret_access_key,
+
+            // this fields are outdated and insecure. kept for backward compatibility
+            access_key_id: AccessKeyId::from(0),
+            secret_access_key: "".into(),
+
+            jwt_token: Some(generate_jwt_token(&secret_access_key, &access_key_id)?.into()),
         };
 
         let encoded_hello: Vec<u8> = bincode::serialize(&hello).unwrap();

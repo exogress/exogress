@@ -73,8 +73,11 @@ pub struct TunnelHello {
     pub account_name: AccountName,
     pub project_name: ProjectName,
     pub instance_id: InstanceId,
+    // This should never be used and kept only for compatibility
     pub access_key_id: AccessKeyId,
     pub secret_access_key: SmolStr,
+
+    pub jwt_token: Option<SmolStr>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
