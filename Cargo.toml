@@ -170,7 +170,6 @@ client-lib = [
     "tunnel",
 ]
 common-utils = [
-    "bs58",
     "linked-hash-map",
     "clap",
     "entities",
@@ -312,6 +311,7 @@ ledb = [
 ]
 access-tokens = [
     "p256",
+    "bs58",
     "jsonwebtoken",
     "entities",
     "thiserror",

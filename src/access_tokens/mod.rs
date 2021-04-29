@@ -34,8 +34,8 @@ pub struct Claims {
 }
 
 pub struct AccessKeyPair {
-    secret_access_key: String,
-    public_key_pem: String,
+    pub secret_access_key: String,
+    pub public_key_pem: String,
 }
 
 pub fn generate_access_key_pair() -> AccessKeyPair {
@@ -56,7 +56,7 @@ pub fn generate_access_key_pair() -> AccessKeyPair {
 pub fn generate_jwt_token(
     secret_access_key: &str,
     access_key_id: &AccessKeyId,
-) -> anyhow::Result<String> {
+) -> Result<String, JwtError> {
     let claims = Claims {
         iss: access_key_id.to_string(),
     };
