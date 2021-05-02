@@ -166,7 +166,7 @@ where
         params: &HashMap<ParameterName, Parameter>,
         refinable_set: &RefinableSet,
         scope: &Scope,
-    ) -> Result<P, Error> {
+    ) -> Result<(P, Option<Scope>), Error> {
         match self {
             Container::Parameter(param) => {
                 let found = params
@@ -176,16 +176,18 @@ where
 
                 let provided_schema = found.schema();
 
-                found.try_into().map_err(|_| Error::SchemaMismatch {
+                let r = found.try_into().map_err(|_| Error::SchemaMismatch {
                     expected: P::schema(),
                     provided: provided_schema,
-                })
+                })?;
+
+                Ok((r, None))
             }
-            Container::Value(v) => Ok(v),
-            Container::Shared(ref_name) => Ok(ref_name
+            Container::Value(v) => Ok((v, None)),
+            Container::Shared(ref_name) => ref_name
                 .get_refined(refinable_set, &scope)
-                .ok_or_else(|| Error::NameNotDefined(ref_name.to_string().into()))?
-                .0),
+                .ok_or_else(|| Error::NameNotDefined(ref_name.to_string().into()))
+                .map(|(val, scope)| (val, Some(scope))),
         }
     }
 }

@@ -20,10 +20,12 @@ use crate::{
         ConfigName, HandlerName, HealthCheckProbeName, MountPointName, ProfileName, Upstream,
     },
 };
+use core::fmt;
 use maplit::btreemap;
 use schemars::JsonSchema;
 use std::{
     collections::BTreeMap,
+    fmt::Formatter,
     hash::{Hash, Hasher},
     mem,
 };
@@ -33,6 +35,12 @@ use std::{
 )]
 #[serde(transparent)]
 pub struct ClientConfigRevision(pub u64);
+
+impl fmt::Display for ClientConfigRevision {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 impl From<u64> for ClientConfigRevision {
     fn from(revision: u64) -> Self {

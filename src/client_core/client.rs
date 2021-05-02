@@ -328,8 +328,6 @@ impl Client {
         let authorization =
             generate_jwt_token(self.secret_access_key.as_str(), &self.access_key_id)?.into();
 
-        error!("authorization = {:?}", authorization);
-
         let connector_result = tokio::spawn({
             shadow_clone!(
                 tunnels,

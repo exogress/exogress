@@ -140,6 +140,18 @@ macro_rules! string_type {
             }
         }
 
+        impl From<$x> for SmolStr {
+            fn from(entity: $x) -> SmolStr {
+                entity.inner
+            }
+        }
+
+        impl<'a> From<&'a $x> for SmolStr {
+            fn from(entity: &'a $x) -> SmolStr {
+                entity.inner.clone()
+            }
+        }
+
         paste::item! {
             impl std::str::FromStr for $x {
                 type Err = $crate::entities::StringIdentifierParseError;

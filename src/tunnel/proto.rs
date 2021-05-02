@@ -1366,7 +1366,7 @@ mod test {
                 upstreams,
                 refinable: Refinable {
                     static_responses: Default::default(),
-                    rescue: vec![],
+                    rescues: vec![],
                 },
             }
             .into(),
