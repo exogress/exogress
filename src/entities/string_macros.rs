@@ -140,14 +140,14 @@ macro_rules! string_type {
             }
         }
 
-        impl From<$x> for SmolStr {
-            fn from(entity: $x) -> SmolStr {
+        impl From<$x> for $crate::entities::SmolStr {
+            fn from(entity: $x) -> Self {
                 entity.inner
             }
         }
 
-        impl<'a> From<&'a $x> for SmolStr {
-            fn from(entity: &'a $x) -> SmolStr {
+        impl<'a> From<&'a $x> for $crate::entities::SmolStr {
+            fn from(entity: &'a $x) -> Self {
                 entity.inner.clone()
             }
         }
