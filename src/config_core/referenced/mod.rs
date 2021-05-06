@@ -1,10 +1,13 @@
-use crate::config_core::referenced::{
-    acl::Acl,
-    aws::{bucket::S3Bucket, credentials::AwsCredentials},
-    google::{bucket::GcsBucket, credentials::GoogleCredentials},
-    mime_types::MimeTypes,
+use crate::config_core::{
+    referenced::{
+        acl::Acl,
+        aws::{bucket::S3Bucket, credentials::AwsCredentials},
+        google::{bucket::GcsBucket, credentials::GoogleCredentials},
+        mime_types::{MimeType, MimeTypes},
+    },
+    RawResponse, ResponseBody, StaticResponse, StatusCode,
 };
-pub use container::Container;
+pub use container::{Container, ContainerScope, Error};
 use core::{convert::TryFrom, fmt, fmt::Formatter, str::FromStr};
 use schemars::JsonSchema;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -16,11 +19,6 @@ pub mod mime_types;
 pub mod static_response;
 
 mod container;
-
-use crate::config_core::{
-    referenced::mime_types::MimeType, RawResponse, ResponseBody, StaticResponse, StatusCode,
-};
-pub use container::Error;
 
 pub trait ReferencedConfigValue:
     DeserializeOwned

@@ -156,6 +156,13 @@ impl Error {
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum ContainerScope {
+    Inline { scope: Scope },
+    Referenced { scope: Scope },
+    Parameter { name: ParameterName },
+}
+
 impl<P, R> Container<P, R>
 where
     P: ReferencedConfigValue,
@@ -166,12 +173,12 @@ where
         params: &HashMap<ParameterName, Parameter>,
         refinable_set: &RefinableSet,
         scope: &Scope,
-    ) -> Result<(P, Option<Scope>), Error> {
+    ) -> Result<(P, ContainerScope), Error> {
         match self {
             Container::Parameter(param) => {
                 let found = params
                     .get(&param)
-                    .ok_or(Error::ParamNotDefined(param))?
+                    .ok_or(Error::ParamNotDefined(param.clone()))?
                     .clone();
 
                 let provided_schema = found.schema();
@@ -181,13 +188,23 @@ where
                     provided: provided_schema,
                 })?;
 
-                Ok((r, None))
+                Ok((
+                    r,
+                    ContainerScope::Parameter {
+                        name: param.clone(),
+                    },
+                ))
             }
-            Container::Value(v) => Ok((v, None)),
+            Container::Value(v) => Ok((
+                v,
+                ContainerScope::Inline {
+                    scope: scope.clone(),
+                },
+            )),
             Container::Shared(ref_name) => ref_name
                 .get_refined(refinable_set, &scope)
                 .ok_or_else(|| Error::NameNotDefined(ref_name.to_string().into()))
-                .map(|(val, scope)| (val, Some(scope))),
+                .map(|(val, scope)| (val, ContainerScope::Referenced { scope })),
         }
     }
 }
