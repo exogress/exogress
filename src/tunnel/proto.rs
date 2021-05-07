@@ -479,8 +479,6 @@ pub async fn client_listener(
                                                                     };
 
                                                                     let forward_to_connection = {
-                                                                        shadow_clone!(compressors);
-
                                                                         async move {
                                                                             while let Some(buf) = tunnel_to_tcp_rx.next().await {
                                                                                 to_tcp.write_all(&buf).await?;
@@ -575,7 +573,7 @@ pub async fn client_listener(
                                         let (ch, mut tx, mut rx) = MixedChannel::new(16, 16);
 
                                         tokio::spawn({
-                                            shadow_clone!(internal_server_connector, mut outgoing_messages_tx, storage, just_closed_by_us);
+                                            shadow_clone!(mut outgoing_messages_tx, storage, just_closed_by_us);
 
                                             async move {
                                                 outgoing_messages_tx.send((
@@ -633,8 +631,6 @@ pub async fn client_listener(
                                                         };
 
                                                         let forward_to_internal_server = {
-                                                            shadow_clone!(compressors);
-
                                                             async move {
                                                                 while let Some(buf) = tunnel_to_tcp_rx.next().await {
                                                                     tx
@@ -987,8 +983,6 @@ pub fn server_connection(
                                                             };
 
                                                             let forward_to_connection = {
-                                                                shadow_clone!(compressors);
-
                                                                 async move {
                                                                     while let Some(buf) = tunnel_to_channel.next().await {
                                                                         from_tunnel_tx
