@@ -31,7 +31,7 @@ pub enum Error {
     UrlError(#[from] url::ParseError),
 
     #[error("resolve error: {}", _0)]
-    ResolveError(#[from] trust_dns_resolver::error::ResolveError),
+    ResolveError(#[from] Box<trust_dns_resolver::error::ResolveError>),
 
     #[error("io error: {}", _0)]
     IoError(#[from] io::Error),
@@ -60,7 +60,7 @@ pub async fn connect_ws(
     let ip = if let Ok(ip) = IpAddr::from_str(host) {
         ip
     } else {
-        let ips = resolver.lookup_ip(host).await?;
+        let ips = resolver.lookup_ip(host).await.map_err(Box::new)?;
         let mut rng = thread_rng();
         ips.iter().choose(&mut rng).ok_or(Error::NotResolved)?
     };

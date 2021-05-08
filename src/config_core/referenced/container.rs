@@ -178,7 +178,7 @@ where
             Container::Parameter(param) => {
                 let found = params
                     .get(&param)
-                    .ok_or(Error::ParamNotDefined(param.clone()))?
+                    .ok_or_else(|| Error::ParamNotDefined(param.clone()))?
                     .clone();
 
                 let provided_schema = found.schema();
@@ -188,12 +188,7 @@ where
                     provided: provided_schema,
                 })?;
 
-                Ok((
-                    r,
-                    ContainerScope::Parameter {
-                        name: param.clone(),
-                    },
-                ))
+                Ok((r, ContainerScope::Parameter { name: param }))
             }
             Container::Value(v) => Ok((
                 v,

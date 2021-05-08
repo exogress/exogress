@@ -50,7 +50,7 @@ pub enum Error {
     EstablishTimeout,
 
     #[error("resolve error: `{_0}`")]
-    ResolveError(#[from] ResolveError),
+    ResolveError(#[from] Box<ResolveError>),
 
     #[error("no addresses resolved")]
     NothingResolved,
@@ -83,7 +83,10 @@ pub async fn spawn(
 ) -> Result<bool, Error> {
     let span = info_span!("spawn", tunnel_id = field::Empty);
     let (tunnel_id, stream) = tokio::time::timeout(Duration::from_secs(5), async {
-        let gw_addrs = resolver.lookup_ip(gw_hostname.to_string()).await?;
+        let gw_addrs = resolver
+            .lookup_ip(gw_hostname.to_string())
+            .await
+            .map_err(Box::new)?;
         let gw_addr = gw_addrs
             .iter()
             .choose(&mut thread_rng())
@@ -95,9 +98,9 @@ pub async fn spawn(
         config.alpn_protocols = vec![ALPN_PROTOCOL.to_vec(), b"http/1.1".to_vec()];
         load_native_certs_safe(&mut config);
         let config = TlsConnector::from(Arc::new(config));
-        let dnsname = DNSNameRef::try_from_ascii_str(&gw_hostname)?;
+        let dns_name = DNSNameRef::try_from_ascii_str(&gw_hostname)?;
 
-        let tls_stream = config.connect(dnsname, socket).await?;
+        let tls_stream = config.connect(dns_name, socket).await?;
 
         let (mut send_request, http_connection) = conn::Builder::new()
             .http2_only(false)

@@ -83,11 +83,9 @@ pub fn generate_jwt_token(
 
 fn extract_public_key(mut asn1: Vec<simple_asn1::ASN1Block>) -> Result<PublicKey, JwtError> {
     if let Some(simple_asn1::ASN1Block::Sequence(_, entries)) = asn1.pop() {
-        if let Some(public_key) = entries.get(3) {
-            if let simple_asn1::ASN1Block::Explicit(_, _, _, bit_string) = public_key {
-                if let simple_asn1::ASN1Block::BitString(_, _, value) = bit_string.as_ref() {
-                    return Ok(p256::PublicKey::from_sec1_bytes(value)?);
-                }
+        if let Some(simple_asn1::ASN1Block::Explicit(_, _, _, bit_string)) = entries.get(3) {
+            if let simple_asn1::ASN1Block::BitString(_, _, value) = bit_string.as_ref() {
+                return Ok(p256::PublicKey::from_sec1_bytes(value)?);
             }
         }
     }
