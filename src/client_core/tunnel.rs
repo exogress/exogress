@@ -139,14 +139,10 @@ pub async fn spawn(
             project_name,
             instance_id,
 
-            // this fields are outdated and insecure. kept for backward compatibility
-            access_key_id: AccessKeyId::from(0),
-            secret_access_key: "".into(),
-
-            jwt_token: Some(generate_jwt_token(&secret_access_key, &access_key_id)?.into()),
+            jwt_token: generate_jwt_token(&secret_access_key, &access_key_id)?.into(),
         };
 
-        let encoded_hello: Vec<u8> = bincode::serialize(&hello).unwrap();
+        let encoded_hello: Vec<u8> = serde_cbor::to_vec(&hello).unwrap();
         stream
             .write_u16(encoded_hello.len().try_into().unwrap())
             .await?;
@@ -155,7 +151,7 @@ pub async fn spawn(
         let resp_len = stream.read_u16().await?.into();
         let mut tunnel_hello_response = vec![0u8; resp_len];
         stream.read_exact(&mut tunnel_hello_response).await?;
-        let hello_response = bincode::deserialize::<TunnelHelloResponse>(&tunnel_hello_response)
+        let hello_response = serde_cbor::from_slice::<TunnelHelloResponse>(&tunnel_hello_response)
             .map_err(crate::tunnel::Error::DecodeError)?;
 
         match hello_response {
@@ -182,4 +178,59 @@ pub async fn spawn(
     info!(parent: &span, "closed successfully");
 
     Ok(r)
+}
+
+#[cfg(test)]
+mod test {
+    use serde::{Deserialize, Serialize};
+
+    #[test]
+    fn cbor_evolution() {
+        #[derive(Debug, Serialize, Deserialize)]
+        pub struct V1 {
+            a: u16,
+            b: String,
+        }
+
+        #[derive(Debug, Serialize, Deserialize)]
+        pub struct V2 {
+            a: u16,
+            b: String,
+            c: Option<String>,
+        }
+
+        #[derive(Debug, Serialize, Deserialize)]
+        pub struct V3 {
+            a: u16,
+            #[serde(default)]
+            c: String,
+        }
+
+        let v1 = V1 {
+            a: 1,
+            b: "v1".to_string(),
+        };
+
+        let v2 = V2 {
+            a: 2,
+            b: "v2".to_string(),
+            c: Some("v2-introduced".to_string()),
+        };
+
+        let v1_serialized = serde_cbor::to_vec(&v1).unwrap();
+        let v2_parsed_v1: V2 = serde_cbor::from_slice(&v1_serialized).unwrap();
+        let v3_parsed_v1: V3 = serde_cbor::from_slice(&v1_serialized).unwrap();
+
+        assert_eq!(v2_parsed_v1.a, 1);
+        assert_eq!(v2_parsed_v1.b, "v1");
+
+        assert_eq!(v3_parsed_v1.a, 1);
+        assert_eq!(v3_parsed_v1.c, "");
+
+        let v2_serialized = serde_cbor::to_vec(&v2).unwrap();
+        let v3_parsed_v2: V3 = serde_cbor::from_slice(&v2_serialized).unwrap();
+
+        assert_eq!(v3_parsed_v2.a, 2);
+        assert_eq!(v3_parsed_v2.c, "v2-introduced");
+    }
 }

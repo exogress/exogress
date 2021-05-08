@@ -1,8 +1,5 @@
 use crate::{
-    entities::{
-        AccessKeyId, AccountName, ConfigName, InstanceId, ProfileName, ProjectName, SmolStr,
-        TunnelId,
-    },
+    entities::{AccountName, ConfigName, InstanceId, ProfileName, ProjectName, SmolStr, TunnelId},
     tunnel::connector::ConnectorRequest,
 };
 use bytes::BytesMut;
@@ -73,11 +70,7 @@ pub struct TunnelHello {
     pub account_name: AccountName,
     pub project_name: ProjectName,
     pub instance_id: InstanceId,
-    // This should never be used and kept only for compatibility
-    pub access_key_id: AccessKeyId,
-    pub secret_access_key: SmolStr,
-
-    pub jwt_token: Option<SmolStr>,
+    pub jwt_token: SmolStr,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -341,7 +334,7 @@ pub async fn client_listener(
                                 return Ok(false);
                             }
                             ServerHeader::ConnectRequest => {
-                                let req = bincode::deserialize::<ConnectRequestPayload>(&payload)?;
+                                let req = serde_cbor::from_slice::<ConnectRequestPayload>(&payload)?;
                                 let target = req.target;
                                 let compression = req.compression;
                                 match target {
@@ -387,7 +380,7 @@ pub async fn client_listener(
                                                             Err(e) => {
                                                                 warn!("error resolving upstream: {}", e);
 
-                                                                let payload = bincode::serialize(&RejectionReason::ConnectionRefused {
+                                                                let payload = serde_cbor::to_vec(&RejectionReason::ConnectionRefused {
                                                                     error_message: e.to_string(),
                                                                 }).unwrap();
 
@@ -525,7 +518,7 @@ pub async fn client_listener(
                                                         Ok(Err(e)) => {
                                                             info!("error connecting to {:?}. error: {:?}", connect_to, e);
 
-                                                            let payload = bincode::serialize(&RejectionReason::ConnectionRefused {
+                                                            let payload = serde_cbor::to_vec(&RejectionReason::ConnectionRefused {
                                                                 error_message: e.to_string(),
                                                             }).unwrap();
 
@@ -539,7 +532,7 @@ pub async fn client_listener(
                                                         }
                                                         Err(e) => {
                                                             info!("error connecting: {}", e);
-                                                            let payload = bincode::serialize(&RejectionReason::ConnectionRefused {
+                                                            let payload = serde_cbor::to_vec(&RejectionReason::ConnectionRefused {
                                                                 error_message: "timeout".to_string(),
                                                             }).unwrap();
 
@@ -554,7 +547,7 @@ pub async fn client_listener(
                                                     }
                                                 } else {
                                                     debug!("error connecting to {:?}. not found in config", upstream);
-                                                    let payload = bincode::serialize(&RejectionReason::UpstreamNotFound)
+                                                    let payload = serde_cbor::to_vec(&RejectionReason::UpstreamNotFound)
                                                         .unwrap();
 
                                                     outgoing_messages_tx.send((
@@ -901,7 +894,7 @@ pub fn server_connection(
                                     header: ServerHeader::ConnectRequest,
                                     slot,
                                 },
-                                bincode::serialize(&ConnectRequestPayload {
+                                serde_cbor::to_vec(&ConnectRequestPayload {
                                     target: connect_target,
                                     compression,
                                 })
@@ -1051,7 +1044,7 @@ pub fn server_connection(
                                         }
                                     }
                                     ClientHeader::Rejected => {
-                                        let error = bincode::deserialize::<RejectionReason>(&payload)?;
+                                        let error = serde_cbor::from_slice::<RejectionReason>(&payload)?;
 
                                         info!("slot connection in tunnel rejected by client with reason: {}", error);
 

@@ -37,7 +37,7 @@ pub enum Error {
     StringIdentifierParseError(#[from] StringIdentifierParseError),
 
     #[error("could not parse decode payload: {0}")]
-    DecodeError(#[from] bincode::Error),
+    DecodeError(#[from] serde_cbor::Error),
 
     #[error("could not resolve upstream: {upstream} hostname {host}")]
     UpstreamResolveError { upstream: Upstream, host: String },
