@@ -67,6 +67,10 @@ impl Backoff {
             need_next: false,
         }
     }
+
+    pub fn reset(&self) {
+        self.data.reset();
+    }
 }
 
 impl BackoffProj<'_> {
