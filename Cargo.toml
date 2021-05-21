@@ -7,6 +7,7 @@ edition = "2018"
 license = "Apache 2.0"
 
 [dependencies]
+ansi_term = { optional = true, version = "0.11" }
 anyhow = { optional = true, version = "1.0.32" }
 serde_cbor = { optional = true, version = "0.11.1" }
 bs58 = { optional = true, version = "0.4" }
@@ -170,6 +171,7 @@ client-lib = [
     "tunnel",
 ]
 common-utils = [
+    "ansi_term",
     "linked-hash-map",
     "clap",
     "entities",

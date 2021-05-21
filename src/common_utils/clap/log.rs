@@ -54,7 +54,17 @@ pub fn handle(matches: &ArgMatches, _service_name: &'static str) {
         _ => panic!("Bad log level"),
     };
 
-    let subscriber = tracing_subscriber::fmt().with_max_level(log_level).finish();
+    #[allow(unused_mut)]
+    let mut subscriber_builder = tracing_subscriber::fmt().with_max_level(log_level);
+
+    #[cfg(windows)]
+    {
+        if ansi_term::enable_ansi_support().is_err() {
+            subscriber_builder = subscriber_builder.with_ansi(false);
+        }
+    }
+
+    let subscriber = subscriber_builder.finish();
 
     tracing::subscriber::set_global_default(subscriber).expect("no global subscriber has been set");
 }
