@@ -7,4 +7,4 @@ edition = "2018"
 [build-dependencies]
 serde_json = "1"
 schemars = { git = "https://github.com/glebpom/schemars.git", branch = "exogress", features = ["ulid", "smol_str", "chrono"] }
-exogress-common = { git = "https://github.com/exogress/exogress.git", branch = "master", version = "0.1.0", features = ["config-core"], default-features = false }
+exogress-common = { git = "https://github.com/exogress/exogress.git", branch = "master", version = "0.2.0", features = ["config-core"], default-features = false }
