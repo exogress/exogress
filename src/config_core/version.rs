@@ -1,4 +1,3 @@
-use crate::config_core::CURRENT_VERSION;
 use schemars::JsonSchema;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -10,15 +9,11 @@ pub struct ConfigVersion(pub Version);
 
 impl ConfigVersion {
     pub fn minor_base_version(&self) -> String {
-        format!(
-            "{}.{}",
-            (*CURRENT_VERSION).0.major,
-            (*CURRENT_VERSION).0.minor
-        )
+        format!("{}.{}", self.0.major, self.0.minor)
     }
 
     pub fn major_base_version(&self) -> String {
-        (*CURRENT_VERSION).0.major.to_string()
+        self.0.major.to_string()
     }
 }
 

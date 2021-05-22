@@ -8,6 +8,7 @@ use crate::{
         gcs::GcsBucketAccess,
         is_profile_active, is_version_supported,
         proxy::Proxy,
+        proxy_public::ProxyPublic,
         rebase::Rebase,
         refinable::Refinable,
         s3::S3BucketAccess,
@@ -307,6 +308,9 @@ pub enum ClientHandlerVariant {
     #[serde(rename = "proxy")]
     Proxy(Proxy),
 
+    #[serde(rename = "proxy-public")]
+    ProxyPublic(ProxyPublic),
+
     #[serde(rename = "static-dir")]
     StaticDir(StaticDir),
 
@@ -335,6 +339,7 @@ impl ClientHandlerVariant {
             ClientHandlerVariant::GcsBucket(v) => Some(&v.rebase),
             // ClientHandlerVariant::ApplicationFirewall(_) => None,
             ClientHandlerVariant::PassThrough(_) => None,
+            ClientHandlerVariant::ProxyPublic(v) => Some(&v.rebase),
         }
     }
 }
@@ -364,7 +369,7 @@ mod test {
     use super::*;
 
     #[test]
-    pub fn test_parsing() {
+    pub fn test_parsing_1_0_0() {
         const YAML: &str = r#"---
 version: 1.0.0
 revision: 10
@@ -418,6 +423,23 @@ mount-points:
         body:
           - content-type: application/html
             content: "<html><body><h1>not found</h1></body>/html>"
+"#;
+        ClientConfig::parse_with_redefined_upstreams(YAML, &Default::default()).unwrap();
+    }
+
+    #[test]
+    pub fn test_parsing_1_1_0() {
+        const YAML: &str = r#"---
+version: 1.1.0
+revision: 10
+name: repository-1
+mount-points:
+  mount_point:
+    handlers:
+      main:
+        kind: proxy-public
+        priority: 30
+        fqdn: google.com
 "#;
         ClientConfig::parse_with_redefined_upstreams(YAML, &Default::default()).unwrap();
     }

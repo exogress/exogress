@@ -3,9 +3,10 @@ use hashbrown::HashSet;
 use crate::{
     config_core::{
         auth::GoogleAuthDefinition, client_config::ClientMount, config::default_rules,
-        gcs::GcsBucketAccess, is_version_supported, referenced::Container, refinable::Refinable,
-        s3::S3BucketAccess, schema::validate_schema, validate_extra_keys, Auth, ClientHandler,
-        ClientHandlerVariant, Config, ConfigVersion, PassThrough, Rule, CURRENT_VERSION,
+        gcs::GcsBucketAccess, is_version_supported, proxy_public::ProxyPublic,
+        referenced::Container, refinable::Refinable, s3::S3BucketAccess, schema::validate_schema,
+        validate_extra_keys, Auth, ClientHandler, ClientHandlerVariant, Config, ConfigVersion,
+        PassThrough, Rule, CURRENT_VERSION,
     },
     entities::{HandlerName, MountPointName},
 };
@@ -192,6 +193,9 @@ pub enum ProjectHandlerVariant {
     #[serde(rename = "auth")]
     Auth(Auth),
 
+    #[serde(rename = "proxy-public")]
+    ProxyPublic(ProxyPublic),
+
     #[serde(rename = "s3-bucket")]
     S3Bucket(S3BucketAccess),
 
@@ -231,6 +235,9 @@ impl From<ProjectHandler> for ClientHandler {
             // }
             ProjectHandlerVariant::PassThrough(pass_through) => {
                 ClientHandlerVariant::PassThrough(pass_through)
+            }
+            ProjectHandlerVariant::ProxyPublic(proxy_public) => {
+                ClientHandlerVariant::ProxyPublic(proxy_public)
             }
         };
         ClientHandler {

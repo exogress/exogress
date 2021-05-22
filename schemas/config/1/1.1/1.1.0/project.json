@@ -1,0 +1,1477 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProjectConfig",
+  "type": "object",
+  "required": [
+    "version"
+  ],
+  "properties": {
+    "mount-points": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ProjectMount"
+      }
+    },
+    "rescue": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/RescueItem"
+      }
+    },
+    "static-responses": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/StaticResponse"
+      }
+    },
+    "version": {
+      "type": "string",
+      "minLength": 5,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+    }
+  },
+  "definitions": {
+    "AclEntry": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "allow"
+          ],
+          "properties": {
+            "allow": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "deny"
+          ],
+          "properties": {
+            "deny": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "Array_of_HttpHeaderName": {
+      "title": "Array of HTTP Header Names",
+      "description": "Array of HTTP Header Names",
+      "type": "array"
+    },
+    "AwsCredentials": {
+      "type": "object",
+      "required": [
+        "access_key_id",
+        "secret_access_key"
+      ],
+      "properties": {
+        "access_key_id": {
+          "type": "string"
+        },
+        "secret_access_key": {
+          "type": "string"
+        }
+      }
+    },
+    "Cache": {
+      "type": "object",
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CatchMatcher": {
+      "title": "Matcher for exception catching",
+      "description": "string starting with 'status-code:' or 'exception:'",
+      "type": "string"
+    },
+    "Encoding": {
+      "type": "object",
+      "required": [
+        "mime-types"
+      ],
+      "properties": {
+        "brotli": {
+          "default": true,
+          "type": "boolean"
+        },
+        "deflate": {
+          "default": true,
+          "type": "boolean"
+        },
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "gzip": {
+          "default": true,
+          "type": "boolean"
+        },
+        "mime-types": {
+          "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_Array_of_MimeType"
+        },
+        "min-size": {
+          "default": 100,
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        }
+      }
+    },
+    "Exception": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Filter": {
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "methods": {
+          "default": "*",
+          "allOf": [
+            {
+              "$ref": "#/definitions/MethodMatcher"
+            }
+          ]
+        },
+        "path": {
+          "$ref": "#/definitions/PathMatcher"
+        },
+        "query-params": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/MatchQueryValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "trailing-slash": {
+          "default": "allow",
+          "allOf": [
+            {
+              "$ref": "#/definitions/TrailingSlashFilterRule"
+            }
+          ]
+        }
+      }
+    },
+    "GcsBucket": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "GithubAuthDefinition": {
+      "type": "object",
+      "required": [
+        "acl"
+      ],
+      "properties": {
+        "acl": {
+          "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_Array_of_AclEntry"
+        }
+      }
+    },
+    "GoogleAuthDefinition": {
+      "type": "object",
+      "required": [
+        "acl"
+      ],
+      "properties": {
+        "acl": {
+          "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_Array_of_AclEntry"
+        }
+      }
+    },
+    "GoogleCredentials": {
+      "type": "object",
+      "required": [
+        "json"
+      ],
+      "properties": {
+        "json": {
+          "type": "string"
+        }
+      }
+    },
+    "HttpHeaderMap": {
+      "title": "HTTP Headers",
+      "description": "Map of HTTP headers, where key is the header name. The headers value may be a single string or multiple strings.",
+      "type": "object"
+    },
+    "HttpMethod": {
+      "title": "HTTP Method",
+      "type": "string",
+      "enum": [
+        "TRACE",
+        "PATCH",
+        "CONNECT",
+        "OPTIONS",
+        "HEAD",
+        "DELETE",
+        "PUT",
+        "POST",
+        "GET"
+      ]
+    },
+    "HttpStatusCode": {
+      "type": "integer"
+    },
+    "HttpStatusCodeRange": {
+      "type": [
+        "integer",
+        "string"
+      ],
+      "minLength": 3,
+      "pattern": "^((?:[1-5]\\d{2}-[1-5]\\d{2})|(?:[1-5]\\d{2})|(?:[1-5]xx)|(?:xxx)|(?:[1-5]\\d{2})(?:,(?:[1-5]\\d{2}))*)$"
+    },
+    "ImagePostProcessing": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "jpeg": {
+          "default": true,
+          "type": "boolean"
+        },
+        "png": {
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
+    "MatchPathSegment": {
+      "title": "Single path segment matcher or multiple choices",
+      "type": [
+        "array",
+        "string"
+      ]
+    },
+    "MatchQuerySingleValue": {
+      "type": "string"
+    },
+    "MatchQueryValue": {
+      "type": [
+        "string",
+        "array"
+      ],
+      "anyOf": [
+        {
+          "$ref": "#/definitions/MatchQuerySingleValue"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "MethodMatcher": {
+      "type": [
+        "string",
+        "array"
+      ],
+      "maxLength": 1,
+      "minLength": 1,
+      "pattern": "\\*",
+      "items": {
+        "$ref": "#/definitions/HttpMethod"
+      }
+    },
+    "MimeType": {
+      "title": "mime-type",
+      "type": "string"
+    },
+    "ModifyHeaders": {
+      "type": "object",
+      "properties": {
+        "append": {
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/HttpHeaderMap"
+            }
+          ]
+        },
+        "insert": {
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/HttpHeaderMap"
+            }
+          ]
+        },
+        "remove": {
+          "default": [],
+          "allOf": [
+            {
+              "$ref": "#/definitions/Array_of_HttpHeaderName"
+            }
+          ]
+        }
+      }
+    },
+    "ModifyQuery": {
+      "type": "object",
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "strategy"
+          ],
+          "properties": {
+            "remove": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "keep"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "strategy"
+          ],
+          "properties": {
+            "keep": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "strategy": {
+              "type": "string",
+              "enum": [
+                "remove"
+              ]
+            }
+          }
+        }
+      ],
+      "properties": {
+        "set": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "NonExistingSharedEntity": {
+      "type": "null"
+    },
+    "NonExistingSharedEntity_or_ParameterName_or_Array_of_AclEntry": {
+      "title": "Either value or parameter name or entity name",
+      "description": "You may supply the desired object or the parameter name (starting with @)",
+      "type": [
+        "string",
+        "object",
+        "array"
+      ],
+      "oneOf": [
+        {
+          "type": "string",
+          "maxLength": 46,
+          "minLength": 3,
+          "pattern": "^@[a-zA-Z][a-zA-Z0-9\\-_]+$"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AclEntry"
+          }
+        },
+        {
+          "$ref": "#/definitions/NonExistingSharedEntity"
+        }
+      ]
+    },
+    "NonExistingSharedEntity_or_ParameterName_or_Array_of_MimeType": {
+      "title": "Either value or parameter name or entity name",
+      "description": "You may supply the desired object or the parameter name (starting with @)",
+      "type": [
+        "string",
+        "object",
+        "array"
+      ],
+      "oneOf": [
+        {
+          "type": "string",
+          "maxLength": 46,
+          "minLength": 3,
+          "pattern": "^@[a-zA-Z][a-zA-Z0-9\\-_]+$"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MimeType"
+          }
+        },
+        {
+          "$ref": "#/definitions/NonExistingSharedEntity"
+        }
+      ]
+    },
+    "NonExistingSharedEntity_or_ParameterName_or_AwsCredentials": {
+      "title": "Either value or parameter name or entity name",
+      "description": "You may supply the desired object or the parameter name (starting with @)",
+      "type": [
+        "string",
+        "object",
+        "array"
+      ],
+      "oneOf": [
+        {
+          "type": "string",
+          "maxLength": 46,
+          "minLength": 3,
+          "pattern": "^@[a-zA-Z][a-zA-Z0-9\\-_]+$"
+        },
+        {
+          "$ref": "#/definitions/AwsCredentials"
+        },
+        {
+          "$ref": "#/definitions/NonExistingSharedEntity"
+        }
+      ]
+    },
+    "NonExistingSharedEntity_or_ParameterName_or_GcsBucket": {
+      "title": "Either value or parameter name or entity name",
+      "description": "You may supply the desired object or the parameter name (starting with @)",
+      "type": [
+        "string",
+        "object",
+        "array"
+      ],
+      "oneOf": [
+        {
+          "type": "string",
+          "maxLength": 46,
+          "minLength": 3,
+          "pattern": "^@[a-zA-Z][a-zA-Z0-9\\-_]+$"
+        },
+        {
+          "$ref": "#/definitions/GcsBucket"
+        },
+        {
+          "$ref": "#/definitions/NonExistingSharedEntity"
+        }
+      ]
+    },
+    "NonExistingSharedEntity_or_ParameterName_or_GoogleCredentials": {
+      "title": "Either value or parameter name or entity name",
+      "description": "You may supply the desired object or the parameter name (starting with @)",
+      "type": [
+        "string",
+        "object",
+        "array"
+      ],
+      "oneOf": [
+        {
+          "type": "string",
+          "maxLength": 46,
+          "minLength": 3,
+          "pattern": "^@[a-zA-Z][a-zA-Z0-9\\-_]+$"
+        },
+        {
+          "$ref": "#/definitions/GoogleCredentials"
+        },
+        {
+          "$ref": "#/definitions/NonExistingSharedEntity"
+        }
+      ]
+    },
+    "NonExistingSharedEntity_or_ParameterName_or_S3Bucket": {
+      "title": "Either value or parameter name or entity name",
+      "description": "You may supply the desired object or the parameter name (starting with @)",
+      "type": [
+        "string",
+        "object",
+        "array"
+      ],
+      "oneOf": [
+        {
+          "type": "string",
+          "maxLength": 46,
+          "minLength": 3,
+          "pattern": "^@[a-zA-Z][a-zA-Z0-9\\-_]+$"
+        },
+        {
+          "$ref": "#/definitions/S3Bucket"
+        },
+        {
+          "$ref": "#/definitions/NonExistingSharedEntity"
+        }
+      ]
+    },
+    "OnResponse": {
+      "type": "object",
+      "required": [
+        "modifications",
+        "when"
+      ],
+      "properties": {
+        "modifications": {
+          "$ref": "#/definitions/ResponseModifications"
+        },
+        "when": {
+          "$ref": "#/definitions/ResponseConditions"
+        }
+      }
+    },
+    "PathMatcher": {
+      "title": "Array of path segments matchers, with optionally single '*' symbol",
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/MatchPathSegment"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "PostProcessing": {
+      "type": "object",
+      "properties": {
+        "encoding": {
+          "default": {
+            "brotli": true,
+            "deflate": true,
+            "enabled": true,
+            "gzip": true,
+            "mime-types": "@compressible-mime-types",
+            "min-size": 100
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/Encoding"
+            }
+          ]
+        },
+        "image-optimization": {
+          "default": {
+            "enabled": true,
+            "jpeg": true,
+            "png": true
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/ImagePostProcessing"
+            }
+          ]
+        }
+      }
+    },
+    "ProfileName": {
+      "type": "string",
+      "maxLength": 45,
+      "minLength": 2,
+      "pattern": "^[a-zA-Z][a-zA-Z0-9\\-_]+$"
+    },
+    "ProjectHandler": {
+      "type": "object",
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "github": {
+              "default": null,
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/GithubAuthDefinition"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "google": {
+              "default": null,
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/GoogleAuthDefinition"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "auth"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "host",
+            "kind"
+          ],
+          "properties": {
+            "base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cache": {
+              "default": {
+                "enabled": false
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/Cache"
+                }
+              ]
+            },
+            "host": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "proxy-public"
+              ]
+            },
+            "post-processing": {
+              "default": {
+                "encoding": {
+                  "brotli": true,
+                  "deflate": true,
+                  "enabled": true,
+                  "gzip": true,
+                  "mime-types": "@compressible-mime-types",
+                  "min-size": 100
+                },
+                "image-optimization": {
+                  "enabled": true,
+                  "jpeg": true,
+                  "png": true
+                }
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/PostProcessing"
+                }
+              ]
+            },
+            "replace-base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "websockets": {
+              "default": true,
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "bucket",
+            "kind"
+          ],
+          "properties": {
+            "base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "bucket": {
+              "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_S3Bucket"
+            },
+            "cache": {
+              "default": {
+                "enabled": false
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/Cache"
+                }
+              ]
+            },
+            "credentials": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_AwsCredentials"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "s3-bucket"
+              ]
+            },
+            "post-processing": {
+              "default": {
+                "encoding": {
+                  "brotli": true,
+                  "deflate": true,
+                  "enabled": true,
+                  "gzip": true,
+                  "mime-types": "@compressible-mime-types",
+                  "min-size": 100
+                },
+                "image-optimization": {
+                  "enabled": true,
+                  "jpeg": true,
+                  "png": true
+                }
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/PostProcessing"
+                }
+              ]
+            },
+            "replace-base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "bucket",
+            "credentials",
+            "kind"
+          ],
+          "properties": {
+            "base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "bucket": {
+              "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_GcsBucket"
+            },
+            "cache": {
+              "default": {
+                "enabled": false
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/Cache"
+                }
+              ]
+            },
+            "credentials": {
+              "$ref": "#/definitions/NonExistingSharedEntity_or_ParameterName_or_GoogleCredentials"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "gcs-bucket"
+              ]
+            },
+            "post-processing": {
+              "default": {
+                "encoding": {
+                  "brotli": true,
+                  "deflate": true,
+                  "enabled": true,
+                  "gzip": true,
+                  "mime-types": "@compressible-mime-types",
+                  "min-size": 100
+                },
+                "image-optimization": {
+                  "enabled": true,
+                  "jpeg": true,
+                  "png": true
+                }
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/PostProcessing"
+                }
+              ]
+            },
+            "replace-base-path": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "pass-through"
+              ]
+            }
+          }
+        }
+      ],
+      "required": [
+        "priority"
+      ],
+      "properties": {
+        "priority": {
+          "type": "integer",
+          "format": "uint16",
+          "minimum": 0.0
+        },
+        "rescue": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RescueItem"
+          }
+        },
+        "rules": {
+          "default": [
+            {
+              "action": "invoke",
+              "filter": {
+                "methods": "*",
+                "path": [
+                  "*"
+                ],
+                "query-params": {},
+                "trailing-slash": "allow"
+              },
+              "modify-request": null,
+              "on-response": [],
+              "profiles": null,
+              "rescue": []
+            }
+          ],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Rule"
+          }
+        },
+        "static-responses": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/StaticResponse"
+          }
+        }
+      }
+    },
+    "ProjectMount": {
+      "type": "object",
+      "properties": {
+        "handlers": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ProjectHandler"
+          }
+        },
+        "rescue": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RescueItem"
+          }
+        },
+        "static-responses": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/StaticResponse"
+          }
+        }
+      }
+    },
+    "RedirectTo": {
+      "title": "URL, or array of path segments, optionally starting from schema://url",
+      "type": [
+        "string",
+        "array"
+      ],
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "RedirectType": {
+      "type": "string",
+      "enum": [
+        "moved-permanently",
+        "permanent-redirect",
+        "found",
+        "see-other",
+        "temporary-redirect",
+        "multiple-choices",
+        "not-modified"
+      ]
+    },
+    "RequestModifications": {
+      "type": "object",
+      "properties": {
+        "headers": {
+          "default": {
+            "append": {},
+            "insert": {},
+            "remove": []
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/ModifyHeaders"
+            }
+          ]
+        },
+        "path": {
+          "default": null,
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "query-params": {
+          "default": {
+            "remove": [],
+            "set": {},
+            "strategy": "keep"
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/ModifyQuery"
+            }
+          ]
+        },
+        "trailing-slash": {
+          "default": "keep",
+          "allOf": [
+            {
+              "$ref": "#/definitions/TrailingSlashModification"
+            }
+          ]
+        }
+      }
+    },
+    "RescueItem": {
+      "type": "object",
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "action",
+            "static-response"
+          ],
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "respond"
+              ]
+            },
+            "data": {
+              "default": {},
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "static-response": {
+              "$ref": "#/definitions/StaticResponseName_or_ParameterName_or_StaticResponse"
+            },
+            "status-code": {
+              "default": null,
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/HttpStatusCode"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "action",
+            "exception"
+          ],
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "throw"
+              ]
+            },
+            "data": {
+              "default": {},
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "exception": {
+              "$ref": "#/definitions/Exception"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "action"
+          ],
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "next-handler"
+              ]
+            }
+          }
+        }
+      ],
+      "required": [
+        "catch"
+      ],
+      "properties": {
+        "catch": {
+          "$ref": "#/definitions/CatchMatcher"
+        }
+      }
+    },
+    "ResponseBody": {
+      "type": "object",
+      "required": [
+        "content",
+        "content-type"
+      ],
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "content-type": {
+          "$ref": "#/definitions/MimeType"
+        },
+        "engine": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TemplateEngine"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ResponseConditions": {
+      "type": "object",
+      "required": [
+        "status-code"
+      ],
+      "properties": {
+        "status-code": {
+          "$ref": "#/definitions/HttpStatusCodeRange"
+        }
+      }
+    },
+    "ResponseModifications": {
+      "type": "object",
+      "properties": {
+        "headers": {
+          "default": {
+            "append": {},
+            "insert": {},
+            "remove": []
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/ModifyHeaders"
+            }
+          ]
+        }
+      }
+    },
+    "Rule": {
+      "type": "object",
+      "anyOf": [
+        {
+          "description": "process by the handler",
+          "type": "object",
+          "required": [
+            "action"
+          ],
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "invoke"
+              ]
+            },
+            "modify-request": {
+              "default": null,
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/RequestModifications"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "on-response": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OnResponse"
+              }
+            },
+            "rescue": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RescueItem"
+              }
+            }
+          }
+        },
+        {
+          "description": "stop rules processing and move on to the next handler",
+          "type": "object",
+          "required": [
+            "action"
+          ],
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "next-handler"
+              ]
+            }
+          }
+        },
+        {
+          "description": "finish the whole handlers chain and move to finalizer",
+          "type": "object",
+          "required": [
+            "action",
+            "exception"
+          ],
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "throw"
+              ]
+            },
+            "data": {
+              "default": {},
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "exception": {
+              "$ref": "#/definitions/Exception"
+            }
+          }
+        },
+        {
+          "description": "finish the whole processing chain with the desired response",
+          "type": "object",
+          "required": [
+            "action",
+            "static-response"
+          ],
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": [
+                "respond"
+              ]
+            },
+            "data": {
+              "default": {},
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "rescue": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RescueItem"
+              }
+            },
+            "static-response": {
+              "$ref": "#/definitions/StaticResponseName_or_ParameterName_or_StaticResponse"
+            },
+            "status-code": {
+              "default": null,
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/HttpStatusCode"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "required": [
+        "filter"
+      ],
+      "properties": {
+        "filter": {
+          "$ref": "#/definitions/Filter"
+        },
+        "profiles": {
+          "default": null,
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/ProfileName"
+          }
+        }
+      }
+    },
+    "S3Bucket": {
+      "type": "object",
+      "required": [
+        "name",
+        "region"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "region": {
+          "$ref": "#/definitions/S3Region"
+        }
+      }
+    },
+    "S3Region": {
+      "title": "S3 region name",
+      "type": "string"
+    },
+    "StaticResponse": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "destination",
+            "kind",
+            "redirect-type"
+          ],
+          "properties": {
+            "destination": {
+              "$ref": "#/definitions/RedirectTo"
+            },
+            "headers": {
+              "default": {},
+              "allOf": [
+                {
+                  "$ref": "#/definitions/HttpHeaderMap"
+                }
+              ]
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "redirect"
+              ]
+            },
+            "query-params": {
+              "default": {
+                "remove": [],
+                "set": {},
+                "strategy": "keep"
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/ModifyQuery"
+                }
+              ]
+            },
+            "redirect-type": {
+              "$ref": "#/definitions/RedirectType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "body",
+            "kind"
+          ],
+          "properties": {
+            "body": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ResponseBody"
+              }
+            },
+            "fallback-accept": {
+              "default": null,
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/MimeType"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "headers": {
+              "default": {},
+              "allOf": [
+                {
+                  "$ref": "#/definitions/HttpHeaderMap"
+                }
+              ]
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "raw"
+              ]
+            },
+            "status-code": {
+              "default": 200,
+              "allOf": [
+                {
+                  "$ref": "#/definitions/HttpStatusCode"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "StaticResponseName": {
+      "type": "string",
+      "maxLength": 45,
+      "minLength": 2,
+      "pattern": "^[a-zA-Z][a-zA-Z0-9\\-_]+$"
+    },
+    "StaticResponseName_or_ParameterName_or_StaticResponse": {
+      "title": "Either value or parameter name or entity name",
+      "description": "You may supply the desired object or the parameter name (starting with @)",
+      "type": [
+        "string",
+        "object",
+        "array"
+      ],
+      "oneOf": [
+        {
+          "type": "string",
+          "maxLength": 46,
+          "minLength": 3,
+          "pattern": "^@[a-zA-Z][a-zA-Z0-9\\-_]+$"
+        },
+        {
+          "$ref": "#/definitions/StaticResponse"
+        },
+        {
+          "$ref": "#/definitions/StaticResponseName"
+        }
+      ]
+    },
+    "TemplateEngine": {
+      "type": "string",
+      "enum": [
+        "handlebars"
+      ]
+    },
+    "TrailingSlashFilterRule": {
+      "type": "string",
+      "enum": [
+        "require",
+        "allow",
+        "deny"
+      ]
+    },
+    "TrailingSlashModification": {
+      "type": "string",
+      "enum": [
+        "keep",
+        "set",
+        "unset"
+      ]
+    }
+  }
+}

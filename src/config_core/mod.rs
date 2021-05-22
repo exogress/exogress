@@ -52,6 +52,7 @@ mod path_segment;
 mod post_processing;
 mod project_config;
 mod proxy;
+mod proxy_public;
 mod query;
 // mod query_modify;
 mod rebase;
@@ -74,7 +75,7 @@ static PARAMETERS_SCHEMAS: Dir = include_dir!("schemas/parameters");
 
 lazy_static! {
     pub static ref MIN_SUPPORTED_VERSION: Version = "1.0.0".parse().unwrap();
-    pub static ref CURRENT_VERSION: ConfigVersion = ConfigVersion("1.0.0".parse().unwrap());
+    pub static ref CURRENT_VERSION: ConfigVersion = ConfigVersion("1.1.0".parse().unwrap());
     pub static ref VERSION_REQUIREMENT: VersionReq = format!(
         ">={} <={} <2",
         MIN_SUPPORTED_VERSION.to_string(),
@@ -147,6 +148,7 @@ mod test {
     fn test_version_supported() {
         assert!(!is_version_supported(&"0.2.4".parse().unwrap()));
         assert!(is_version_supported(&"1.0.0".parse().unwrap()));
+        assert!(is_version_supported(&"1.1.0".parse().unwrap()));
         assert!(!is_version_supported(&"1.0.0-pre.2".parse().unwrap()));
         assert!(!is_version_supported(&"1.23.1".parse().unwrap()));
         assert!(!is_version_supported(&"2.0.0".parse().unwrap()));
