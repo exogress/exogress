@@ -115,7 +115,7 @@ impl ClientConfig {
                     rescue: vec![],
                 },
                 profiles: None,
-                // languages: None,
+                languages: None,
             },
         );
 
@@ -359,9 +359,9 @@ pub struct ClientHandler {
 
     #[serde(default)]
     pub profiles: Option<Vec<ProfileName>>,
-    // #[schemars(skip)]
-    // #[serde(default)]
-    // pub languages: Option<Vec<langtag::LanguageTagBuf>>,
+
+    #[serde(default)]
+    pub languages: Option<Vec<language_tags::LanguageTag>>,
 }
 
 #[cfg(test)]

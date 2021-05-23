@@ -56,6 +56,7 @@ impl ProjectConfig {
                     static_responses: Default::default(),
                     rescue: Default::default(),
                 },
+                languages: None,
             },
         );
 
@@ -220,6 +221,9 @@ pub struct ProjectHandler {
 
     #[serde(flatten)]
     pub refinable: Refinable,
+
+    #[serde(default)]
+    pub languages: Option<Vec<language_tags::LanguageTag>>,
 }
 
 impl From<ProjectHandler> for ClientHandler {
@@ -246,7 +250,7 @@ impl From<ProjectHandler> for ClientHandler {
             priority: f.priority,
             refinable: f.refinable,
             profiles: None,
-            // languages: None,
+            languages: f.languages,
         }
     }
 }
