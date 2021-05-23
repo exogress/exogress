@@ -4,7 +4,7 @@ use anyhow::bail;
 pub use auth::{Auth, GithubAuthDefinition, GoogleAuthDefinition};
 pub use catch::{CatchAction, CatchMatcher, CatchMatcherParseError, RescueItem};
 pub use client_config::{
-    ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant, ClientMount,
+    ClientConfig, ClientConfigRevision, ClientHandler, ClientHandlerVariant, ClientMount, Languages,
 };
 pub use config::{default_rules, Config};
 pub use duration::DurationWrapper;

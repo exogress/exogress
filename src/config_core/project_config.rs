@@ -2,9 +2,16 @@ use hashbrown::HashSet;
 
 use crate::{
     config_core::{
-        auth::GoogleAuthDefinition, client_config::ClientMount, config::default_rules,
-        gcs::GcsBucketAccess, is_version_supported, proxy_public::ProxyPublic,
-        referenced::Container, refinable::Refinable, s3::S3BucketAccess, schema::validate_schema,
+        auth::GoogleAuthDefinition,
+        client_config::{ClientMount, Languages},
+        config::default_rules,
+        gcs::GcsBucketAccess,
+        is_version_supported,
+        proxy_public::ProxyPublic,
+        referenced::Container,
+        refinable::Refinable,
+        s3::S3BucketAccess,
+        schema::validate_schema,
         validate_extra_keys, Auth, ClientHandler, ClientHandlerVariant, Config, ConfigVersion,
         PassThrough, Rule, CURRENT_VERSION,
     },
@@ -223,7 +230,7 @@ pub struct ProjectHandler {
     pub refinable: Refinable,
 
     #[serde(default)]
-    pub languages: Option<Vec<language_tags::LanguageTag>>,
+    pub languages: Option<Languages>,
 }
 
 impl From<ProjectHandler> for ClientHandler {

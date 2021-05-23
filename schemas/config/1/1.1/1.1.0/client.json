@@ -515,13 +515,14 @@
       "properties": {
         "languages": {
           "default": null,
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "type": "string"
-          }
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Languages"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "priority": {
           "type": "integer",
@@ -789,6 +790,26 @@
         "png": {
           "default": true,
           "type": "boolean"
+        }
+      }
+    },
+    "Languages": {
+      "type": "object",
+      "required": [
+        "supported"
+      ],
+      "properties": {
+        "default": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "supported": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

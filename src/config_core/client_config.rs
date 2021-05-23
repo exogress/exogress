@@ -345,6 +345,12 @@ impl ClientHandlerVariant {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
+pub struct Languages {
+    pub supported: Vec<language_tags::LanguageTag>,
+    pub default: Option<language_tags::LanguageTag>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, JsonSchema)]
 pub struct ClientHandler {
     #[serde(flatten)]
     pub variant: ClientHandlerVariant,
@@ -361,7 +367,7 @@ pub struct ClientHandler {
     pub profiles: Option<Vec<ProfileName>>,
 
     #[serde(default)]
-    pub languages: Option<Vec<language_tags::LanguageTag>>,
+    pub languages: Option<Languages>,
 }
 
 #[cfg(test)]
