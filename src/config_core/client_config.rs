@@ -369,6 +369,30 @@ mod test {
     use super::*;
 
     #[test]
+    pub fn test_language() {
+        const YAML: &str = r#"---
+version: 1.0.0
+revision: 10
+name: repository-1
+upstreams:
+  backend2: 
+    port: 3000
+mount-points:
+  mount_point:
+    handlers:
+      main:
+        kind: proxy
+        priority: 30
+        upstream: backend
+        languages: ["ru", "en", "en-US", "tr"]
+"#;
+        ClientConfig::parse_with_redefined_upstreams(YAML, &Default::default())
+            .unwrap()
+            .validate()
+            .unwrap();
+    }
+
+    #[test]
     pub fn test_parsing_1_0_0() {
         const YAML: &str = r#"---
 version: 1.0.0
