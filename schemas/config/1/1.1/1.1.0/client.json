@@ -513,6 +513,16 @@
         "priority"
       ],
       "properties": {
+        "languages": {
+          "default": null,
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
         "priority": {
           "type": "integer",
           "format": "uint16",

@@ -282,7 +282,7 @@ pub struct RequestModifications {
 }
 
 #[derive(Debug, Hash, Serialize, Deserialize, Eq, PartialEq, Clone, JsonSchema)]
-#[serde(tag = "strategy", deny_unknown_fields)]
+#[serde(tag = "strategy")]
 pub enum ModifyQueryStrategy {
     #[serde(rename = "keep")]
     Keep {
