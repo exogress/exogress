@@ -377,7 +377,7 @@ mod test {
     #[test]
     pub fn test_language() {
         const YAML: &str = r#"---
-version: 1.0.0
+version: 1.1.0
 revision: 10
 name: repository-1
 upstreams:
@@ -387,10 +387,10 @@ mount-points:
   mount_point:
     handlers:
       main:
-        kind: proxy
+        kind: pass-through
         priority: 30
-        upstream: backend
-        languages: ["ru", "en", "en-US", "tr"]
+        languages: 
+          supported: ["ru", "en", "en-US", "tr"]
 "#;
         ClientConfig::parse_with_redefined_upstreams(YAML, &Default::default())
             .unwrap()
@@ -469,7 +469,7 @@ mount-points:
       main:
         kind: proxy-public
         priority: 30
-        fqdn: google.com
+        host: google.com
 "#;
         ClientConfig::parse_with_redefined_upstreams(YAML, &Default::default()).unwrap();
     }
