@@ -24,7 +24,7 @@ pub use redirect::RedirectTo;
 pub use response::{RawResponse, RedirectResponse, ResponseBody, StaticResponse, TemplateEngine};
 pub use rule::{
     Action, Filter, ModifyHeaders, ModifyQueryStrategy, OnResponse, RequestModifications,
-    ResponseModifications, Rule, TrailingSlashFilterRule, TrailingSlashModification,
+    ResponseModifications, Rule, RuleCacheMode, TrailingSlashFilterRule, TrailingSlashModification,
 };
 pub use schema::get_schema;
 pub use scope::Scope;

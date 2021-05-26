@@ -11,7 +11,7 @@ use crate::{
 };
 use schemars::JsonSchema;
 
-use crate::entities::Exception;
+use crate::{config_core::DurationWrapper, entities::Exception};
 use core::fmt;
 use http::{header::HeaderName, HeaderMap, HeaderValue};
 use schemars::{
@@ -333,11 +333,37 @@ pub struct ResponseConditions {
     pub status_code: StatusCodeRange,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq, JsonSchema)]
+#[serde(tag = "mode")]
+pub enum RuleCacheMode {
+    #[serde(rename = "headers")]
+    Headers,
+
+    #[serde(rename = "prohibit")]
+    Prohibit,
+
+    #[serde(rename = "force")]
+    Force {
+        #[serde(rename = "max-age")]
+        max_age: DurationWrapper,
+    },
+}
+
+impl Default for RuleCacheMode {
+    fn default() -> Self {
+        Self::Headers
+    }
+}
+
 #[derive(Debug, Hash, Serialize, Deserialize, PartialEq, Clone, JsonSchema)]
 pub struct Rule {
     pub filter: Filter,
     #[serde(flatten)]
     pub action: Action,
+
+    #[serde(default)]
+    pub cache: RuleCacheMode,
+
     #[serde(default)]
     pub profiles: Option<Vec<ProfileName>>,
 }

@@ -29,6 +29,7 @@ pub fn default_rules() -> Vec<Rule> {
             on_response: Default::default(),
             rescue: Default::default(),
         },
+        cache: Default::default(),
         profiles: None,
     }]
 }
