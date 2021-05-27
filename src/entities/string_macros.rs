@@ -203,6 +203,7 @@ macro_rules! string_type {
             }
         }
 
+        #[cfg(feature = "api")]
         impl rweb::openapi::Entity for $x {
             fn describe() -> rweb::openapi::Schema {
                 rweb::openapi::Schema {
