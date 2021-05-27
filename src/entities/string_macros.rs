@@ -202,6 +202,20 @@ macro_rules! string_type {
                 v.inner.to_string()
             }
         }
+
+        impl rweb::openapi::Entity for $x {
+            fn describe() -> rweb::openapi::Schema {
+                rweb::openapi::Schema {
+                    description: stringify!($x).into(),
+                    format: "String".into(),
+                    ..Default::default()
+                }
+            }
+
+            fn describe_components() -> rweb::openapi::Components {
+                Default::default()
+            }
+        }
     };
 }
 

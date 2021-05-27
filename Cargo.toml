@@ -79,6 +79,7 @@ p256 = {version = "0.7.3", features = ["pem"], optional = true }
 simple_asn1 = {version =  "0.5.2", optional = true }
 pem = {version =  "0.8", optional = true }
 hex = {version =  "0.4", optional = true }
+rweb = { version = "0.12", features = ["openapi"], optional = true }
 
 seahash = { optional = true, version = "4.1.0" }
 tokio-tungstenite = { optional = true, version = "0.14" }
@@ -101,6 +102,9 @@ default = [
     "signaling",
     "tunnel",
     "ws-client",
+]
+api = [
+    "rweb"
 ]
 client-core = [
     "anyhow",

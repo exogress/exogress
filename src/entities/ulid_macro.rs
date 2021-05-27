@@ -102,6 +102,20 @@ macro_rules! ulid_type {
                 b.freeze()
             }
         }
+
+        impl rweb::openapi::Entity for $x {
+            fn describe() -> rweb::openapi::Schema {
+                rweb::openapi::Schema {
+                    description: stringify!($x).into(),
+                    format: "ULID".into(),
+                    ..Default::default()
+                }
+            }
+
+            fn describe_components() -> rweb::openapi::Components {
+                Default::default()
+            }
+        }
     };
 }
 
