@@ -104,7 +104,7 @@ macro_rules! ulid_type {
         }
 
         #[cfg(feature = "api")]
-        impl rweb::openapi::Entity for $x {
+        impl $crate::entities::rweb::openapi::Entity for $x {
             fn describe() -> rweb::openapi::Schema {
                 rweb::openapi::Schema {
                     description: stringify!($x).into(),
@@ -118,8 +118,8 @@ macro_rules! ulid_type {
             }
         }
 
-        impl AsRef<Ulid> for $x {
-            fn as_ref(&self) -> &Ulid {
+        impl AsRef<$crate::entities::Ulid> for $x {
+            fn as_ref(&self) -> &$crate::entities::Ulid {
                 &self.inner
             }
         }

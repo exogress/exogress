@@ -5,7 +5,6 @@ use crate::{
 };
 use anyhow::anyhow;
 use http::header::AUTHORIZATION;
-use reqwest::Error;
 use smol_str::SmolStr;
 use tokio::time::Duration;
 use url::Url;
