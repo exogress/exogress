@@ -1,4 +1,5 @@
 pub use bytes;
+#[cfg(feature = "api")]
 pub use rweb;
 pub use schemars;
 pub use serde;
