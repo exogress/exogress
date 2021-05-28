@@ -1,7 +1,7 @@
 [package]
 name = "exogress-common"
 description = "Exogress common code"
-version = "0.2.0-beta.1"
+version = "0.2.0"
 authors = ["Exogress Team <team@exogress.com>"]
 edition = "2018"
 license = "Apache 2.0"
