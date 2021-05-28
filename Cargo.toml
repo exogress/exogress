@@ -67,7 +67,7 @@ ulid = { optional = true, version = "0.4.0" }
 url = { optional = true, version = "2.1.1" }
 urlencoding = { optional = true, version = "1.1.1" }
 webpki = { optional = true, version = "0.21.3" }
-zstd = { optional = true, version = "0.6" }
+zstd = { optional = true, version = "0.7" }
 tokio-stream = { optional = true, version = "0.1.2" }
 valico = { optional = true, version = "3.6" }
 serde_with = { optional = true, version = "1.6" }
@@ -75,17 +75,20 @@ never = { optional = true, version = "0.1.0" }
 include_dir = { optional = true, version = "0.6" }
 schemars = { optional = true, git = "https://github.com/glebpom/schemars.git", branch = "exogress", features = ["ulid", "smol_str", "chrono", "semver", "language-tags"] }
 ledb-types = { version = "0.4.0", optional = true }
-p256 = {version = "0.7.3", features = ["pem"], optional = true }
-simple_asn1 = {version =  "0.5.2", optional = true }
-pem = {version =  "0.8", optional = true }
-hex = {version =  "0.4", optional = true }
+p256 = { version = "0.7.3", features = ["pem"], optional = true }
+simple_asn1 = { version = "0.5.2", optional = true }
+pem = { version = "0.8", optional = true }
+hex = { version = "0.4", optional = true }
 rweb = { version = "0.12", features = ["openapi"], optional = true }
 reqwest = { optional = true, version = "0.11", features = ["rustls-tls", "json", "trust-dns", "stream", "gzip", "brotli"], default-features = false }
-
+tokio-tar = { optional = true, version = "0.3.0" }
+walkdir = { optional = true, version = "2" }
+async-compression = { optional = true, version = "0.3.8", features = ["tokio"] }
 seahash = { optional = true, version = "4.1.0" }
 tokio-tungstenite = { optional = true, version = "0.14" }
 trust-dns-resolver = { optional = true, version = "0.20" }
 warp = { optional = true, version = "0.3" }
+tempfile = { optional = true, version = "3.2.0" }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full", "parking_lot"] }
@@ -107,6 +110,16 @@ default = [
 api = [
     "entities",
     "rweb"
+]
+deployments = [
+    "tokio",
+    "tokio/fs",
+    "anyhow",
+    "entities",
+    "tokio-tar",
+    "walkdir",
+    "async-compression/zstd",
+    "tempfile",
 ]
 client-core = [
     "anyhow",
