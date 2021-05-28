@@ -195,7 +195,7 @@ impl From<ProjectMount> for ClientMount {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Hash, JsonSchema)]
 #[serde(tag = "kind")]
 pub enum ProjectHandlerVariant {
     #[serde(rename = "auth")]

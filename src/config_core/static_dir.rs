@@ -30,7 +30,7 @@ impl From<http::StatusCode> for Error {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Hash, JsonSchema)]
 // #[schemars(deny_unknown_fields)]
 pub struct StaticDir {
     pub dir: PathBuf,

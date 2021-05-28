@@ -117,6 +117,12 @@ macro_rules! ulid_type {
                 Default::default()
             }
         }
+
+        impl AsRef<Ulid> for $x {
+            fn as_ref(&self) -> &Ulid {
+                &self.inner
+            }
+        }
     };
 }
 

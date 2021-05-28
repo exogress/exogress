@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     config_core::{
+        cache::Cache,
         config::{default_rules, Config},
         gcs::GcsBucketAccess,
         is_profile_active, is_version_supported,
@@ -301,7 +302,7 @@ pub struct ClientMount {
     pub refinable: Refinable,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Hash, JsonSchema)]
 // #[schemars(deny_unknown_fields)]
 #[serde(tag = "kind")]
 pub enum ClientHandlerVariant {
@@ -337,9 +338,20 @@ impl ClientHandlerVariant {
             ClientHandlerVariant::Auth(_) => None,
             ClientHandlerVariant::S3Bucket(v) => Some(&v.rebase),
             ClientHandlerVariant::GcsBucket(v) => Some(&v.rebase),
-            // ClientHandlerVariant::ApplicationFirewall(_) => None,
             ClientHandlerVariant::PassThrough(_) => None,
             ClientHandlerVariant::ProxyPublic(v) => Some(&v.rebase),
+        }
+    }
+
+    pub fn cache(&self) -> Option<&Cache> {
+        match self {
+            ClientHandlerVariant::Proxy(v) => Some(&v.cache),
+            ClientHandlerVariant::StaticDir(v) => Some(&v.cache),
+            ClientHandlerVariant::Auth(_) => None,
+            ClientHandlerVariant::S3Bucket(v) => Some(&v.cache),
+            ClientHandlerVariant::GcsBucket(v) => Some(&v.cache),
+            ClientHandlerVariant::PassThrough(_) => None,
+            ClientHandlerVariant::ProxyPublic(v) => Some(&v.cache),
         }
     }
 }

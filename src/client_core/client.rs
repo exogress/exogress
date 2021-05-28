@@ -101,7 +101,7 @@ impl Client {
         reload_config_tx: mpsc::UnboundedSender<()>,
         mut reload_config_rx: mpsc::UnboundedReceiver<()>,
         resolver: TokioAsyncResolver,
-    ) -> Result<(), anyhow::Error> {
+    ) -> anyhow::Result<()> {
         let project_name: ProjectName = self.project.parse()?;
         let account_name: AccountName = self.account.parse()?;
         let maybe_identity = self.maybe_identity.clone();

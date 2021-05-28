@@ -1,3 +1,4 @@
+pub mod api;
 mod client;
 mod health;
 mod internal_server;

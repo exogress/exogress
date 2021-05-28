@@ -30,6 +30,7 @@ ulid_type!(AccessKeyId);
 ulid_type!(TunnelId);
 ulid_type!(AccountUniqueId);
 ulid_type!(ProjectUniqueId);
+ulid_type!(RequestId);
 
 string_type!(ProjectName);
 string_type!(AccountName);
@@ -44,6 +45,7 @@ string_type!(ExceptionSegment);
 string_type!(HealthCheckProbeName);
 string_type!(ParameterName);
 string_type!(ProfileName);
+string_type!(InvalidationGroupName);
 
 #[cfg(feature = "ledb")]
 impl ledb_types::DocumentKeyType for AccountUniqueId {

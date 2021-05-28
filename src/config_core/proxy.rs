@@ -6,7 +6,7 @@ use crate::{
 };
 use schemars::JsonSchema;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash, JsonSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Hash, JsonSchema)]
 // #[schemars(deny_unknown_fields)]
 pub struct Proxy {
     pub upstream: Upstream,
