@@ -35,6 +35,7 @@ mime = { optional = true, version = "0.3.16" }
 mime_guess = { optional = true, version = "2.0.3" }
 num_cpus = { optional = true, version = "1.0" }
 parking_lot = { optional = true, version = "0.11" }
+parse-display = { optional = true, version = "0.4.1" }
 paste = { optional = true, version = "1.0" }
 percent-encoding = { optional = true, version = "2.1.0" }
 pin-project = { optional = true, version = "1.0" }
@@ -89,6 +90,8 @@ tokio-tungstenite = { optional = true, version = "0.14" }
 trust-dns-resolver = { optional = true, version = "0.20" }
 warp = { optional = true, version = "0.3" }
 tempfile = { optional = true, version = "3.2.0" }
+tame-gcs = { optional = true, version = "0.10" }
+tame-oauth = { optional = true, version = "0.4.5" }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full", "parking_lot"] }
@@ -342,6 +345,15 @@ access-tokens = [
     "simple_asn1",
     "pem",
     "hex"
+]
+gcs = [
+    "tame-gcs",
+    "tame-oauth",
+    "reqwest",
+    "smol_str",
+    "bytes",
+    "futures",
+    "parse-display",
 ]
 
 [workspace]
