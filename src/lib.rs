@@ -12,8 +12,6 @@ pub mod common_utils;
 pub mod config_core;
 #[cfg(feature = "entities")]
 pub mod entities;
-#[cfg(feature = "gcs")]
-pub mod gcs;
 #[cfg(feature = "signaling")]
 pub mod signaling;
 #[cfg(feature = "tunnel")]
