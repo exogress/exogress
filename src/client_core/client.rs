@@ -83,13 +83,18 @@ pub struct Client {
     pub additional_connection_params: HashMap<SmolStr, SmolStr>,
 }
 
-impl Client {
+impl ClientBuilder {
     pub fn label(&mut self, name: LabelName, value: LabelValue) -> &mut Self {
         let new = self;
-        new.labels.insert(name, value);
+        if new.labels.is_none() {
+            new.labels = Some(Default::default());
+        }
+        new.labels.as_mut().unwrap().insert(name, value);
         new
     }
+}
 
+impl Client {
     pub fn builder() -> ClientBuilder {
         Default::default()
     }
