@@ -80,7 +80,7 @@ simple_asn1 = { version = "0.5.2", optional = true }
 pem = { version = "0.8", optional = true }
 hex = { version = "0.4", optional = true }
 rweb = { version = "0.12", features = ["openapi"], optional = true }
-reqwest = { optional = true, version = "0.11", features = ["rustls-tls", "json", "trust-dns", "stream", "gzip", "brotli"], default-features = false }
+reqwest = { optional = true, version = "0.11", features = ["rustls-tls", "json", "trust-dns", "stream"], default-features = false }
 tokio-tar = { optional = true, version = "0.3.0" }
 walkdir = { optional = true, version = "2" }
 async-compression = { optional = true, version = "0.3.8", features = ["tokio"] }
