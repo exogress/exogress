@@ -67,7 +67,7 @@ pub struct Client {
     #[builder(setter(into), default = "DEFAULT_CLOUD_ENDPOINT.into()")]
     pub cloud_endpoint: SmolStr,
 
-    #[builder(setter(into))]
+    #[builder(setter(into), default = "None")]
     pub profile: Option<ProfileName>,
 
     #[builder(setter(into), default = "Default::default()")]
@@ -84,6 +84,12 @@ pub struct Client {
 }
 
 impl Client {
+    pub fn label(&mut self, name: LabelName, value: LabelValue) -> &mut Self {
+        let new = self;
+        new.labels.insert(name, value);
+        new
+    }
+
     pub fn builder() -> ClientBuilder {
         Default::default()
     }
